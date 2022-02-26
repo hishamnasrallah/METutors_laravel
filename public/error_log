@@ -1,0 +1,7 @@
+[11-Jan-2022 18:41:26 Asia/Tehran] PHP Fatal error:  Trait 'App\HasApiTokens' not found in /home1/zaptaies/test.zaptatechnologies.com/app/User.php on line 20
+[14-Jan-2022 13:39:21 Asia/Tehran] PHP Fatal error:  Cannot declare class App\Http\Controllers\Auth\LoginController, because the name is already in use in /home1/zaptaies/test.zaptatechnologies.com/app/Http/Controllers/Api/Auth/LoginController.php on line 11
+[14-Jan-2022 13:40:02 Asia/Tehran] PHP Fatal error:  Cannot declare class App\Http\Controllers\Auth\Api\LoginController, because the name is already in use in /home1/zaptaies/test.zaptatechnologies.com/app/Http/Controllers/Api/Auth/LoginController.php on line 11
+[17-Jan-2022 11:51:40 Asia/Tehran] PHP Fatal error:  Cannot use empty array elements in arrays in /home1/zaptaies/test.zaptatechnologies.com/app/Http/Controllers/Auth/RegisterController.php on line 111
+[19-Jan-2022 14:10:00 Asia/Tehran] PHP Fatal error:  Cannot use Illuminate\Notifications\Notification as Notification because the name is already in use in /home1/zaptaies/test.zaptatechnologies.com/app/User.php on line 21
+[22-Jan-2022 23:18:20 Asia/Tehran] PHP Fatal error:  Trait 'Illuminate\Database\Eloquent\Factories\HasFactory' not found in /home1/zaptaies/test.zaptatechnologies.com/app/Models/Ticket.php on line 9
+[23-Jan-2022 01:39:52 Asia/Tehran] PHP Fatal error:  Cannot use Hash as Hash because the name is already in use in /home1/zaptaies/test.zaptatechnologies.com/app/Http/Controllers/Auth/ResetPasswordController.php on line 13
