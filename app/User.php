@@ -19,9 +19,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use \App\Mail\SendMailOtp;
-use App\Models\Feedback;
+use App\Models\UserFeedback;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, Notifiable;
 
@@ -38,7 +41,7 @@ class User extends Authenticatable
      */
     protected $guarded = ['id'];
     protected $hidden = [
-        'password', 'remember_token', 'google_id', 'facebook_id', 'role_id'
+        'password', 'remember_token', 'google_id', 'facebook_id'
     ];
 
     static $statuses = [
@@ -57,6 +60,66 @@ class User extends Authenticatable
     private $userInfo;
 
 
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+    public function teacher_qualification()
+    {
+        return $this->hasOne('App\TeachingQualification');
+    }
+
+    // public function feedbacks(){
+    //     return $this->hasMany(\App\Models\Feedback::class,'teacher_id','id')->select('id','teacher_id','course_id','review','rating','kudos_points','feedback_by');
+    // }
+
+    public function teacher_specification()
+    {
+        return $this->hasOne(TeachingSpecification::class);
+    }
+
+    public function spoken_languages()
+    {
+        return $this->hasMany(SpokenLanguage::class);
+    }
+
+    public function teacher_subjects()
+    {
+        return $this->hasMany(TeacherSubject::class);
+    }
+
+
+
+    public function teacherAvailability()
+    {
+        return $this->hasMany(TeacherAvailability::class);
+    }
+
+    public function teacherProgram()
+    {
+        return $this->hasMany(TeacherProgram::class);
+    }
+
+
+
+    public function teacherSubject()
+    {
+        return $this->hasMany(TeacherSubject::class);
+    }
+
+
+
+
+
+
+
     static function getAdmin()
     {
         $role = Role::where('name', Role::$admin)->first();
@@ -67,88 +130,90 @@ class User extends Authenticatable
 
         return $admin;
     }
-    
-    
-    public function adminOtp(){
-        
-          $code = rand(1000, 9999);
-                    UserCode::updateOrCreate(
-                        [ 'user_id' => $this->id ],
-                        [ 'code' => $code ]
-                    );
-          
-                    $details  = [
-                        'title' => 'Two Factor authentication for MEtutors',
-                        'message' => 'Your one time password for MEtutor',
-                        'code' => $code,
-                        'ignoremessage' => "If you didnt submit this request, please ignore it.",
-                    ];
-                   \Mail::to($this->email)->send(new SendMailOtp($details));
-                   
-                      return response()->json([
-                            'status'=>true,
-                            'message'=>'Otp has been sent to your email' ,
-                            
-                            ]);
-        
+
+
+    public function adminOtp()
+    {
+
+        $code = rand(1000, 9999);
+        UserCode::updateOrCreate(
+            ['user_id' => $this->id],
+            ['code' => $code]
+        );
+
+        $details  = [
+            'title' => 'Two Factor authentication for MEtutors',
+            'message' => 'Your one time password for MEtutor',
+            'code' => $code,
+            'ignoremessage' => "If you didnt submit this request, please ignore it.",
+        ];
+        \Mail::to($this->email)->send(new SendMailOtp($details));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Otp has been sent to your email',
+
+        ]);
     }
-    
-    public function resendOtp(){
-        
-          $code = rand(1000, 9999);
-                    UserCode::updateOrCreate(
-                        [ 'user_id' => $this->id ],
-                        [ 'code' => $code ]
-                    );
-          
-                    $details  = [
-                        'title' => 'Two Factor authentication for MEtutors',
-                        'message' => 'Your one time password for MEtutor',
-                        'code' => $code,
-                        'ignoremessage' => "If you didnt submit this request, please ignore it.",
-                    ];
-                   \Mail::to($this->email)->send(new SendMailOtp($details));
-                   
-                      return response()->json([
-                            'status'=>true,
-                            'message'=>'Two factor verification otp has been sent to your email' ,
-                            
-                            ]);
-        
+
+    public function resendOtp()
+    {
+
+        $code = rand(1000, 9999);
+        UserCode::updateOrCreate(
+            ['user_id' => $this->id],
+            ['code' => $code]
+        );
+
+        $details  = [
+            'title' => 'Two Factor authentication for MEtutors',
+            'message' => 'Your one time password for MEtutor',
+            'code' => $code,
+            'ignoremessage' => "If you didnt submit this request, please ignore it.",
+        ];
+        \Mail::to($this->email)->send(new SendMailOtp($details));
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Two factor verification otp has been sent to your email',
+
+        ]);
     }
-    
-    
-    public function generateOtp(){
-        
-               $code = rand(1000, 9999);
-                    UserCode::updateOrCreate(
-                        [ 'user_id' => $this->id ],
-                        [ 'code' => $code ]
-                    );
-          
-                    $details  = [
-                        'title' => 'Two Factor authentication for MEtutors',
-                        'message' => 'Your one time password for MEtutor',
-                        'code' => $code,
-                        'ignoremessage' => "If you didnt submit this request, please ignore it.",
-                    ];
-                   \Mail::to($this->email)->send(new SendMailOtp($details));
-                   
-                      $token_result=$this->createToken('METutor')->plainTextToken;
-                      
-                      return response()->json([
-                    'status'=>true,
-                    'message'=>'Two factor verification otp has been sent to your email!' ,
-                    'user'=> $this,
-                    'token'=>$token_result
-                    ]);
-                   
-                    //   return response()->json([
-                    //         'status'=>true,
-                    //         'message'=>'Two factor verification otp has been sent to your email' ,
-                            
-                    //         ]);
-        
+
+
+    public function generateOtp($token)
+    {
+
+        $code = rand(1000, 9999);
+        UserCode::updateOrCreate(
+            ['user_id' => $this->id],
+            ['code' => $code]
+        );
+
+        $details  = [
+            'title' => 'Two Factor authentication for MEtutors',
+            'message' => 'Your one time password for MEtutor',
+            'code' => $code,
+            'ignoremessage' => "If you didnt submit this request, please ignore it.",
+        ];
+        \Mail::to($this->email)->send(new SendMailOtp($details));
+
+
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Two factor verification otp has been sent to your email!',
+
+            'token' => $token
+        ]);
+
+        //   return response()->json([
+        //         'status'=>true,
+        //         'message'=>'Two factor verification otp has been sent to your email' ,
+
+        //         ]);
+
     }
 
     public function isAdmin()
@@ -288,27 +353,27 @@ class User extends Authenticatable
         return $this->hasMany('App\Models\UserMeta', 'user_id', 'id');
     }
 
-   public function teacherInterviewRequests()
+    public function teacherInterviewRequests()
     {
         return $this->hasMany('App\TeacherInterviewRequest', 'user_id', 'id');
     }
 
- public function teacherSpecifications()
+    public function teacherSpecifications()
     {
         return $this->hasMany('App\TeachingSpecification');
     }
 
- public function teacherQualifications()
+    public function teacherQualifications()
     {
         return $this->hasMany('App\TeachingQualification');
     }
 
- public function teacherDocuments()
+    public function teacherDocuments()
     {
         return $this->hasMany('App\TeacherDocument');
     }
 
- public function spokenLanguages()
+    public function spokenLanguages()
     {
         return $this->hasMany('App\SpokenLanguage');
     }
@@ -364,11 +429,15 @@ class User extends Authenticatable
         return $this->hasOne('App\Models\UserZoomApi', 'user_id', 'id');
     }
 
+    public function feedbacks()
+    {
+        return $this->hasMany(UserFeedback::class, 'reciever_id', 'id');
+    }
 
     public function rates()
     {
         $webinars = $this->webinars()
-            ->where('status','active')
+            ->where('status', 'active')
             ->get();
 
         $rate = 0;
@@ -692,25 +761,5 @@ class User extends Authenticatable
         }
 
         return $query->get();
-    }
-
-    public function teacher_qualification(){
-        return $this->hasOne('App\TeachingQualification');
-    }
-
-    public function feedbacks(){
-        return $this->hasMany(Feedback::class,'teacher_id','id');
-    }
-
-    public function teacher_specification(){
-        return $this->hasOne(TeachingSpecification::class);
-    }
-
-    public function spoken_languages(){
-        return $this->hasMany(SpokenLanguage::class);
-    }
-
-    public function teacher_subjects(){
-        return $this->hasMany(TeacherSubject::class);
     }
 }

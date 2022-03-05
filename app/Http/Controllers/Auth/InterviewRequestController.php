@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use JWTAuth;
 
 class InterviewRequestController extends Controller
 {
@@ -100,9 +101,11 @@ class InterviewRequestController extends Controller
     {
         
         
-   
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-      $user = auth('sanctum')->user();
+      $user = $token_user;
       
        $rules = [
             'level_of_education' => 'required',
@@ -127,7 +130,7 @@ class InterviewRequestController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
       
@@ -142,7 +145,7 @@ class InterviewRequestController extends Controller
                return response()->json([
                 'status'=>false,
                 'message'=>'Your have already submitted the interview request'
-                ]);
+                ],400);
               
           }
           
@@ -167,7 +170,7 @@ class InterviewRequestController extends Controller
             return response()->json([
                 'status'=>false,
                 'message'=>'Only Teachers can submit request to admin for interview'
-                ]);
+                ],401);
       }
         
        

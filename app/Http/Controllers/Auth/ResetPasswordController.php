@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use JWTAuth;
 
 
 class ResetPasswordController extends Controller
@@ -57,8 +58,11 @@ public function change_password(Request $request){
          if ($validator->fails()) {
             return response()->json(['error' => $validator->messages()], 400);
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-        $user=User::find(auth('sanctum')->user()->id);
+        $user=User::find($token_user->id);
         
         // print_r($user);die;
         
@@ -77,13 +81,13 @@ public function change_password(Request $request){
              return response()->json([
                 'success' => false,
                 'message' => 'Current password is not correct'
-            ]);
+            ],400);
         }
         
     return response()->json([
                 'success' => false,
                 'message' => 'something went wrong'
-            ]);
+            ],500);
     
 }
 
@@ -101,8 +105,11 @@ public function change_email(Request $request){
          if ($validator->fails()) {
             return response()->json(['error' => $validator->messages()], 400);
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-        $user=User::find(auth('sanctum')->user()->id);
+        $user=User::find($token_user->id);
         
         
         if (Hash::check($request->current_password, $user->password)) { 
@@ -126,13 +133,13 @@ public function change_email(Request $request){
              return response()->json([
                 'success' => false,
                 'message' => 'Current password is not correct'
-            ]);
+            ],400);
         }
         
     return response()->json([
                 'success' => false,
                 'message' => 'something went wrong'
-            ]);
+            ],500);
     
 }
 
@@ -150,17 +157,20 @@ public function submit_email_withOtp(Request $request){
          if ($validator->fails()) {
             return response()->json(['error' => $validator->messages()], 400);
         }
+       $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-        $user=User::find(auth('sanctum')->user()->id);
+        $user=User::find($token_user->id);
         
-          $find=UserCode::where('user_id',auth('sanctum')->user()->id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(5))->first();
+          $find=UserCode::where('user_id',$token_user->id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(5))->first();
           
         //   return $find;
          
          
          if($find != null){
              
-               $find=UserCode::where('user_id',auth('sanctum')->user()->id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(5))->first();
+               $find=UserCode::where('user_id',$token_user->id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(5))->first();
                
                if($find != null){
                    
@@ -177,7 +187,7 @@ public function submit_email_withOtp(Request $request){
              return response()->json([
                 'success' => false,
                 'message' => 'Current password is not correct'
-            ]);
+            ],400);
         }
                     
                    
@@ -186,7 +196,7 @@ public function submit_email_withOtp(Request $request){
                 
                 'status' => 'false',
                 'message' => "OTP Expired",
-                ]) ;
+                ],400) ;
                    
                }
               
@@ -197,7 +207,7 @@ public function submit_email_withOtp(Request $request){
                 
                 'status' => 'false',
                 'message' => "Invalid OTP",
-                ]) ;
+                ],401) ;
              
          }
         
@@ -207,7 +217,7 @@ public function submit_email_withOtp(Request $request){
     return response()->json([
                 'success' => false,
                 'message' => 'something went wrong'
-            ]);
+            ],500);
     
 }
 
@@ -238,11 +248,14 @@ public function submit_email_withOtp(Request $request){
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-        $user=auth('sanctum')->user();
+        $user=$token_user;
         
         if (Hash::check($request->current_password, $user->password)) { 
         
@@ -258,7 +271,7 @@ public function submit_email_withOtp(Request $request){
              return response()->json([
                 'success' => false,
                 'message' => 'Current password is not correct'
-            ]);
+            ],401);
         }
         
         
@@ -293,7 +306,7 @@ public function submit_email_withOtp(Request $request){
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             
         }
         

@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Validator;
 use Hash;
 use Illuminate\Support\Str;
+use JWTAuth;
 class TicketsController extends Controller
 {
     // public function __construct()
@@ -25,13 +26,17 @@ class TicketsController extends Controller
      */
     public function index(Request $request)
     {
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
        
-        $user = auth('sanctum')->user();
+        $user = $token_user;
         if ($user->role_name != 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'access denied',
-            ]);
+            ],401);
         }
         $tickets = Ticket::orderBy('created_at', 'desc')->get();
         foreach ($tickets as $ticket) {
@@ -96,8 +101,10 @@ class TicketsController extends Controller
         if ($validator->fails()) {
             return response()->json(['error' => $validator->messages()], 400);
         }
-        
-        $user = auth('sanctum')->user();
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = $token_user;
         if ($request->hasFile('file')) {
             $imageName = time() . '.' . $request->file->getClientOriginalExtension();
             $request->file->move(public_path('uploads/images'), $imageName);
@@ -144,8 +151,10 @@ class TicketsController extends Controller
     }
     public function userTickets(Request $request)
     {
-       
-        $user = auth('sanctum')->user();
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = $token_user;
         // return $user->id;
         $tickets = Ticket::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
         // return json_encode($tickets);
@@ -226,13 +235,16 @@ class TicketsController extends Controller
     }
     public function close(Request $request, $ticket_id)
     {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-        $user = auth('sanctum')->user();
+        $user = $token_user;
         if ($user->role_name != 'admin') {
             return response()->json([
                 'success' => false,
                 'message' => 'access denied',
-            ]);
+            ],401);
         }
         $ticket = Ticket::where('ticket_id', $ticket_id)->firstOrFail();
         $ticket->status = "Closed";

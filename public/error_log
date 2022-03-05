@@ -5,3 +5,4 @@
 [19-Jan-2022 14:10:00 Asia/Tehran] PHP Fatal error:  Cannot use Illuminate\Notifications\Notification as Notification because the name is already in use in /home1/zaptaies/test.zaptatechnologies.com/app/User.php on line 21
 [22-Jan-2022 23:18:20 Asia/Tehran] PHP Fatal error:  Trait 'Illuminate\Database\Eloquent\Factories\HasFactory' not found in /home1/zaptaies/test.zaptatechnologies.com/app/Models/Ticket.php on line 9
 [23-Jan-2022 01:39:52 Asia/Tehran] PHP Fatal error:  Cannot use Hash as Hash because the name is already in use in /home1/zaptaies/test.zaptatechnologies.com/app/Http/Controllers/Auth/ResetPasswordController.php on line 13
+[28-Feb-2022 14:49:36 UTC] PHP Fatal error:  Trait 'App\Models\HasApiTokens' not found in /home1/zaptaies/tutor.zaptatechnologies.com/app/Models/User.php on line 11

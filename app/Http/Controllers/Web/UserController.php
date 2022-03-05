@@ -17,8 +17,8 @@ use App\Models\Follow;
 use App\Models\Meeting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use JWTAuth;
 
 class UserController extends Controller
 {
@@ -26,79 +26,166 @@ class UserController extends Controller
     {
         return view(getTemplate() . '.panel.dashboard');
     }
+    
+    
+    /********************* Filter Teacher ***************************/
+	
+	public function filteredTeacher(Request $request) {
+
+		$language_id = $request->language_id;
+
+// 		$teacher_availability_id = $request->teacher_availability_id;
+
+		$teacher_program_id = $request->teacher_program_id;
+
+		$teacher_qualification_id = $request->teacher_qualification_id;
+
+		$teacher_specification_id = $request->teacher_specification_id;
+
+		$teacher_subject_id = $request->teacher_subject_id;
+
+		$filtered_teacher = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('role_name','!=','admin' )->where('role_name','!=','student' )
+        
+
+        ->where('role_name', 'teacher')->where('verified', 0)->get();
+
+        return response()->json([
+            'success' => true,
+            'filtered_teacher' => $filtered_teacher,
+        ]);
+	}
+
+	/****End*****/ 
+    
+    
 
     public function student_profile($id)
     {
-        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('id', $id)->where('role_name', '!=', 'admin')->where('role_name', 'student')
+        $user = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('id', $id)->where('role_name','!=','admin' )->where('role_name','student' )
             ->first();
-
-        $user->joined_date = $user->created_at;
-
-        //  $user->userMetas;
+           
+            $user->joined_date=$user->created_at;
+            
+            //  $user->userMetas;
 
         if (!$user) {
-
+           
             return response()->json([
-                'status' => false,
-                'message' => "User Not found",
-            ]);
+            'status' => false,
+            'message' => "User Not found",
+            ],204);
         }
 
+        
+          return response()->json([
+              'status' => true,
+              'user' => $user,
+            ]);
 
-        return response()->json([
-            'status' => true,
-            'user' => $user,
-        ]);
+
     }
 
 
     public function teacher_profile($id)
     {
-
-        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('id', $id)->where('role_name', '!=', 'admin')->where('role_name', '!=', 'student')->where('role_name', 'teacher')
+       
+         $user = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('id', $id)->where('role_name','!=','admin' )->where('role_name','!=','student' )->where('role_name','teacher' )
             ->first();
-
-        $user->joined_date = $user->created_at;
+            
+            $user->joined_date=$user->created_at;
 
         if (!$user) {
-
+           
             return response()->json([
-                'status' => false,
-                'message' => "User Not found",
-            ]);
+            'status' => false,
+            'message' => "User Not found",
+            ],204);
         }
+        
+           $user->userMetas;
+           $user->teacherSpecifications;
+           $user->teacherQualifications;
 
-        $user->userMetas;
-        $user->teacherSpecifications;
-        $user->teacherQualifications;
+        
+          return response()->json([
+              'status' => true,
+              'user' => $user,
+            ]);
 
 
-        return response()->json([
-            'status' => true,
-            'user' => $user,
-        ]);
+       
+       
+       
+    }
+
+
+    public function teacher_public_profile(Request $request)
+    {
+       
+          
+        $rules = [
+            'id' => 'required',
+        ];
+
+        $validator=Validator::make($request->all(),$rules);
+        
+        if($validator->fails())
+        {
+            $messages=$validator->messages();
+            $errors=$messages->all();
+            
+            return response()->json([
+                
+                'status' => 'false',
+                'errors' => $errors,
+                ],400) ;
+            
+        }
+       
+       
+       
+         $user = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('role_name','!=','admin' )->where('role_name','!=','student' )->where('role_name','teacher' )->with('spokenLanguages','teacherAvailability','teacherProgram','teacherSpecifications','teacherSubject','teacherQualifications','teacherSubject.subject','teacherSubject.field')->where('id', $request->id)->first();
+           
+        if (!$user) {
+           
+            return response()->json([
+            'status' => false,
+            'message' => "User Not found",
+            ],204);
+        }
+        
+          return response()->json([
+              'status' => true,
+              'user' => $user,
+            ]);
+
     }
 
 
     public function admin_profile($id)
     {
-        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'mobile', 'email',  'verified', 'avatar', 'created_at', 'updated_at')->where('id', auth('sanctum')->user()->id)->where('role_name', auth('sanctum')->user()->role_name)
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar', 'created_at', 'updated_at')->where('id', $token_user->id)->where('role_name', $token_user->role_name)
             ->first();
 
         if (!$user) {
-
+           
             return response()->json([
-                'status' => false,
-                'message' => "User Not found",
-            ]);
+            'status' => false,
+            'message' => "User Not found",
+            ],204);
         }
 
+       
+        
+          return response()->json([
+              'status' => true,
+              'user' => $user,
+            ]);
 
 
-        return response()->json([
-            'status' => true,
-            'user' => $user,
-        ]);
     }
 
     public function followToggle($id)
@@ -386,7 +473,7 @@ class UserController extends Controller
                 ->whereNull('refund_at');
         })
             ->whereNotNull('sales.seller_id')
-            ->select('users.*', 'sales.seller_id', DB::raw('count(sales.seller_id) as counts'))
+            ->select('users.*','sales.seller_id', DB::raw('count(sales.seller_id) as counts'))
             ->groupBy('sales.seller_id')
             ->orderBy('counts', 'desc');
 
@@ -568,43 +655,4 @@ class UserController extends Controller
             ]);
         }
     }
-
-    public function teacher_public_profile(Request $request)
-    {
-        $rules = [
-            'id' => 'required',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            $messages = $validator->messages();
-            $errors = $messages->all();
-
-            return response()->json([
-
-                'status' => 'false',
-                'errors' => $errors,
-            ]);
-        }
-
-
-
-        $user = User::with('spokenLanguages', 'teacherAvailability', 'teacherProgram', 'teacherSpecifications', 'teacherSubject', 'teacherQualifications')->where('role_name', 'teacher')->where('id', $request->id)->first();
-
-        if (!$user) {
-
-            return response()->json([
-                'status' => false,
-                'message' => "User Not found",
-            ]);
-        }
-
-        return response()->json([
-            'status' => true,
-            'user' => $user,
-        ]);
-    }
-
-    
 }

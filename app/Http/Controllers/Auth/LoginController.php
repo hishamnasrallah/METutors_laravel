@@ -14,6 +14,9 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use \App\Mail\SendMailOtp;
 use Auth;
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+
 class LoginController extends Controller
 {
     /*
@@ -59,15 +62,20 @@ class LoginController extends Controller
     public function logout(Request $request)
     {
         
-         Auth::user()->tokens()->delete();
-        return [
-            'status'=> true,
-            'message'=>'Logged out Successfully!',
-            
-        ];
-        
-        
-        
+    try {
+      JWTAuth::invalidate(JWTAuth::getToken());
+      return response()->json([
+        'status' => 'success',
+        'msg' => 'You have successfully logged out.'
+      ]);
+    } catch (JWTException $e) {
+        JWTAuth::unsetToken();
+        // something went wrong tries to validate a invalid token
+        return response()->json([
+          'status' => 'error',
+          'msg' => 'Failed to logout, please try again.'
+      ],400);
+    }
         
     }
         
@@ -75,8 +83,10 @@ class LoginController extends Controller
     {
         // return 'hello';
         
-        
-          $id=auth('sanctum')->user()->id;
+         $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+          $id=$token_user->id;
           
         //   return $id;
          
@@ -112,11 +122,14 @@ class LoginController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         // return 'hello';
-         $id=auth('sanctum')->user()->id;
+         $id=$token_user->id;
          
          $find=UserCode::where('id',$id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(2))->first();
          
@@ -138,7 +151,7 @@ class LoginController extends Controller
                 
                 'status' => 'false',
                 'message' => "OTP Expired",
-                ]) ;
+                ],400) ;
                    
                }
               
@@ -149,7 +162,7 @@ class LoginController extends Controller
                 
                 'status' => 'false',
                 'message' => "Invalid OTP",
-                ]) ;
+                ],400) ;
              
          }
          
@@ -169,9 +182,7 @@ class LoginController extends Controller
     }
     public function login(Request $request)
     {
-        
-        // return $request->all();
-        
+       
         
         $rules = [
             'username' => 'required|max:100',
@@ -193,20 +204,33 @@ class LoginController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
     
         if ($this->attemptLogin($request)) {
             
-             $user=User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->username)->first();
+             $user=User::select('id','first_name','last_name','role_id','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->username)->first();
              
+           $credentials=array();
+        $credentials['email']=$request->username;
+        $credentials['password']=$request->password;
+        
+        $token = JWTAuth::customClaims(['user' => $user ])->attempt($credentials);
+        
             
              if($user->role_name == 'admin'){
                
-              $new = $user->generateOtp();
+              $new = $user->generateOtp($token);
               
               return $new;
+            
+             }  
+              if($user->role_name == 'teacher'){
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->username)->first();
+                 
+                 $token = JWTAuth::customClaims(['user' => $user ])->attempt($credentials);
             
              }  
              
@@ -216,13 +240,13 @@ class LoginController extends Controller
                     'status'=>true,
                     'message'=>'User Logged in Successfully!!' ,
                     'user'=> $user,
-                    'token'=>$token_result
+                    'token'=>$token
                     ]);
         }
         
         
         
-         return response()->json(['status'=>false,'message'=>'Invalid credentials']);
+         return response()->json(['status'=>false,'message'=>'Invalid credentials'],401);
 
         // return $this->sendFailedLoginResponse($request);
     }

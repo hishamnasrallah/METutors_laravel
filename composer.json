@@ -11,10 +11,12 @@
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.75",
         "laravel/sanctum": "^2.14",
+        "laravel/socialite": "^5.5",
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.4",
         "pusher/pusher-php-server": "^7.0",
-        "twilio/sdk": "^6.33"
+        "twilio/sdk": "^6.33",
+        "tymon/jwt-auth": "dev-develop"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

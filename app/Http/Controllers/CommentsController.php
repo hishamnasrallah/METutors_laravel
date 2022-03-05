@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Validator;
 
 use Hash;
+use JWTAuth;
 
 class CommentsController extends Controller
 {
@@ -33,10 +34,13 @@ class CommentsController extends Controller
             return response()->json([
                 'status' => 'false',
                 'message' => "Ticket is closed you can not add comment on it",
-            ]);
+            ],400);
         }
+
+         $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
         
-        $user = auth('sanctum')->user();
+        $user = $token_user;
         if ($request->hasFile('file')) {
             $imageName = time() . '.' . $request->file->getClientOriginalExtension();
             $request->file->move(public_path('uploads/images'), $imageName);

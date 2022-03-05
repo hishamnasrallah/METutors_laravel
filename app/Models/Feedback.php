@@ -20,4 +20,8 @@ class Feedback extends Model
     public function course(){
         return $this->belongsTo(Course::class)->select('id','course_code','created_at');
     }
+
+    public function user(){
+        return $this->belongsTo(User::class,'feedback_by','id')->select('id','first_name','last_name','role_name','email','mobile');
+    }
 }

@@ -200,7 +200,20 @@ class RegisterController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
+            // return $this->respondWithError($errors,500);
+        }
+    
+        if($request->role == 2 || $request->role > 3)
+        {
+           
+           
+            
+            return response()->json([
+                
+                'status' => 'false',
+                'message' => "invalid role",
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
     

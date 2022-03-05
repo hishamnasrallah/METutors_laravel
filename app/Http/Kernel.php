@@ -70,5 +70,6 @@ class Kernel extends HttpKernel
         'impersonate' => Impersonate::class,
         'share' => Share::class,
         'cors' => \App\Http\Middleware\Cors::class,
+        'auth.jwt' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class
     ];
 }

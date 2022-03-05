@@ -24,7 +24,7 @@ class VerifyMiddleware
                 
                 'status' => 'false',
                 'message' => "Please verify Your Email First",
-                ]);
+                ],401);
         }
         
         return $next($request);

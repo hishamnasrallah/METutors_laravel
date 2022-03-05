@@ -54,7 +54,7 @@ class ForgotPasswordController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             
         }
         
@@ -117,7 +117,7 @@ class ForgotPasswordController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             
         }
         

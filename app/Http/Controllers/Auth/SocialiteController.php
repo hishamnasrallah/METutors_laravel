@@ -17,7 +17,7 @@ use Twilio\Rest\Client;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use \App\Mail\SendMailOtp;
-
+use JWTAuth;
 
 
 
@@ -59,7 +59,7 @@ class SocialiteController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
         }
         
         
@@ -92,31 +92,50 @@ class SocialiteController extends Controller
                      $user->save();
                     
                   
-                            
-                             $user=User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
+                          $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
                              
-                              $token_result=$user->createToken('METutor')->plainTextToken;
+                              if($user->role_name == 'teacher'){
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
+                 
+                
+             }  
+                             
+                             
+                       
+                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                             
                              
                                 return response()->json([
                                     'status'=>true,
                                     'message'=>'User Logged in Successfully!!' ,
                                     'user'=> $user,
-                                    'token'=>$token_result
+                                    'token'=>$token
                                     ]);
                      
                      
                      
                  }else{
              
-                       $user=User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
-                     
-                       $token_result=$user->createToken('METutor')->plainTextToken;
+                          $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
+                             
+                              if($user->role_name == 'teacher'){
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
+                 
+                
+             }  
+                             
+                             
+                       
+                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                             
                       
                         return response()->json([
                             'status'=>true,
                             'message'=>'User Logged in Successfully!!' ,
                             'user'=> $user,
-                            'token'=>$token_result
+                            'token'=>$token
                             ]);
                  }
                  
@@ -133,7 +152,7 @@ class SocialiteController extends Controller
                         
                         'status' => 'false',
                         'message' => 'auth token required',
-                        ]) ;
+                        ],400) ;
             
         }
            
@@ -144,7 +163,7 @@ class SocialiteController extends Controller
                         
                         'status' => 'false',
                         'message' => 'auth token invalid',
-                        ]) ;
+                        ],401) ;
         }
         
         
@@ -187,7 +206,7 @@ class SocialiteController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
         }
         
         
@@ -221,30 +240,51 @@ class SocialiteController extends Controller
                     
                   
                             
-                             $user=User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
+                             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
                              
-                              $token_result=$user->createToken('METutor')->plainTextToken;
+                              if($user->role_name == 'teacher'){
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
+                 
+                
+             }  
+                             
+                             
+                       
+                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
                              
                                 return response()->json([
                                     'status'=>true,
                                     'message'=>'User Logged in Successfully!!' ,
                                     'user'=> $user,
-                                    'token'=>$token_result
+                                    'token'=>$token
                                     ]);
                      
                      
                      
                  }else{
              
-                       $user=User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
+                       $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
+                             
+                              if($user->role_name == 'teacher'){
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
+                 
+                
+             }  
+                             
+                             
+                       
+                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                             
                      
-                       $token_result=$user->createToken('METutor')->plainTextToken;
+                            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
                       
                         return response()->json([
                             'status'=>true,
                             'message'=>'User Logged in Successfully!!' ,
                             'user'=> $user,
-                            'token'=>$token_result
+                            'token'=>$token
                             ]);
                  }
                  
@@ -261,7 +301,7 @@ class SocialiteController extends Controller
                         
                         'status' => 'false',
                         'message' => 'access token required',
-                        ]) ;
+                        ],400) ;
             
         }
         
@@ -274,7 +314,7 @@ class SocialiteController extends Controller
                         
                         'status' => 'false',
                         'message' => 'access token invalid',
-                        ]) ;
+                        ],401) ;
         }
         
         
@@ -309,7 +349,7 @@ class SocialiteController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
          
@@ -322,7 +362,7 @@ class SocialiteController extends Controller
                 
                 'status' => true,
                 'message' => 'User exists already',
-                ]);
+                ],400);
              
          }else{
              
@@ -331,7 +371,7 @@ class SocialiteController extends Controller
                 
                 'status' => false,
                 'message' => 'User does not exist',
-                ]) ;
+                ],404) ;
              
          }
      }
@@ -356,7 +396,7 @@ class SocialiteController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
          
@@ -376,7 +416,7 @@ class SocialiteController extends Controller
                 
                 'status' => false,
                 'message' => 'User does not exist',
-                ]) ;
+                ],404) ;
              
          }
      }

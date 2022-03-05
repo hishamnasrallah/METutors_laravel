@@ -63,7 +63,7 @@ class VerificationController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
     
@@ -242,7 +242,7 @@ class VerificationController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
             // return $this->respondWithError($errors,500);
         }
         

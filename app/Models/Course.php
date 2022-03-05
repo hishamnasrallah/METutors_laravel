@@ -33,4 +33,17 @@ class Course extends Model
         return $this->belongsTo(FieldOfStudy::class,'field_of_study','id');
     }
 
+    public function teacher(){
+        return $this->belongsTo(User::class,'teacher_id','id')->select('id','first_name','last_name','role_name','email','mobile');
+    }
+
+    public function student(){
+        return $this->belongsTo(User::class,'student_id','id')->select('id','first_name','last_name','role_name','email','mobile');
+    }
+
+    public function fields(){
+        return $this->hasMany(FieldOfStudy::class,'field_of_study','id');
+    }
+
+
 }

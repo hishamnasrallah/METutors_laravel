@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
+use JWTAuth;
 
 class UserController extends Controller
 {
@@ -29,7 +30,6 @@ class UserController extends Controller
     
     public function invite_friends(Request $request)
     {
-   
         $rules = [
             'email' => 'required',
         ];
@@ -45,11 +45,14 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-        $user=User::find(auth('sanctum')->user()->id);
+        $user=User::find($token_user->id);
         
         
         // $inv=User::where('email',$request->email)->first();
@@ -60,7 +63,7 @@ class UserController extends Controller
                     $details  = [
                         'title' => 'Invitation to join MEtutors',
                         'link' => 'https://localhost:4200/',
-                        'message' => $user->email.' has invited you yo join MEtutors',
+                        'message' => $user->first_name." ".$user->last_name.' has invited you yo join MEtutors',
                        
                         'ignoremessage' => "If you don't want to join, please ignore it.",
                     ];
@@ -78,8 +81,8 @@ class UserController extends Controller
               return response()->json([
                 
                 'status' => 'false',
-                'message' => 'user ',
-                ]) ;
+                'message' => 'Unauthorized',
+                ],401) ;
         }
       
         
@@ -106,7 +109,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
       
@@ -140,7 +143,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'message' =>  'request does not exist'
-                ]) ;
+                ],204) ;
            
          }
        
@@ -171,7 +174,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
       
@@ -208,7 +211,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'message' =>  'request does not exist'
-                ]) ;
+                ],204) ;
            
          }
        
@@ -232,23 +235,26 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
       
-         $avail=TeacherAvailability::where('user_id',auth('sanctum')->user()->id)->where('day',$request->day)->where('time_from',$request->time_from)->where('time_to',$request->time_to)->first();
+         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$request->day)->where('time_from',$request->time_from)->where('time_to',$request->time_to)->first();
          
                  if($avail == null){
                      
                         $teacher_avail=new TeacherAvailability();
-                        $teacher_avail->user_id=auth('sanctum')->user()->id;
+                        $teacher_avail->user_id=$token_user->id;
                         $teacher_avail->day=$request->day;
                         $teacher_avail->time_from=$request->time_from;
                         $teacher_avail->time_to=$request->time_to;
                         $teacher_avail->save();
                   
                    
-                   $teacher_availability=TeacherAvailability::where('user_id',auth('sanctum')->user()->id)->where('day',$request->day)->get();
+                   $teacher_availability=TeacherAvailability::where('user_id',$token_user->id)->where('day',$request->day)->get();
                    
                     return response()->json([
                 
@@ -265,12 +271,12 @@ class UserController extends Controller
                         'status' => 'false',
                         'message' => 'The same data added already',
                        
-                        ]);
+                        ],400);
                    
                  }
                  
                  
-                  $lings=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->get();
+                  $lings=TeacherSubject::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -299,9 +305,13 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
       
          $avail=TeacherAvailability::find($request->id);
          
@@ -309,7 +319,7 @@ class UserController extends Controller
                      
                      $avail->delete();
                      
-                    $teacher_availability=TeacherAvailability::where('user_id',auth('sanctum')->user()->id)->where('day',$request->day)->get();
+                    $teacher_availability=TeacherAvailability::where('user_id',$token_user->id)->where('day',$request->day)->get();
                     return response()->json([
                 
                         'status' => 'true',
@@ -325,12 +335,12 @@ class UserController extends Controller
                         'status' => 'false',
                         'message' => 'Not found',
                        
-                        ]);
+                        ],204);
                    
                  }
                  
                  
-                  $lings=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->get();
+                  $lings=TeacherSubject::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -364,11 +374,14 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
       
-         $sub=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->where('field_id',$request->field_id)->first();
+         $sub=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$request->field_id)->first();
          
                  if($sub == null){
                      
@@ -377,13 +390,13 @@ class UserController extends Controller
                    foreach($subjectss as $subj){
                        
                         $teacher_sub=new TeacherSubject();
-                        $teacher_sub->user_id=auth('sanctum')->user()->id;
+                        $teacher_sub->user_id=$token_user->id;
                         $teacher_sub->field_id=$request->field_id;
                         $teacher_sub->subject_id=$subj;
                         $teacher_sub->save();
                    }
                    
-                   $subjects=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->get();
+                   $subjects=TeacherSubject::where('user_id',$token_user->id)->get();
                    
                     return response()->json([
                 
@@ -400,12 +413,12 @@ class UserController extends Controller
                         'status' => 'false',
                         'message' => 'This field is already added',
                        
-                        ]);
+                        ],400);
                    
                  }
                  
                  
-                  $lings=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->get();
+                  $lings=TeacherSubject::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -434,17 +447,20 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
           }
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
       
-         $sub=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->where('field_id',$request->field_id)->first();
+         $sub=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$request->field_id)->first();
          
                  if($sub != null){
                      
-                    $subs=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->where('field_id',$request->field_id)->delete();
+                    $subs=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$request->field_id)->delete();
                     
-                     $subjects=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->get();
+                     $subjects=TeacherSubject::where('user_id',$token_user->id)->get();
                    
                     return response()->json([
                 
@@ -461,12 +477,12 @@ class UserController extends Controller
                         'status' => 'false',
                         'message' => 'This field of study not found',
                        
-                        ]);
+                        ],404);
                    
                  }
                  
                  
-                  $lings=TeacherSubject::where('user_id',auth('sanctum')->user()->id)->get();
+                  $lings=TeacherSubject::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -500,29 +516,29 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
-      
-        
-        
-         $ling=SpokenLanguage::where('user_id',auth('sanctum')->user()->id)->where('language',$request->language)->first();
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+         $ling=SpokenLanguage::where('user_id',$token_user->id)->where('language',$request->language)->first();
          
                  if($ling == null){
                   $lang=new SpokenLanguage();
-                  $lang->user_id=auth('sanctum')->user()->id;
+                  $lang->user_id=$token_user->id;
                   $lang->language=$request->language;
                   $lang->level=$request->level;
                   $lang->save();
                  }else{
-                  $ling->user_id=auth('sanctum')->user()->id;
+                  $ling->user_id=$token_user->id;
                   $ling->language=$request->language;
                   $ling->level=$request->level;
                   $ling->update();
                  }
                  
                  
-                  $lings=SpokenLanguage::where('user_id',auth('sanctum')->user()->id)->get();
+                  $lings=SpokenLanguage::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -556,13 +572,15 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
       
-        
-        
-         $ling=SpokenLanguage::where('user_id',auth('sanctum')->user()->id)->where('id',$request->id)->first();
+         $ling=SpokenLanguage::where('user_id',$token_user->id)->where('id',$request->id)->first();
          
                  if($ling != null){
                   $lang=SpokenLanguage::find($request->id);
@@ -574,12 +592,12 @@ class UserController extends Controller
                 'status' => 'false',
                 'message' => 'language not found',
               
-                ]) ;
+                ],404) ;
                  
                  }
                  
                  
-                  $lings=SpokenLanguage::where('user_id',auth('sanctum')->user()->id)->get();
+                  $lings=SpokenLanguage::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -593,6 +611,9 @@ class UserController extends Controller
     }
      public function teacher_complete_account(Request $request)
     {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
        $rules = [
             
@@ -630,7 +651,7 @@ class UserController extends Controller
             $rules['name_of_university'] = 'required|string';
             $rules['degree_level'] = 'required|string';
             $rules['degree_field'] = 'required|string';
-            // $rules['spoken_language'] = 'required|json';
+            $rules['spoken_languages'] = 'required';
             $rules['computer_skills'] = 'required|string';
             $rules['teaching_experience'] = 'required|string';
             $rules['teaching_experience_online'] = 'required|string';
@@ -638,47 +659,29 @@ class UserController extends Controller
             // $rules['current_title'] = 'required|string';
            
         }
+        
+        
          if ($request->step == 4) {
             
-            $rules['level_of_education'] = 'required|string';
-            $rules['field_of_study'] = 'required|string';
-            $rules['subject'] = 'required|string';
-            $rules['type_of_tutoring'] = 'required|string';
-            $rules['expected_salary_per_hour'] = 'required|string';
-            $rules['availability_start_date'] = 'required|string';
-            $rules['availability_end_date'] = 'required|string';
-            $rules['teaching_days'] = 'required|string';
-            $rules['teaching_hours'] = 'required|string';
-            
-        }
-        
-         if ($request->step == 5) {
-            
-            $rules['level_of_education'] = 'required|string';
+            $rules['level_of_education'] = 'required';
             $rules['type_of_tutoring'] = 'required|string';
             $rules['expected_salary_per_hour'] = 'required|string';
             $rules['availability_start_date'] = 'required|string';
             $rules['availability_end_date'] = 'required|string';
             
-            $rules['program_id'] = 'required|json';
+            $rules['subjects'] = 'required';
+            $rules['availability'] = 'required';
+            $rules['program_id'] = 'required';
             
-            $programs=json_decode($request->program_id);
+            $programs=json_decode(json_encode($request->program_id));
             
             foreach($programs as $program){
                  if($program == 3){
                 
-                  $rules['country_id'] = 'required|json';
+                  $rules['country_id'] = 'required';
             } 
             }
             
-            $avail=TeacherAvailability::where('user_id',auth('sanctum')->user()->id)->first();
-            if($avail == null){
-                
-                 return response()->json([
-                'status' => 'false',
-                'message' => 'Please add available days and slots first',
-                ]);
-            }
         }
         
         
@@ -694,7 +697,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
         
@@ -702,10 +705,14 @@ class UserController extends Controller
          if ($request->step == 1) {
              
              
-            $user=User::find(auth('sanctum')->user()->id);
-            
-            
-            
+            $user=User::find($token_user->id);
+
+
+            if($user->gender == null && $user->address == null && $user->country == null && $user->city == null){
+
+                $user->profile_completed_step=1;
+            }
+
             $user->gender = $request->gender;
             $user->nationality = $request->nationality;
             $user->date_of_birth = $request->date_of_birth;
@@ -733,6 +740,13 @@ class UserController extends Controller
               $user->cover_img = $imageName;
          }
          
+         
+               
+          $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                    
+         $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+
+         
         //  return $user;
        $user->update();
        
@@ -740,6 +754,7 @@ class UserController extends Controller
                 
                 'status' => true,
                 'message' => 'data updated succesfully',
+                'token' => $token,
                 ]);
           
           
@@ -748,9 +763,14 @@ class UserController extends Controller
          if ($request->step == 2) {
             
              
-            $user=User::find(auth('sanctum')->user()->id);
-            
-            
+            $user=User::find($token_user->id);
+
+
+            if($user->avatar == null && $user->cover_img == null){
+
+                 $user->profile_completed_step=2;
+            }
+             
             if($request->hasFile('avatar')){
                 
               $imageName = rand(10,100).time().'.'.$request->avatar->getClientOriginalExtension();
@@ -765,11 +785,19 @@ class UserController extends Controller
          
         //  return $user;
        $user->update();
+
+
+
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                 
+           $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
        
          return response()->json([
                 
                 'status' => true,
                 'message' => 'data updated succesfully',
+                'token' => $token,
                 ]);
           
           
@@ -777,24 +805,52 @@ class UserController extends Controller
         
         }
          if ($request->step == 3) {
+
+
+
+             $languages=json_decode(json_encode($request->spoken_languages));
+               
+               foreach($languages as $language){
+                   
+               
+                  
+                 $ling=SpokenLanguage::where('user_id',$token_user->id)->where('language',$language->language_id)->first();
+         
+                 if($ling == null){
+                  $lang=new SpokenLanguage();
+                  $lang->user_id=$token_user->id;
+                  $lang->language=$language->language_id;
+                  $lang->level=$language->level;
+                  $lang->save();
+                 }else{
+                  $ling->user_id=$token_user->id;
+                  $ling->language=$language->language_id;
+                  $ling->level=$language->level;
+                  $ling->update();
+                 }
+                 
+                   
+               }
+               
              
-               $ling=SpokenLanguage::where('user_id',auth('sanctum')->user()->id)->first();
+             
+               $ling=SpokenLanguage::where('user_id',$token_user->id)->first();
                if($ling == null){
                    
              return response()->json([
                 
                 'status' => false,
                 'message' => 'please add language first',
-                ]);
+                ],400);
           
                    
                }
              
-           $teaching_quali=TeachingQualification::where('user_id',auth('sanctum')->user()->id)->first();
+           $teaching_quali=TeachingQualification::where('user_id',$token_user->id)->first();
              
              if($teaching_quali == null){
               $teaching_quali=new TeachingQualification();
-               $teaching_quali->user_id = auth('sanctum')->user()->id;
+               $teaching_quali->user_id = $token_user->id;
                $teaching_quali->name_of_university = $request->name_of_university;
             $teaching_quali->degree_level = $request->degree_level;
             $teaching_quali->degree_field = $request->degree_field;
@@ -806,20 +862,33 @@ class UserController extends Controller
            $teaching_quali->current_title = $request->current_title;
                $teaching_quali->save();  
                
+              
                
                
-           
+             $user=User::find($token_user->id);
+                $user->profile_completed_step=3;
+               $user->update();
+
+
+             
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                    
+                $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
              
                 return response()->json([
                 
                 'status' => true,
                 'message' => 'data updated succesfully',
+                'token' => $token,
                 ]) ;
                  
              }else{
+
+
                   
                
-               $teaching_quali->user_id = auth('sanctum')->user()->id;
+               $teaching_quali->user_id = $token_user->id;
                $teaching_quali->name_of_university = $request->name_of_university;
             $teaching_quali->degree_level = $request->degree_level;
             $teaching_quali->degree_field = $request->degree_field;
@@ -830,95 +899,44 @@ class UserController extends Controller
            $teaching_quali->current_title = $request->current_title;
                $teaching_quali->update();  
                
+               
+             
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                 
+                 
+           $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+               
                  return response()->json([
                 
                 'status' => true,
                 'message' => 'data updated succesfully',
+                'token' => $token,
                 ]) ;
                  
                  
              }
            
-           
-            
-          
-          
-          
-           
-            
-        
         } 
+      
         if ($request->step == 4) {
             
           
-             
-             $teaching_specs=TeachingSpecification::where('user_id',auth('sanctum')->user()->id)->first();
-             
-             if($teaching_specs == null){
-              $teaching_spec=new TeachingSpecification();
-               $teaching_spec->user_id = auth('sanctum')->user()->id;
-               $teaching_spec->level_of_education = $request->level_of_education;
-            $teaching_spec->field_of_study = $request->field_of_study;
-            $teaching_spec->subject = $request->subject;
-            $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
-           $teaching_spec->expected_salary_per_hour = $request->expected_salary_per_hour;
-            $teaching_spec->availability_start_date = $request->availability_start_date;
-           $teaching_spec->availability_end_date =$request->availability_end_date;
-           $teaching_spec->teaching_days = $request->teaching_days;
-           $teaching_spec->teaching_hours = $request->teaching_hours;
-               $teaching_spec->save();  
-               
-                return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                ]) ;
-                 
-             }else{
-                  
-               
-               $teaching_specs->level_of_education = $request->level_of_education;
-            $teaching_specs->field_of_study = $request->field_of_study;
-            $teaching_specs->subject = $request->subject;
-            $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
-           $teaching_specs->expected_salary_per_hour = $request->expected_salary_per_hour;
-            $teaching_specs->availability_start_date = $request->availability_start_date;
-           $teaching_specs->availability_end_date =$request->availability_end_date;
-           $teaching_specs->teaching_days = $request->teaching_days;
-           $teaching_specs->teaching_hours = $request->teaching_hours;
-               $teaching_specs->update();  
-               
-                 return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                ]) ;
-                 
-                 
-             }
-           
-           
-            
-        
-        }
-        if ($request->step == 5) {
-            
-          
-           $programs=json_decode($request->program_id);
+           $programs=json_decode(json_encode($request->program_id));
             
             foreach($programs as $program){
                 
-                $avail=TeacherProgram::where('user_id',auth('sanctum')->user()->id)->where('program_id',$program)->first();
+                $avail=TeacherProgram::where('user_id',$token_user->id)->where('program_id',$program)->first();
                 
               if($avail == null){
                   
                  if($program == 3){
                   
-                  $countries=json_decode($request->country_id);
+                  $countries=json_decode(json_encode($request->country_id));
                   foreach($countries as $country){
                       
                     $teacher_program=new TeacherProgram();
-                    $teacher_program->user_id=auth('sanctum')->user()->id;
+                    $teacher_program->user_id=$token_user->id;
                     $teacher_program->program_id=$program;
                     $teacher_program->country_id=$country;
                     $teacher_program->save();
@@ -927,7 +945,7 @@ class UserController extends Controller
             } else{
                 
                 $teacher_program=new TeacherProgram();
-                $teacher_program->user_id=auth('sanctum')->user()->id;
+                $teacher_program->user_id=$token_user->id;
                 $teacher_program->program_id=$program;
                 $teacher_program->save();
                 
@@ -936,20 +954,13 @@ class UserController extends Controller
             }
             
             
-            if($avail == null){
-                
-                 return response()->json([
-                'status' => 'false',
-                'message' => 'Please add available days and slots first',
-                ]);
-            }
-          
+            
              
-             $teaching_specs=TeachingSpecification::where('user_id',auth('sanctum')->user()->id)->first();
+             $teaching_specs=TeachingSpecification::where('user_id',$token_user->id)->first();
              
              if($teaching_specs == null){
               $teaching_spec=new TeachingSpecification();
-               $teaching_spec->user_id = auth('sanctum')->user()->id;
+               $teaching_spec->user_id = $token_user->id;
                $teaching_spec->level_of_education = $request->level_of_education;
             $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
            $teaching_spec->expected_salary_per_hour = $request->expected_salary_per_hour;
@@ -957,10 +968,91 @@ class UserController extends Controller
            $teaching_spec->availability_end_date =$request->availability_end_date;
                $teaching_spec->save();  
                
+                 
+               $field_of_studies=json_decode(json_encode($request->subjects));
+               
+               foreach($field_of_studies as $field){
+                   
+                   
+                     $subjectss=$field->subject_id;
+                     
+                   foreach($subjectss as $subj){
+                       
+                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$field->field_id)->where('subject_id',$subj)->first();
+                            
+                        if($sub == null){
+                            
+                            $teacher_sub=new TeacherSubject();
+                            $teacher_sub->user_id=$token_user->id;
+                            $teacher_sub->field_id=$field->field_id;
+                            $teacher_sub->subject_id=$subj;
+                            $teacher_sub->save();
+                        }else{
+                            $sub->user_id=$token_user->id;
+                            $sub->field_id=$field->field_id;
+                            $sub->subject_id=$subj;
+                            $sub->update();
+                        }
+                       
+                       
+                   }
+                  
+                 
+               }
+               
+            $availabilities=json_decode(json_encode($request->availability));
+            
+            // print_r($availabilities);die;
+               
+               foreach($availabilities as $availability){
+                   
+                    $availability_slots=$availability->time_slots;
+                     
+                   foreach($availability_slots as $slot){
+                       
+                    //   return $slot;
+                       
+                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->start_time)->where('time_to',$slot->end_time)->first();
+                            
+                        if($avail == null){
+                            
+                            $teacher_sub=new TeacherAvailability();
+                            $teacher_sub->user_id=$token_user->id;
+                            $teacher_sub->day=$availability->day;
+                            $teacher_sub->time_from=$slot->start_time;
+                            $teacher_sub->time_to=$slot->end_time;
+                            $teacher_sub->save();
+                        }else{
+                            $avail->user_id=$token_user->id;
+                            $avail->day=$availability->day;
+                            $avail->time_from=$slot->start_time;
+                            $avail->time_to=$slot->end_time;
+                            $avail->update();
+                        }
+                       
+                       
+                   }
+                  
+                 
+               }
+               
+              
+                $user=User::find($token_user->id);
+                $user->profile_completed_step=4;
+               $user->update();
+
+       
+               
+                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                   
+                $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+
+               
                 return response()->json([
                 
                 'status' => true,
                 'message' => 'data updated succesfully',
+                'token' => $token,
                 ]) ;
                  
              }else{
@@ -977,10 +1069,93 @@ class UserController extends Controller
            $teaching_specs->teaching_hours = $request->teaching_hours;
                $teaching_specs->update();  
                
+               
+                 
+               $field_of_studies=json_decode(json_encode($request->subjects));
+               
+            //   print_r($field_of_studies);die;
+               
+               foreach($field_of_studies as $field){
+                   
+                     $subjectss=$field->subject_id;
+                     
+                   foreach($subjectss as $subj){
+                       
+                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$field->field_id)->where('subject_id',$subj)->first();
+                            
+                        if($sub == null){
+                            
+                            $teacher_sub=new TeacherSubject();
+                            $teacher_sub->user_id=$token_user->id;
+                            $teacher_sub->field_id=$field->field_id;
+                            $teacher_sub->subject_id=$subj;
+                            $teacher_sub->save();
+                        }else{
+                            $sub->user_id=$token_user->id;
+                            $sub->field_id=$field->field_id;
+                            $sub->subject_id=$subj;
+                            $sub->update();
+                        }
+                       
+                       
+                   }
+                  
+                 
+               }
+               
+                $availabilities=json_decode(json_encode($request->availability));
+            
+            // print_r($availabilities);die;
+               
+               foreach($availabilities as $availability){
+                   
+                    $availability_slots=$availability->time_slots;
+                     
+                   foreach($availability_slots as $slot){
+                       
+                    //   return $slot;
+                       
+                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->start_time)->where('time_to',$slot->end_time)->first();
+                            
+                        if($avail == null){
+                            
+                            $teacher_sub=new TeacherAvailability();
+                            $teacher_sub->user_id=$token_user->id;
+                            $teacher_sub->day=$availability->day;
+                            $teacher_sub->time_from=$slot->start_time;
+                            $teacher_sub->time_to=$slot->end_time;
+                            $teacher_sub->save();
+                        }else{
+                            $avail->user_id=$token_user->id;
+                            $avail->day=$availability->day;
+                            $avail->time_from=$slot->start_time;
+                            $avail->time_to=$slot->end_time;
+                            $avail->update();
+                        }
+                       
+                       
+                   }
+                  
+                 
+               }
+               
+               
+               
+              $user=User::find($token_user->id);
+                $user->profile_completed_step=4;
+               $user->update();
+           
+                            
+               
+         $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                    
+        $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+               
                  return response()->json([
                 
                 'status' => true,
                 'message' => 'data updated succesfully',
+                'token' => $token,
                 ]) ;
                  
                  
@@ -1033,7 +1208,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
          if(!$request->hasFile('documents')) {
@@ -1080,7 +1255,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'message' =>  'user does not exist'
-                ]) ;
+                ],404) ;
            
          }
        
@@ -1112,7 +1287,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
          if(!$request->hasFile('documents')) {
@@ -1159,7 +1334,7 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'message' =>  'user does not exist'
-                ]) ;
+                ],404) ;
            
          }
        
@@ -1205,8 +1380,11 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255',
             
         ];
+         $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-         if (auth('sanctum')->user()->email != $request->email) {
+         if ($token_user->email != $request->email) {
              
             $rules['email'] = 'required|string|email|max:255|unique:users';
         }
@@ -1232,12 +1410,12 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
     
         // return 'hello';
-         $id=auth('sanctum')->user()->id;
+         $id=$token_user->id;
          
          $user=User::find($id);
          $user->first_name = $request->first_name;
@@ -1274,8 +1452,8 @@ class UserController extends Controller
 
    public function teacher_documents(Request $request)
     {
-        
-         $id=auth('sanctum')->user()->id;
+        // return $request->user_id;
+         $id=$request->user_id;
          
          $user=User::find($id);
         
@@ -1307,8 +1485,11 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255',
             
         ];
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-         if (auth('sanctum')->user()->email != $request->email) {
+         if ($token_user->email != $request->email) {
              
             $rules['email'] = 'required|string|email|max:255|unique:users';
         }
@@ -1334,12 +1515,12 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
     
         // return 'hello';
-         $id=auth('sanctum')->user()->id;
+         $id=$token_user->id;
          
          $user=User::find($id);
          $user->first_name = $request->first_name;
@@ -1387,8 +1568,11 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255',
             
         ];
+         $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         
-         if (auth('sanctum')->user()->email != $request->email) {
+         if ($token_user->email != $request->email) {
              
             $rules['email'] = 'required|string|email|max:255|unique:users';
         }
@@ -1414,12 +1598,12 @@ class UserController extends Controller
                 
                 'status' => 'false',
                 'errors' => $errors,
-                ]) ;
+                ],400) ;
            
         }
     
         // return 'hello';
-         $id=auth('sanctum')->user()->id;
+         $id=$token_user->id;
          
          $user=User::find($id);
          $user->first_name = $request->first_name;
