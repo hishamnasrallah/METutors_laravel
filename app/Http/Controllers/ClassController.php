@@ -533,7 +533,7 @@ class ClassController extends Controller
     //*********/  All Courses details *********
     public function courses(Request $request)
     {
-        $courses = Course::with('subject', 'language', 'program')->get();
+        $courses = Course::with('subject', 'language', 'program','classes')->where('teacher_id',$request->teacher_id)->get();
         return response()->json([
             'success' => true,
             'courses' => $courses,
@@ -693,6 +693,8 @@ class ClassController extends Controller
 
             ],400);
         }
+
+       
     }
 
 

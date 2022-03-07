@@ -120,8 +120,8 @@ Route::get('field-of-study', 'GeneralController@field_of_study');
 Route::get('field-subjects', 'GeneralController@field_subjects');
 Route::get('languages', 'GeneralController@languages');
 
-Route::post('ticket-categories', 'TicketsController@ticket_categories');
-Route::post('ticket-priorities', 'TicketsController@ticket_priorities');
+Route::get('ticket-categories', 'TicketsController@ticket_categories');
+Route::get('ticket-priorities', 'TicketsController@ticket_priorities');
 
 
 Route::post('create-ticket', 'TicketsController@store_new');
