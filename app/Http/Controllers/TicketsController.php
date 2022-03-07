@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\TicketCategory;
+use App\Models\TicketPriorities;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
 use App\Mailers\AppMailer;
@@ -24,6 +25,29 @@ class TicketsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+
+
+    public function ticket_priorities(){
+
+        $ticket_priorities=TicketPriorities::all();
+
+         return response()->json([
+            'success' => 'true',
+            'ticket_priorities' => $ticket_priorities
+        ]);
+    }
+
+    public function ticket_categories(){
+
+        $ticket_categories=TicketCategory::all();
+
+         return response()->json([
+            'success' => 'true',
+            'ticket_categories' => $ticket_categories
+        ]);
+    }
+
     public function index(Request $request)
     {
 

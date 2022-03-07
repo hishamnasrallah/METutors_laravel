@@ -31,7 +31,7 @@ use DateTime;
 use \App\Mail\SendMailInvite;
 class PricingController extends Controller
 {
-  
+
 
 
 public function estimated_price(Request $request){
@@ -58,10 +58,10 @@ public function final_invoice(Request $request){
     $total_hours = new DateTime(date('Y-m-d').' '.$total_hours);
 
     $total_hours=$total_hours->format('H:i');
-   
+
 $classes=0;
 
-    foreach (json_decode($request->classes) as $class) {
+    foreach (json_decode(json_encode($request->classes)) as $class) {
 $classes++;
 
         $start_time = $class->start_time;
@@ -78,7 +78,7 @@ $classes++;
     $total_hours = date("H:i:s", strtotime($time) + $secs);
 
 
-         
+
     }
     function decimal($total_hours)
 {
@@ -88,7 +88,7 @@ $classes++;
 
 
     $total_h = decimal($total_hours);
- 
+
 
 // print_r($total_h);die;
 
@@ -101,7 +101,7 @@ $classes++;
                 'price_per_hour' => $subject->price_per_hour,
                 'total_hours' => $total_h,
                 'total_amount' => $total_h*$subject->price_per_hour,
-                
+
                 ]);
 
 }

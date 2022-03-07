@@ -54,7 +54,7 @@ class DashboardController extends Controller
             $newly_assigned_courses = Course::with('subject', 'student','classes')
                 ->whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->get();
 
-            $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", "status")->with('course')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", "status","duration")->with('course')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->whereBetween('created_at', [$endDate, $current_date])->where('reciever_id', $user_id)->get();
 
             $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->count();

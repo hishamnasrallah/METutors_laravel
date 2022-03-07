@@ -39,7 +39,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
     Route::get('search-student', 'ClassController@search_student');
     Route::get('courses', 'ClassController@courses');
     Route::get('courses/search-course', 'ClassController@search_course');
-    Route::post('courses/course-detail', 'ClassController@course_detail');
+    Route::get('courses/course-detail/{id}', 'ClassController@course_detail');
 });
 
 Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], function () {
@@ -82,18 +82,18 @@ Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], functio
 
      Route::post('/logout', 'LoginController@logout');
 
-   
+
 
         Route::get('/testing', 'LoginController@testing');
 
-       
+
 
         Route::post('validate-password', 'ResetPasswordController@validate_password');
 
         Route::post('change-password', 'ResetPasswordController@change_password');
         Route::post('change-email', 'ResetPasswordController@change_email');
         Route::post('submit-email-withotp', 'ResetPasswordController@submit_email_withOtp');
-    
+
 });
 
 Route::get('estimated-price', 'PricingController@estimated_price');
@@ -119,6 +119,10 @@ Route::get('subjects', 'GeneralController@subjects');
 Route::get('field-of-study', 'GeneralController@field_of_study');
 Route::get('field-subjects', 'GeneralController@field_subjects');
 Route::get('languages', 'GeneralController@languages');
+
+Route::post('ticket-categories', 'TicketsController@ticket_categories');
+Route::post('ticket-priorities', 'TicketsController@ticket_priorities');
+
 
 Route::post('create-ticket', 'TicketsController@store_new');
 Route::get('create-ticket', 'TicketsController@store_new');

@@ -121,6 +121,7 @@ class ClassController extends Controller
         $course->weekdays = $request->weekdays;
         $course->start_date = $request->start_date;
         $course->end_date = $request->end_date;
+        $course->status = 'pending';
         $course->save();
 
         $classes = $request->classes;
@@ -137,6 +138,7 @@ class ClassController extends Controller
             $class->class_type = $request->class_type;
             $class->duration = $session->duration;
             $class->day = $session->day;
+            $class->status = 'pending';
             $class->save();
         }
         $program = Program::find($request->program_id);
@@ -270,7 +272,7 @@ class ClassController extends Controller
             $onTime_rating_sum=UserFeedback::where('feedback_id',4)->where('reciever_id',$teacher_id)->sum('rating');
             $onTime_rating = $onTime_rating_sum / $onTime_rating_total;
         }
-       
+
         return response()->json([
             'success' => true,
             'teacher' => $teacher,
@@ -534,7 +536,7 @@ class ClassController extends Controller
         $courses = Course::with('subject', 'language', 'program')->get();
         return response()->json([
             'success' => true,
-            'classes' => $courses,
+            'courses' => $courses,
         ]);
     }
 
@@ -579,23 +581,9 @@ class ClassController extends Controller
     }
 
     //*********/ Specific Course details *********
-    public function course_detail(Request $request)
+    public function course_detail(Request $request, $course_id)
     {
-        $rules = [
-            "course_id" => "required",
-        ];
 
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            $messages = $validator->messages();
-            $errors = $messages->all();
-
-            return response()->json([
-                'status' => 'false',
-                'errors' => $errors,
-            ],400);
-        }
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -605,16 +593,16 @@ class ClassController extends Controller
         $teacher_id = $token_user->id;
         $current_date = Carbon::today()->format('Y-m-d');
 
-        $course = Course::with('subject', 'language', 'program')->find($request->course_id);
+        $course = Course::with('subject', 'language', 'program')->find($course_id);
 
-        $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
+        $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration','day')
             ->with('course', 'course.subject')
             ->where('start_date', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
             ->get();
 
-        $upcoming_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
+        $upcoming_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration','day')
             ->with('course', 'course.subject')
             ->where('start_date', '>', $current_date)
             ->with('course')
@@ -625,7 +613,7 @@ class ClassController extends Controller
             ->where('teacher_id', $teacher_id)
             ->count();
 
-        $past_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
+        $past_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration','day')
             ->with('course', 'course.subject')
             ->where('start_date', '<', $current_date)
             ->with('course')
@@ -636,8 +624,8 @@ class ClassController extends Controller
             ->where('teacher_id', $teacher_id)
             ->count();
 
-        $remaining_classes=AcademicClass::where('course_id',$request->course_id)->where('status','!=','completed')->count();
-        $completed_classes=AcademicClass::where('course_id',$request->course_id)->where('status','completed')->count();
+        $remaining_classes=AcademicClass::where('course_id',$course_id)->where('status','!=','completed')->count();
+        $completed_classes=AcademicClass::where('course_id',$course_id)->where('status','completed')->count();
 
         return response()->json([
             'status' => true,
@@ -707,5 +695,5 @@ class ClassController extends Controller
         }
     }
 
-   
+
 }
