@@ -11,6 +11,7 @@ RUN echo "<Directory /var/www/html/public>" >> /etc/apache2/sites-enabled/000-de
 RUN echo "Options Indexes FollowSymLinks MultiViews" >> /etc/apache2/sites-enabled/000-default.conf
 RUN echo "AllowOverride All" >> /etc/apache2/sites-enabled/000-default.conf
 RUN echo "</Directory>" >> /etc/apache2/sites-enabled/000-default.conf
+RUN echo 'Header set Access-Control-Allow-Origin "*"'>> /etc/apache2/sites-enabled/000-default.conf
 RUN echo "</VirtualHost>" >> /etc/apache2/sites-enabled/000-default.conf
 RUN mv .env.example .env
 RUN composer install
