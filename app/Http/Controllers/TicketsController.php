@@ -62,7 +62,7 @@ class TicketsController extends Controller
                 'message' => 'access denied',
             ],401);
         }
-        $tickets = Ticket::orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with('category')->orderBy('created_at', 'desc')->get();
         foreach ($tickets as $ticket) {
             $ticket->user = $ticket->user;
             unset($ticket->user->industry);
@@ -147,8 +147,13 @@ class TicketsController extends Controller
             'file' => $file,
         ]);
         $ticket->save();
+
+        $ticket->category=$ticket->category;
+        $ticket->priority=$ticket->priority;
+
         return response()->json([
             'message' => 'success',
+            'ticket' => $ticket,
             'status' => "A ticket with ID: #$ticket->ticket_id has been opened",
         ]);
     }
@@ -180,7 +185,8 @@ class TicketsController extends Controller
 
         $user = $token_user;
         // return $user->id;
-        $tickets = Ticket::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with('category','priority')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+
         // return json_encode($tickets);
         return response()->json([
             'message' => 'success',

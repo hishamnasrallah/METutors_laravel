@@ -533,7 +533,10 @@ class ClassController extends Controller
     //*********/  All Courses details *********
     public function courses(Request $request)
     {
-        $courses = Course::with('subject', 'language', 'program','classes')->where('teacher_id',$request->teacher_id)->get();
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $courses = Course::with('subject', 'language', 'program','classes')->where('teacher_id',$token_user->id)->get();
         return response()->json([
             'success' => true,
             'courses' => $courses,
