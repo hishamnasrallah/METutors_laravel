@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get upgrade -y && apt-get install -y software-properties-common nano htop git curl apache2 unzip nmap && apt-get --with-new-pkgs upgrade -y && apt-get install php-cli php-curl php-dom composer libapache2-mod-php php-mysql libapache2-mod-php -y && apt-get autoclean && apt-get autoremove -y && a2enmod rewrite
+RUN apt-get update && apt-get upgrade -y && apt-get install -y software-properties-common nano htop git curl apache2 unzip nmap && apt-get --with-new-pkgs upgrade -y && apt-get install php-cli php-curl php-dom composer libapache2-mod-php php-mysql libapache2-mod-php -y && apt-get autoclean && apt-get autoremove -y && a2enmod rewrite && a2enmod headers
 WORKDIR /var/www/html
 RUN rm index.html
 COPY . .
