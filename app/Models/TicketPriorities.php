@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class TicketPriorities extends Model
 {
     use HasFactory;
+    
+    
+     public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

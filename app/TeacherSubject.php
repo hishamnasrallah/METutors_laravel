@@ -18,4 +18,8 @@ class TeacherSubject extends Model
         return $this->belongsTo(FieldOfStudy::class, 'field_id', 'id');
     }
 
+    public function program(){
+        return $this->belongsTo(Program::class, 'program_id', 'id');
+    }
+
 }

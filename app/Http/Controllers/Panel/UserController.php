@@ -655,9 +655,9 @@ class UserController extends Controller
             $rules['computer_skills'] = 'required|string';
             $rules['teaching_experience'] = 'required|string';
             $rules['teaching_experience_online'] = 'required|string';
-            // $rules['current_employer'] = 'required|string';
+            $rules['video'] = 'required|mimes:mp4,ogx,oga,ogv,ogg,webm|max:152400';
             // $rules['current_title'] = 'required|string';
-           
+          
         }
         
         
@@ -673,15 +673,7 @@ class UserController extends Controller
             $rules['availability'] = 'required';
             $rules['program_id'] = 'required';
             
-            $programs=json_decode(json_encode($request->program_id));
-            
-            foreach($programs as $program){
-                 if($program == 3){
-                
-                  $rules['country_id'] = 'required';
-            } 
-            }
-            
+           
         }
         
         
@@ -808,7 +800,7 @@ class UserController extends Controller
 
 
 
-             $languages=json_decode(json_encode($request->spoken_languages));
+             $languages=json_decode($request->spoken_languages);
                
                foreach($languages as $language){
                    
@@ -860,6 +852,13 @@ class UserController extends Controller
            $teaching_quali->teaching_experience_online =$request->teaching_experience_online;
            $teaching_quali->current_employer = $request->current_employer;
            $teaching_quali->current_title = $request->current_title;
+
+            if($request->hasFile('video')){
+                
+              $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
+              $request->video->move(public_path('uploads/teacher_videos'), $imageName);
+              $teaching_quali->video = $imageName;
+            }
                $teaching_quali->save();  
                
               
@@ -897,6 +896,12 @@ class UserController extends Controller
            $teaching_quali->teaching_experience =$request->teaching_experience;
            $teaching_quali->current_employer = $request->current_employer;
            $teaching_quali->current_title = $request->current_title;
+           if($request->hasFile('video')){
+                
+              $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
+              $request->video->move(public_path('uploads/teacher_videos'), $imageName);
+              $teaching_quali->video = $imageName;
+            }
                $teaching_quali->update();  
                
                
@@ -921,90 +926,69 @@ class UserController extends Controller
       
         if ($request->step == 4) {
             
-          
-           $programs=json_decode(json_encode($request->program_id));
-            
-            foreach($programs as $program){
-                
-                $avail=TeacherProgram::where('user_id',$token_user->id)->where('program_id',$program)->first();
-                
-              if($avail == null){
-                  
-                 if($program == 3){
-                  
-                  $countries=json_decode(json_encode($request->country_id));
-                  foreach($countries as $country){
-                      
-                    $teacher_program=new TeacherProgram();
-                    $teacher_program->user_id=$token_user->id;
-                    $teacher_program->program_id=$program;
-                    $teacher_program->country_id=$country;
-                    $teacher_program->save();
-                  }
-                  
-            } else{
-                
-                $teacher_program=new TeacherProgram();
-                $teacher_program->user_id=$token_user->id;
-                $teacher_program->program_id=$program;
-                $teacher_program->save();
-                
-            }
-              }
-            }
-            
-            
-            
-             
+        
              $teaching_specs=TeachingSpecification::where('user_id',$token_user->id)->first();
              
              if($teaching_specs == null){
-              $teaching_spec=new TeachingSpecification();
-               $teaching_spec->user_id = $token_user->id;
-               $teaching_spec->level_of_education = $request->level_of_education;
-            $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
-           $teaching_spec->expected_salary_per_hour = $request->expected_salary_per_hour;
-            $teaching_spec->availability_start_date = $request->availability_start_date;
-           $teaching_spec->availability_end_date =$request->availability_end_date;
-               $teaching_spec->save();  
+                 $teaching_spec=new TeachingSpecification();
+                 $teaching_spec->user_id = $token_user->id;
+                 $teaching_spec->level_of_education = $request->level_of_education;
+                 $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
+                 $teaching_spec->expected_salary_per_hour = $request->expected_salary_per_hour;
+                 $teaching_spec->availability_start_date = $request->availability_start_date;
+                 $teaching_spec->availability_end_date =$request->availability_end_date;
+                 $teaching_spec->save();  
                
                  
-               $field_of_studies=json_decode(json_encode($request->subjects));
+                $teacher_subjects=json_decode($request->subjects);
+               // print_r($teacher_subjects);die;
                
-               foreach($field_of_studies as $field){
+               foreach($teacher_subjects as $subj){
                    
-                   
-                     $subjectss=$field->subject_id;
-                     
-                   foreach($subjectss as $subj){
                        
-                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$field->field_id)->where('subject_id',$subj)->first();
+                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
                             
                         if($sub == null){
                             
                             $teacher_sub=new TeacherSubject();
                             $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->field_id=$field->field_id;
-                            $teacher_sub->subject_id=$subj;
+                            $teacher_sub->program_id=$subj->program_id;
+                            if($subj->program_id == 3){
+                                $teacher_sub->country_id=$subj->country_id;
+                                $teacher_sub->grade=$subj->grade;
+                            }
+                            $teacher_sub->field_id=$subj->field_id;
+                            $teacher_sub->subject_id=$subj->subject_id;
+                            $teacher_sub->hourly_price=$subj->hourly_price;
                             $teacher_sub->save();
                         }else{
-                            $sub->user_id=$token_user->id;
-                            $sub->field_id=$field->field_id;
-                            $sub->subject_id=$subj;
+
+
+                           $teacher_sub=TeacherSubject::find($sub->id);
+                           $teacher_sub->user_id=$token_user->id;
+                            $teacher_sub->program_id=$subj->program_id;
+                            if($subj->program_id == 3){
+                                $teacher_sub->country_id=$subj->country_id;
+                                $teacher_sub->grade=$subj->grade;
+                            }
+                            $teacher_sub->field_id=$subj->field_id;
+                            $teacher_sub->subject_id=$subj->subject_id;
+                            $teacher_sub->hourly_price=$subj->hourly_price;
                             $sub->update();
                         }
                        
-                       
-                   }
+                  
                   
                  
                }
                
-            $availabilities=json_decode(json_encode($request->availability));
+           $availabilities=json_decode($request->availability);
             
-            // print_r($availabilities);die;
+            
                
                foreach($availabilities as $availability){
+
+                // print_r($availability->time_slots);die;
                    
                     $availability_slots=$availability->time_slots;
                      
@@ -1012,21 +996,21 @@ class UserController extends Controller
                        
                     //   return $slot;
                        
-                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->start_time)->where('time_to',$slot->end_time)->first();
+                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->time_from)->where('time_to',$slot->time_to)->first();
                             
                         if($avail == null){
                             
                             $teacher_sub=new TeacherAvailability();
                             $teacher_sub->user_id=$token_user->id;
                             $teacher_sub->day=$availability->day;
-                            $teacher_sub->time_from=$slot->start_time;
-                            $teacher_sub->time_to=$slot->end_time;
+                            $teacher_sub->time_from=$slot->time_from;
+                            $teacher_sub->time_to=$slot->time_to;
                             $teacher_sub->save();
                         }else{
                             $avail->user_id=$token_user->id;
                             $avail->day=$availability->day;
-                            $avail->time_from=$slot->start_time;
-                            $avail->time_to=$slot->end_time;
+                            $avail->time_from=$slot->time_from;
+                            $avail->time_to=$slot->time_to;
                             $avail->update();
                         }
                        
@@ -1059,55 +1043,69 @@ class UserController extends Controller
                   
                
                $teaching_specs->level_of_education = $request->level_of_education;
-            $teaching_specs->field_of_study = $request->field_of_study;
-            $teaching_specs->subject = $request->subject;
-            $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
-           $teaching_specs->expected_salary_per_hour = $request->expected_salary_per_hour;
-            $teaching_specs->availability_start_date = $request->availability_start_date;
-           $teaching_specs->availability_end_date =$request->availability_end_date;
-           $teaching_specs->teaching_days = $request->teaching_days;
-           $teaching_specs->teaching_hours = $request->teaching_hours;
+               $teaching_specs->field_of_study = $request->field_of_study;
+               $teaching_specs->subject = $request->subject;
+               $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
+               $teaching_specs->expected_salary_per_hour = $request->expected_salary_per_hour;
+               $teaching_specs->availability_start_date = $request->availability_start_date;
+               $teaching_specs->availability_end_date =$request->availability_end_date;
+               $teaching_specs->teaching_days = $request->teaching_days;
+               $teaching_specs->teaching_hours = $request->teaching_hours;
                $teaching_specs->update();  
                
                
                  
-               $field_of_studies=json_decode(json_encode($request->subjects));
+               $teacher_subjects=json_decode($request->subjects);
+               // print_r($teacher_subjects);die;
                
-            //   print_r($field_of_studies);die;
-               
-               foreach($field_of_studies as $field){
+               foreach($teacher_subjects as $subj){
                    
-                     $subjectss=$field->subject_id;
-                     
-                   foreach($subjectss as $subj){
                        
-                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('field_id',$field->field_id)->where('subject_id',$subj)->first();
+                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
+
+                         // print_r($sub);die;
                             
                         if($sub == null){
+
+                            // return 'hello';
                             
                             $teacher_sub=new TeacherSubject();
                             $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->field_id=$field->field_id;
-                            $teacher_sub->subject_id=$subj;
+                            $teacher_sub->program_id=$subj->program_id;
+                            if($subj->program_id == 3){
+                                $teacher_sub->country_id=$subj->country_id;
+                                $teacher_sub->grade=$subj->grade;
+                            }
+                            $teacher_sub->field_id=$subj->field_id;
+                            $teacher_sub->subject_id=$subj->subject_id;
+                            $teacher_sub->hourly_price=$subj->hourly_price;
                             $teacher_sub->save();
                         }else{
-                            $sub->user_id=$token_user->id;
-                            $sub->field_id=$field->field_id;
-                            $sub->subject_id=$subj;
+                            $teacher_sub=TeacherSubject::find($sub->id);
+                           $teacher_sub->user_id=$token_user->id;
+                            $teacher_sub->program_id=$subj->program_id;
+                            if($subj->program_id == 3){
+                                $teacher_sub->country_id=$subj->country_id;
+                                $teacher_sub->grade=$subj->grade;
+                            }
+                            $teacher_sub->field_id=$subj->field_id;
+                            $teacher_sub->subject_id=$subj->subject_id;
+                            $teacher_sub->hourly_price=$subj->hourly_price;
                             $sub->update();
                         }
                        
-                       
-                   }
+                  
                   
                  
                }
                
-                $availabilities=json_decode(json_encode($request->availability));
+                $availabilities=json_decode($request->availability);
             
-            // print_r($availabilities);die;
+            
                
                foreach($availabilities as $availability){
+
+                // print_r($availability->time_slots);die;
                    
                     $availability_slots=$availability->time_slots;
                      
@@ -1115,21 +1113,21 @@ class UserController extends Controller
                        
                     //   return $slot;
                        
-                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->start_time)->where('time_to',$slot->end_time)->first();
+                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->time_from)->where('time_to',$slot->time_to)->first();
                             
                         if($avail == null){
                             
                             $teacher_sub=new TeacherAvailability();
                             $teacher_sub->user_id=$token_user->id;
                             $teacher_sub->day=$availability->day;
-                            $teacher_sub->time_from=$slot->start_time;
-                            $teacher_sub->time_to=$slot->end_time;
+                            $teacher_sub->time_from=$slot->time_from;
+                            $teacher_sub->time_to=$slot->time_to;
                             $teacher_sub->save();
                         }else{
                             $avail->user_id=$token_user->id;
                             $avail->day=$availability->day;
-                            $avail->time_from=$slot->start_time;
-                            $avail->time_to=$slot->end_time;
+                            $avail->time_from=$slot->time_from;
+                            $avail->time_to=$slot->time_to;
                             $avail->update();
                         }
                        
@@ -1263,9 +1261,6 @@ class UserController extends Controller
     
     public function upload_documents(Request $request)
     {
-        
-        // print_r($request->all());die;
-       
         $rules = [
             
             'email' => 'required|email|min:3|max:100',
@@ -1300,20 +1295,28 @@ class UserController extends Controller
          
          if($user != null){
              
-             
-             
+            // $imgs=array();
+            // $files= $request->file('documents');
+            // if($files){
+            //     foreach($files as $file){
+            //         $fileName = date('YmdHis').random_int(0,1000).'.'.$file->getClientOriginalExtension();
+            //         $file->move(public_path('uploads/teacher_documents'), $fileName);
+            //         $imgs[]=$fileName;
+            //     }
+                
+            // }
+            // $driver->license_images=implode("|",$imgs);
         
         $imgs=array();
         $files = $request->file('documents'); 
-        if($request->hasfile('documents')) { 
+        if($request->hasFile('documents')) { 
             foreach($files as $file)
             {
-                $fileName = time().rand(0, 1000).pathinfo($request->documents->getClientOriginalName(), PATHINFO_FILENAME);
-                $fileName = $fileName.'.'.$request->documents->getClientOriginalExtension();
-                $request->documents->move(public_path('uploads/teacher_documents'),$fileName);
+                $fileName = date('YmdHis').random_int(0,1000).'_'.$file->getClientOriginalName();
+                $file->move(public_path('uploads/teacher_documents'), $fileName);
                 $imgs[]=$fileName;
                
-               $userMeta=new UserMeta();
+               $userMeta=new UserMeta;
                $userMeta->user_id=$user->id;
                $userMeta->name='documents';
                $userMeta->value=$fileName;

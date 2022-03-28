@@ -16,11 +16,11 @@ class CreateVerificationsTable extends Migration
         Schema::create('verifications', function (Blueprint $table) {
             $table->id();
             $table->integer("user_id");
-            $table->string("mobile");
-            $table->string("email");
+            $table->string("mobile")->nullable();
+            $table->string("email")->nullable();
             $table->string("code");
-            $table->integer("verified_at");
-            $table->integer("expired_at");
+            $table->integer("verified_at")->nullable();
+            $table->integer("expired_at")->nullable();
             $table->timestamps();
         });
     }

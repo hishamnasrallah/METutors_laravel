@@ -15,8 +15,8 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.4",
         "pusher/pusher-php-server": "^7.0",
-        "twilio/sdk": "^6.33",
-        "tymon/jwt-auth": "dev-develop"
+        "twilio/sdk": "^6.35",
+        "tymon/jwt-auth": "^1.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

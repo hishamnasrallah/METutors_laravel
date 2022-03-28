@@ -34,32 +34,32 @@ class ForgotPasswordController extends Controller
 
     public function forgot(Request $request)
     {
-        
-        
-        
+
+
+
           $rules = [
             'email' => 'required|email|exists:users',
-           
+
         ];
 
-      
+
         $validator=Validator::make($request->all(),$rules);
-        
+
         if($validator->fails())
         {
             $messages=$validator->messages();
             $errors=$messages->all();
-            
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
                 ],400) ;
-            
+
         }
-        
-        
-       
+
+
+
 
         $token = \Illuminate\Support\Str::random(60);
         DB::table('password_resets')->insert([
@@ -76,7 +76,7 @@ class ForgotPasswordController extends Controller
         ];
 
         Mail::send('web.default.auth.password_verify', $emailData, function ($message) use ($request) {
-            $message->from(!empty($generalSettings['site_email']) ? $generalSettings['site_email'] : env('MAIL_FROM_ADDRESS'));
+
             $message->to($request->input('email'));
             $message->subject('Reset Password Notification');
         });
@@ -86,43 +86,43 @@ class ForgotPasswordController extends Controller
             'msg' => trans('auth.send_email_for_reset_password'),
             'status' => 'success'
         ];
-        
+
         return response()->json([
-                
+
                 'status' => 'true',
                 'message' => 'Password recovery link sent to your email address. Please check your email',
-                
+
                 ]);
         return back()->with(['toast' => $toastData]);
     }
     public function resend(Request $request)
     {
-        
-        
-        
+
+
+
           $rules = [
             'email' => 'required|email|exists:users',
-           
+
         ];
 
-      
+
         $validator=Validator::make($request->all(),$rules);
-        
+
         if($validator->fails())
         {
             $messages=$validator->messages();
             $errors=$messages->all();
-            
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
                 ],400) ;
-            
+
         }
-        
-        
-       
+
+
+
 
         $token = \Illuminate\Support\Str::random(60);
         DB::table('password_resets')->insert([
@@ -139,7 +139,7 @@ class ForgotPasswordController extends Controller
         ];
 
         Mail::send('web.default.auth.password_verify', $emailData, function ($message) use ($request) {
-            $message->from(!empty($generalSettings['site_email']) ? $generalSettings['site_email'] : env('MAIL_FROM_ADDRESS'));
+
             $message->to($request->input('email'));
             $message->subject('Reset Password Notification');
         });
@@ -149,12 +149,12 @@ class ForgotPasswordController extends Controller
             'msg' => trans('auth.send_email_for_reset_password'),
             'status' => 'success'
         ];
-        
+
         return response()->json([
-                
+
                 'status' => 'true',
                 'message' => 'Password recovery link sent to your email address. Please check your email',
-                
+
                 ]);
         return back()->with(['toast' => $toastData]);
     }

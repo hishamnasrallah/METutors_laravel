@@ -294,4 +294,20 @@ class VerificationController extends Controller
     {
         return rand(10000, 99999);
     }
+
+
+    public function show(){
+
+
+        return response()->json([
+                        'status'=>false,
+                        'message'=>'Email is not verified yet' ,
+                        
+                        ],401);
+
+    }
+
+
+
+
 }

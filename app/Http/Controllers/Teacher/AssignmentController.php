@@ -1,0 +1,265 @@
+<?php
+
+namespace App\Http\Controllers\Teacher;
+use App\Http\Controllers\Controller;
+
+use App\Models\AcademicClass;
+use App\Models\Assignment;
+use App\Models\Attendance;
+use App\Models\CanceledCourse;
+use App\Models\ClassTopic;
+use App\Models\Course;
+use App\Models\RejectedCourse;
+use App\Models\Resource;
+use App\Models\Topic;
+
+use App\Models\User;
+use App\Models\UserAssignment;
+use App\Models\UserFeedback;
+use Illuminate\Http\Request;
+use JWTAuth;
+use Carbon\Carbon;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+
+class AssignmentController extends Controller
+{
+    
+
+    public function addAssignment(Request $request)
+    {
+        $rules = [
+            'course_id' =>  'required|integer',
+            'title' =>  'required',
+            'description' =>  'required',
+            'start_date' =>  'required',
+            'deadline' =>  'required',
+            'assignee' =>  'required',
+            'urls' =>  'required|json',
+            'files' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        $teacher = User::find($token_user->id);
+
+        $assignment = new Assignment();
+        $assignment->title = $request->title;
+        $assignment->description = $request->description;
+        $assignment->start_date = $request->start_date;
+        $assignment->deadline = $request->deadline;
+        $assignment->urls = $request->urls;
+        $assignment->course_id = $request->course_id;
+
+        $assignments = array();
+
+        
+
+
+        $assignment->files = $request['files'];
+        $assignment->status = 'active';
+        $assignment->created_by = $teacher->id;
+        $assignment->save();
+
+        $assignees = json_decode($request->assignee);
+        foreach ($assignees as $assignee) {
+            $user_assignment = new UserAssignment();
+            $user_assignment->user_id =  $assignee;
+            $user_assignment->assignment_id = $assignment->id;
+            $user_assignment->status = 'pending';
+            // $user_assignment->course_id = $request->course_id;
+            $user_assignment->save();
+        }
+
+        $assignment = Assignment::with('assignees')->find($assignment->id);
+        $assignment->urls=json_decode($assignment->urls);
+        $assignment->files=json_decode($assignment->files);
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Course Assignment added Successfully!',
+            'assignment' => $assignment,
+        ]);
+    }
+
+    public function assignmentDashboard($course_id, Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        $teacher = User::find($token_user->id);
+
+        $corse = Course::find($course_id);
+
+        $course = Course::with('assignments', 'assignments.assignees', 'assignments.assignees.user')
+            ->find($course_id);
+
+        $total_assinments = 0;
+        $completed_assignments = 0;
+        $active_assignments = 0;
+        foreach ($course['assignments'] as $assignment) {
+
+            if ($assignment->status == 'active') {
+                $active_assignments = $active_assignments + 1;
+            }
+            if ($assignment->status == 'completed') {
+                $completed_assignments = $completed_assignments + 1;
+            }
+            $total_assinments++;
+        }
+
+        if (count($request->all()) >= 1) {
+
+            if ($request->status == 'active') {
+
+                $course = Course::with('assignments.assignees', 'assignments.assignees.user')
+                    ->with('assignments', function ($query) {
+                        $query->where('status', 'active');
+                    })
+                    ->where('id', $course_id)->get();
+            }
+            if ($request->status == 'completed') {
+
+                $course = Course::with('assignments.assignees', 'assignments.assignees.user')
+                    ->with('assignments', function ($query) {
+                        $query->where('status', 'completed');
+                    })
+                    ->where('id', $course_id)->get();
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Course Assignment Dashboard!',
+                'course' => $course,
+                'total_assignments' => $total_assinments,
+                'active_assignments' => $active_assignments,
+                'completed_assignments' => $completed_assignments,
+
+            ]);
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Course Assignment Dashboard!',
+            'course' => $course,
+            'total_assignments' => $total_assinments,
+            'active_assignments' => $active_assignments,
+            'completed_assignments' => $completed_assignments,
+
+        ]);
+    }
+
+   
+    public function assignmentDetail($assignment_id)
+    {
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $assignment = Assignment::with('assignees', 'assignees.user')->find($assignment_id);
+
+        $assignment->urls=json_decode($assignment->urls);
+        $assignment->files=json_decode($assignment->files);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Assignment details',
+            'assignment' => $assignment,
+        ]);
+    }
+
+    public function updateAssignment($assignment_id, Request $request)
+    {
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        $teacher = User::find($token_user->id);
+
+        $assignment = Assignment::find($assignment_id);
+        $assignment->title = $request->title;
+        $assignment->description = $request->description;
+        $assignment->start_date = $request->start_date;
+        $assignment->deadline = $request->deadline;
+        $assignment->urls = $request->urls;
+        $assignment->files = $request['files'];
+        $assignment->course_id = $assignment->course_id;
+
+        $assignments = array();
+
+
+        $assignment->status = 'active';
+        $assignment->created_by = $teacher->id;
+        $assignment->update();
+
+        $assignees = json_decode($request->assignee);
+
+        $assignment = Assignment::with('assignees')->find($assignment_id);
+
+        $db_assignees = [];
+         foreach($assignment['assignees'] as $assignee){
+            array_push($db_assignees, $assignee->user->id);
+         }
+
+        //******** Requested Array loop ********
+        foreach ($assignees as $assignee) {
+            if (in_array($assignee, $db_assignees)) {    
+            } else{
+                $user_assignment = new UserAssignment();
+                $user_assignment->user_id =  $assignee;
+                $user_assignment->assignment_id = $assignment->id;
+                $user_assignment->status = 'pending';
+                $user_assignment->save();
+            }
+        }
+
+        //******** Database Array loop ********
+        foreach ($assignment['assignees'] as $assignee) {
+            if (in_array($assignee->user_id, $assignees)) {
+            } else {
+                $user_assignment = UserAssignment::find($assignee->id);
+                $user_assignment->delete();
+            }
+        }
+
+        //******** returning response ********
+        $assignment = Assignment::with('assignees')->find($assignment_id);
+        $assignment->urls=json_decode($assignment->urls);
+        $assignment->files=json_decode($assignment->files);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Course Assignment updated Successfully!',
+            'assignment' => $assignment,
+        ]);
+    }
+
+
+    public function deleteAssignment($assignment_id)
+    {
+        $assignment = Assignment::find($assignment_id);
+        // $assignment->assignees->delete();
+        foreach ($assignment->assignees as $assignee) {
+            $assignee->delete();
+        }
+        $assignment->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Course Assignment updated Successfully!',
+            'deleted_assignment' => $assignment,
+
+        ]);
+    }
+}

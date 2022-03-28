@@ -54,7 +54,7 @@ class TicketsController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-       
+
         $user = $token_user;
         if ($user->role_name != 'admin') {
             return response()->json([
@@ -62,34 +62,8 @@ class TicketsController extends Controller
                 'message' => 'access denied',
             ],401);
         }
-        $tickets = Ticket::with('category')->orderBy('created_at', 'desc')->get();
-        foreach ($tickets as $ticket) {
-            $ticket->user = $ticket->user;
-            unset($ticket->user->industry);
-            unset($ticket->user->no_of_hires);
-            unset($ticket->user->company_logo);
-            unset($ticket->user->email_verified_at);
-            unset($ticket->user->company_phone);
-            unset($ticket->user->country);
-            unset($ticket->user->city);
-            unset($ticket->user->address);
-            unset($ticket->user->zipcode);
-            unset($ticket->user->website_link);
-            unset($ticket->user->linkedin_profile_link);
-            unset($ticket->user->profile_bio);
-            unset($ticket->user->language);
-            unset($ticket->user->availability);
-            unset($ticket->user->expertise);
-            unset($ticket->user->expertise_level);
-            unset($ticket->user->acceptTerms);
-            unset($ticket->user->vat);
-            unset($ticket->user->profile_completed);
-            unset($ticket->user->stripe_id);
-            unset($ticket->user->card_brand);
-            unset($ticket->user->trial_ends_at);
-            unset($ticket->user->pm_type);
-            unset($ticket->user->pm_last_four);
-        }
+        $tickets = Ticket::with('category','user','priority')->orderBy('created_at', 'desc')->get();
+
         return response()->json([
             'success' => 'true',
             'tickets' => $tickets
@@ -136,16 +110,17 @@ class TicketsController extends Controller
         } else {
             $file = null;
         }
-        $ticket = new Ticket([
-            'subject' => $request->title,
-            'user_id' =>  $user->id,
-            'ticket_id' => strtoupper(Str::random(10)),
-            'category_id' => $request->category,
-            'priority' => $request->priority,
-            'message' => $request->message,
-            'status' => "Open",
-            'file' => $file,
-        ]);
+        $ticket = new Ticket();
+
+            $ticket->subject = $request->title;
+            $ticket->user_id =  $user->id;
+            $ticket->ticket_id = strtoupper(Str::random(10));
+            $ticket->category_id = $request->category;
+            $ticket->priority = $request->priority;
+            $ticket->message = $request->message;
+            $ticket->status = "Open";
+            $ticket->file = $file;
+
         $ticket->save();
 
         $ticket->category=$ticket->category;
@@ -185,7 +160,7 @@ class TicketsController extends Controller
 
         $user = $token_user;
         // return $user->id;
-        $tickets = Ticket::with('category','priority')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with('category','priority','user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
 
         // return json_encode($tickets);
         return response()->json([
@@ -202,8 +177,8 @@ class TicketsController extends Controller
      */
     public function show($ticket_id)
     {
-        
-        $ticket = Ticket::where('ticket_id', $ticket_id)->firstOrFail();
+
+        $ticket = Ticket::with('category','user','priority')->where('ticket_id', $ticket_id)->firstOrFail();
         $ticket->user = $ticket->user;
             unset($ticket->user->industry);
             unset($ticket->user->no_of_hires);
@@ -263,12 +238,38 @@ class TicketsController extends Controller
         ]);
         return view('tickets.show', compact('ticket'));
     }
-    public function close(Request $request, $ticket_id)
+    public function change_status(Request $request)
     {
+
+
+         $rules = [
+
+            'status' => 'required',
+            'ticket_id' => 'required',
+        ];
+
+        $validator=Validator::make($request->all(),$rules);
+
+        if($validator->fails())
+        {
+            $messages=$validator->messages();
+            $errors=$messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+                ],400) ;
+
+        }
+
+
+
+
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        
+
         $user = $token_user;
         if ($user->role_name != 'admin') {
             return response()->json([
@@ -276,8 +277,17 @@ class TicketsController extends Controller
                 'message' => 'access denied',
             ],401);
         }
-        $ticket = Ticket::where('ticket_id', $ticket_id)->firstOrFail();
-        $ticket->status = "Closed";
+
+        if (strtolower($request->status) == 'closed' || strtolower($request->status) == 'inprogress') {
+
+        }else{
+             return response()->json([
+                'success' => false,
+                'message' => 'status can only be changed to closed or inprogress',
+            ],401);
+        }
+        $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();
+        $ticket->status = $request->status;
         $ticket->save();
         $ticketOwner = $ticket->user;
         return response()->json([

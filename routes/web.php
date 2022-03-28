@@ -23,3 +23,5 @@ Route::get('join-meeting/{string}',[VedioController::class,'meeting_join']);
 
 Route::get('search-student', [VedioController::class, 'student']);
 Route::post('search-student', [VedioController::class, 'search_student'])->name('search_student');
+
+Auth::routes(['verify' => true]);

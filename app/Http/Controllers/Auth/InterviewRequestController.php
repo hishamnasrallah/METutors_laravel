@@ -15,32 +15,15 @@ use JWTAuth;
 
 class InterviewRequestController extends Controller
 {
-    public function interview_requests_details(Request $request)
+    public function interview_requests_details(Request $request,$id)
     {
         
-          $interviewRequests=TeacherInterviewRequest::all();
+          $interviewRequests=null;
           
-        //   return $_GET['teacher_name'];
+          if(isset($id)){
+              
+              $interviewRequests=TeacherInterviewRequest::with('user','user.userMetas','user.teacherSpecifications','user.teacherQualifications','user.spokenLanguages','user.teacher_subjects','user.teacher_subjects.program','user.teacher_subjects.field','user.teacher_subjects.subject')->where('id',$id)->get();
           
-          if(isset($_GET['id'])){
-              
-              $interviewRequests=TeacherInterviewRequest::find($_GET['id']);
-              
-              $users=User::find($interviewRequests->user_id);
-              
-             $user_meta= $users->userMetas;
-             $user_spec= $users->teacherSpecifications;
-             $user_quali= $users->teacherQualifications;
-             $user_spoken_language= $users->spokenLanguages;
-             
-             
-             
-              
-              $interviewRequests->user=$users;
-              $interviewRequests->teacherSpecifications=$user_spec;
-              $interviewRequests->teacherQualifications=$user_quali;
-              $interviewRequests->spokenLanguages=$user_spoken_language;
-              
           }
         
             return response()->json([
@@ -80,9 +63,9 @@ class InterviewRequestController extends Controller
              
               
               $interviewRequest->user=$users;
-              $interviewRequest->teacherSpecifications=$user_spec;
-              $interviewRequest->teacherQualifications=$user_quali;
-              $interviewRequest->spokenLanguages=$user_spoken_language;
+              // $interviewRequest->teacherSpecifications=$user_spec;
+              // $interviewRequest->teacherQualifications=$user_quali;
+              // $interviewRequest->spokenLanguages=$user_spoken_language;
               
               
               
@@ -108,13 +91,10 @@ class InterviewRequestController extends Controller
       $user = $token_user;
       
        $rules = [
-            'level_of_education' => 'required',
-            'level_to_teach' => 'required',
-            'subject' => 'required',
+           
             'date_for_interview' => 'required',
             'time_for_interview' => 'required',
             'addtional_comments' => 'required|max:60',
-          
         ];
 
       
@@ -134,9 +114,16 @@ class InterviewRequestController extends Controller
             // return $this->respondWithError($errors,500);
         }
       
-      
+      $user=User::find($token_user->id);
       
       if($user->isTeacher()){
+
+        if($user->profile_completed_step != 4){
+             return response()->json([
+                'status'=>false,
+                'message'=>'Please complete your account details first'
+                ],400);
+        }
           
           $interviewRequests=TeacherInterviewRequest::where('user_id',$user->id)->first();
           
@@ -151,9 +138,6 @@ class InterviewRequestController extends Controller
           
           $interviewRequest=new TeacherInterviewRequest();
           $interviewRequest->user_id=$user->id;
-          $interviewRequest->level_of_education=$request->level_of_education;
-          $interviewRequest->level_to_teach=$request->level_to_teach;
-          $interviewRequest->subject=$request->subject;
           $interviewRequest->date_for_interview=$request->date_for_interview;
           $interviewRequest->time_for_interview=$request->time_for_interview;
           $interviewRequest->addtional_comments=$request->addtional_comments;

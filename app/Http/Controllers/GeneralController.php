@@ -30,42 +30,13 @@ use Validator;
 use \App\Mail\SendMailInvite;
 class GeneralController extends Controller
 {
-  public function get_step(){
 
 
+  public function testing_verify(){
 
+    return 'very good';
 
-		$filtered_teacher = User::
-
-		whereHas('spokenLanguages', function ($query)  {
-
-        })
-
-        ->	whereHas('teacherAvailability', function ($query)  {
-
-        })
-        ->	whereHas('teacherProgram', function ($query)  {
-
-        })
-         ->	whereHas('teacherSubject', function ($query)  {
-
-        })
-         ->	whereHas('teacherQualifications', function ($query)  {
-
-        })
-         ->	whereHas('teacherSpecifications', function ($query)  {
-
-        })
-
-        ->where('role_name', 'teacher')->where('id', 1128)->get();
-
-        return response()->json([
-            'success' => true,
-            'filtered_teacher' => $filtered_teacher,
-        ]);
-    }
-
-
+  }
 
   public function field_of_studies(){
 
@@ -265,4 +236,40 @@ class GeneralController extends Controller
                 ]) ;
 
    }
+     public function get_step(){
+
+
+
+
+        $filtered_teacher = User::
+
+        whereHas('spokenLanguages', function ($query)  {
+
+        })
+
+        ->  whereHas('teacherAvailability', function ($query)  {
+
+        })
+        ->  whereHas('teacherProgram', function ($query)  {
+
+        })
+         -> whereHas('teacherSubject', function ($query)  {
+
+        })
+         -> whereHas('teacherQualifications', function ($query)  {
+
+        })
+         -> whereHas('teacherSpecifications', function ($query)  {
+
+        })
+
+        ->where('role_name', 'teacher')->where('id', 1128)->get();
+
+        return response()->json([
+            'success' => true,
+            'filtered_teacher' => $filtered_teacher,
+        ]);
+    }
+
+
 }

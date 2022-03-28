@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicClass;
 use App\Models\Course;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\UserFeedback;
 use Illuminate\Http\Request;
@@ -138,9 +139,69 @@ class AdminController extends Controller
         ]);
     }
 
-    public function testApi(Request $request){
-         $token_1 = $request->bearerToken();
-        // $token_user = JWTAuth::toUser($token_1);
-        return $decoded = JWT::decode($token_1, '', array('HS256'));
+    public function add_role(Request $request){
+        $rules = [
+            'name' =>  'required|unique:roles,name',
+            'caption' =>  'required',
+            'is_admin' =>  'required|bool',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ]);
+        }
+        $role = new Role();
+        $role->name = $request->name;
+        $role->caption = $request->caption;
+        $role->is_admin = $request->is_admin;
+        $role->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Role added Successfully",
+            'role' => $role,
+        ]);
     }
+
+    public function update_role(Request $request,$role_id){
+
+        $role = Role::find($role_id);
+        $userUpdated = $role->update($request->all());
+
+        return response()->json([
+            'status' => true,
+            'message' => "Role Updated Successfully",
+            'role' =>  $role,
+        ]);
+    }
+
+    public function delete_role($role_id){
+        $role = Role::find($role_id);
+        $role->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Role Deleted Successfully",
+            'role' =>  $role,
+        ]);
+    }
+
+    public function roles(){
+        $roles = Role::all();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Role Deleted Successfully",
+            'roles' => $roles,
+        ]);
+    }
+
+    
 }

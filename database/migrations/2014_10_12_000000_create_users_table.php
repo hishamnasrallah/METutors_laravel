@@ -21,7 +21,7 @@ class CreateUsersTable extends Migration
             $table->longText('full_name');
             $table->string('role_name');
             $table->integer('role_id');
-            $table->integer('organ_id')->nullable();
+
             $table->string('mobile')->nullable();
             $table->string('email')->unique();
             $table->string('password');
@@ -38,17 +38,18 @@ class CreateUsersTable extends Migration
             $table->string('headline')->nullable();
             $table->longText('about')->nullable();
             $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('country')->nullable();
+            $table->string('postal_code')->nullable();
             $table->string('status')->nullable();
             $table->string('admin_approval')->nullable();
+            $table->string('profile_completed_step')->nullable();
             $table->string('language')->nullable();
             $table->integer('newsletter');
             $table->integer('public_message');
             $table->string('account_type')->nullable();
-            $table->string('iban')->nullable();
-            $table->string('account_id')->nullable();
-            $table->string('identity_scan')->nullable();
-            $table->string('certificate')->nullable();
-            $table->integer('commission')->nullable();
+          
+            $table->integer('kudos_points');
             $table->integer('ban');
             $table->integer('ban_start_at')->nullable();
             $table->integer('ban_end_at')->nullable();

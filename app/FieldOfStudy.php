@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class FieldOfStudy extends Model
 {
+
+    protected $fillable = ['program_id','country_id','name'];
+
+
     public function teacherField() {
         return $this->hasMany(FieldOfStudy::class);
     }

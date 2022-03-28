@@ -45,21 +45,7 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
-    public function showRegistrationForm()
-    {
-        $seoSettings = getSeoMetas('register');
-        $pageTitle = !empty($seoSettings['title']) ? $seoSettings['title'] : trans('site.register_page_title');
-        $pageDescription = !empty($seoSettings['description']) ? $seoSettings['description'] : trans('site.register_page_title');
-        $pageRobot = getPageRobot('register');
 
-        $data = [
-            'pageTitle' => $pageTitle,
-            'pageDescription' => $pageDescription,
-            'pageRobot' => $pageRobot,
-        ];
-
-        return view(getTemplate() . '.auth.register', $data);
-    }
 
     /**
      * Get a validator for an incoming registration request.
