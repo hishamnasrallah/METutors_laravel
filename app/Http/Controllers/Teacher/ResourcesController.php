@@ -104,7 +104,7 @@ class ResourcesController extends Controller
 
         $array=array(
             'id' => $image->id ?? '',
-            'file_url' => $image_url ?? '',
+            'url' => $image_url ?? '',
 
         );
 
@@ -149,8 +149,8 @@ class ResourcesController extends Controller
         // $resource->academic_class_id= $academic_class->id;
         $resource->user_id = $user->id;
         $resource->description = $request->description;
-        $resource->urls = $request->urls;
-        $resource->files = $request['files'];
+        $resource->urls = json_encode($request->urls);
+        $resource->files = json_encode($request['files']);
         $resource->save();
         $academic_class->resource_id = $resource->id;
         $academic_class->update();
@@ -193,23 +193,8 @@ class ResourcesController extends Controller
             $resource->description = $request->description;
         }
         if ($request->has('urls')) {
-            $new_urls=[];
-            $common_urls=[];
-            $final_urls=[];
-            $resource_urls = json_decode($request->urls);
-            $db_urls = json_decode($resource->urls);
-            foreach($resource_urls as $url){
-                if(in_array($url,$db_urls)){
-                    array_push($common_urls,$url);
-                }
-                else{
-                    array_push($new_urls,$url);
-                }
-            }
-        
-            $final_urls = array_merge($common_urls, $new_urls);
-
-            $resource->urls=$final_urls;
+           
+            $resource->urls=$request->urls;
         }
         if ($request->has('files')) {
             
@@ -218,8 +203,7 @@ class ResourcesController extends Controller
         }
         $resource->update();
 
-        $resource->urls=json_decode($resource->urls);
-        $resource->files=json_decode($resource->files);
+       
 
         return response()->json([
             'status' => true,
