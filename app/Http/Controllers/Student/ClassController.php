@@ -589,7 +589,7 @@ class ClassController extends Controller
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
                     'countries' => $countries,
-                    'lastActivity_course' => $lastActivity_course,
+                    'lastActivity_course' => [$lastActivity_course],
                     'active_courses' => $active_courses,
                     'completed_courses' => $completed_courses,
                 ]);
@@ -615,7 +615,7 @@ class ClassController extends Controller
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
                         'countries' => $countries,
-                        'lastActivity_course' => $lastActivity_course,
+                        'lastActivity_course' => [$lastActivity_course],
                         'active_courses' => $active_courses,
                         'completed_courses' => $completed_courses,
 
@@ -638,7 +638,7 @@ class ClassController extends Controller
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
                         'countries' => $countries,
-                        'lastActivity_course' => $lastActivity_course,
+                        'lastActivity_course' => [$lastActivity_course],
                         'active_courses' => $active_courses,
                         'completed_courses' => $completed_courses,
 
@@ -665,7 +665,7 @@ class ClassController extends Controller
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
                     'countries' => $countries,
-                    'lastActivity_course' => $lastActivity_course,
+                    'lastActivity_course' => [$lastActivity_course],
                     'active_courses' => $active_courses,
                     'completed_courses' => $completed_courses,
 
@@ -681,7 +681,7 @@ class ClassController extends Controller
             return response()->json([
                 'success' => true,
                 'programs' => $programs,
-                'lastActivity_course' => $lastActivity_course,
+                'lastActivity_course' => [$lastActivity_course],
                 'active_courses' => $active_courses,
                 'completed_courses' => $completed_courses,
             ]);
