@@ -1,0 +1,41 @@
+
+
+Route::group(['prefix' => 'course','middleware' => ['cors', 'share']], function () {
+
+    Route::Post('/create', 'ClassController@create_course');
+    Route::get('/', 'ClassController@courses');
+    Route::get('/search', 'ClassController@search_course');
+    Route::get('/detail/{id}', 'ClassController@course_detail');
+    Route::get('/levels', 'GeneralController@course_levels');
+
+    Route::get('/{id}/progress', 'TeacherController@courseProgress');
+    Route::get('/{id}/student/progress', 'Web\UserController@courseProgress');
+    Route::get('/{id}/reviews', 'TeacherController@courseReviews');
+    Route::get('/reschedule/{id}', 'TeacherController@rescheduleCourse');
+    Route::post('/add-topic', 'TeacherController@addTopic');
+    Route::get('/{course_id}/syllabus', 'TeacherController@syllabusDashboard');
+    Route::get('/classes/resources', 'TeacherController@classResources');
+
+    
+});
+
+Route::group(['prefix' => 'teacher','middleware' => ['cors', 'share']], function () {
+
+    Route::get('/{id}/profile', 'UserController@teacher_profile');
+    Route::get('/documents', 'UserController@teacher_documents');
+    Route::post('/setting', 'UserController@teacher_update');
+    Route::post('/upload-documents', 'Panel\UserController@upload_documents');
+    Route::post('/upload-documents2', 'Panel\UserController@upload_documents2');
+    Route::post('/complete-account', 'Panel\UserController@teacher_complete_account');
+    Route::get('/dashboard', 'DashboardController@teacher_dashboard');
+    Route::Post('/update-profile', 'DashboardController@update_teacherProfile');
+    Route::post('/reschedule-class', 'ClassController@reschedule_class');
+    Route::get('/kudos-points', 'ClassController@kudos_points');
+
+    
+});
+
+    Route::resource('program', 'ProgramController');
+    Route::resource('fieldofstudy', 'FieldOfStudyController');
+    Route::resource('subject', 'SubjectController');
+

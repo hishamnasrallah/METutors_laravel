@@ -423,7 +423,7 @@ Route::delete('topic/{id}', 'TeacherController@deleteTopic');
 Route::post('roles/add', 'AdminController@add_role');
 Route::patch('role/{id}', 'AdminController@update_role');
 Route::delete('role/{id}', 'AdminController@delete_role');
-Route::get('roles', 'AdminController@roles');
+
 
 Route::post('teachers/filter', 'Web\UserController@filterTeacher');
 Route::post('teachers/available', 'Web\UserController@availableTeachers');
