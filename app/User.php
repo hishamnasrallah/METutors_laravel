@@ -20,6 +20,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use \App\Mail\SendMailOtp;
+use App\Models\ClassRoom;
 use App\Models\UserFeedback;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use JWTAuth;
@@ -283,14 +284,12 @@ class User extends Authenticatable implements JWTSubject
         return '/users/' . $this->id . '/profile';
     }
 
-
-
     public static function generatePassword($password)
     {
         return password_hash($password, PASSWORD_BCRYPT);
     }
 
-  
+
 
 
     public function followers()
@@ -303,17 +302,17 @@ class User extends Authenticatable implements JWTSubject
         return Follow::where('follower', $this->id)->where('status', Follow::$accepted)->get();
     }
 
- 
+
 
 
     public function userMetas()
     {
         return $this->hasMany('App\Models\UserMeta', 'user_id', 'id');
     }
-     public function tickets()
-        {
-            return $this->hasMany('App\Models\Ticket', 'user_id', 'id');
-        }
+    public function tickets()
+    {
+        return $this->hasMany('App\Models\Ticket', 'user_id', 'id');
+    }
 
     public function teacherInterviewRequests()
     {
@@ -322,12 +321,12 @@ class User extends Authenticatable implements JWTSubject
 
     public function teacherSpecifications()
     {
-        return $this->hasMany('App\TeachingSpecification');
+        return $this->hasOne('App\TeachingSpecification');
     }
 
     public function teacherQualifications()
     {
-        return $this->hasMany('App\TeachingQualification');
+        return $this->hasOne('App\TeachingQualification');
     }
 
     public function teacherDocuments()
@@ -360,13 +359,13 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany('App\Models\UserBadge', 'user_id', 'id');
     }
 
-   
 
 
-  
-  
 
-   
+
+
+
+
 
     public function feedbacks()
     {
@@ -374,19 +373,15 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
-    
+
 
     public function getBadges($customs = true, $getNext = false)
     {
         return Badge::getUserBadges($this, $customs, $getNext);
     }
 
-  
- 
-   
-  
-
- 
-
-   
+    public function courses()
+    {
+        return $this->hasMany(ClassRoom::class, 'student_id', 'id');
+    }
 }

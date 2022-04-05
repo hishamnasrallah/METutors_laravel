@@ -18,7 +18,7 @@ class CreateUsersTable extends Migration
             $table->string('first_name')->nullable();
             $table->string('middle_name')->nullable();
             $table->string('last_name')->nullable();
-            $table->longText('full_name');
+            $table->longText('full_name')->nullable()               ;
             $table->string('role_name');
             $table->integer('role_id');
 
@@ -31,8 +31,8 @@ class CreateUsersTable extends Migration
             $table->string('bio')->nullable();
             $table->string('google_id')->nullable();
             $table->string('facebook_id')->nullable();
-            $table->integer('verified');
-            $table->integer('financial_approval');
+            $table->integer('verified')->default(0);
+            $table->integer('financial_approval')->default(0    );
             $table->string('avatar')->nullable();
             $table->string('cover_img')->nullable();
             $table->string('headline')->nullable();
@@ -43,18 +43,18 @@ class CreateUsersTable extends Migration
             $table->string('postal_code')->nullable();
             $table->string('status')->nullable();
             $table->string('admin_approval')->nullable();
-            $table->string('profile_completed_step')->nullable();
+            $table->integer('profile_completed_step')->nullable();
             $table->string('language')->nullable();
-            $table->integer('newsletter');
-            $table->integer('public_message');
+            $table->integer('newsletter')->default(0);
+            $table->integer('public_message')->default(0);
             $table->string('account_type')->nullable();
           
-            $table->integer('kudos_points');
-            $table->integer('ban');
+            $table->integer('kudos_points')->nullable();
+            $table->integer('ban')->default(0);
             $table->integer('ban_start_at')->nullable();
             $table->integer('ban_end_at')->nullable();
-            $table->integer('offline');
-            $table->longText('offline_message');
+            $table->integer('offline')->default(0);
+            $table->longText('offline_message')->nullable();
             $table->rememberToken()->nullable();
             $table->timestamps();
         });

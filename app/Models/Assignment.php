@@ -9,6 +9,11 @@ class Assignment extends Model
 {
     use HasFactory;
 
+     protected $casts = [
+        'urls' => 'array',
+        'files' => 'array',
+    ];
+
     public function assignees(){
         return $this->hasMany(UserAssignment::class);
     }

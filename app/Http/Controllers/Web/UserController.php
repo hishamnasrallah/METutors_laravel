@@ -23,6 +23,7 @@ use App\TeacherAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 
@@ -673,36 +674,49 @@ class UserController extends Controller
         ]);
     }
 
-    public function account_setting(Request $request)
+    public function security_setting(Request $request)
     {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
+        $rules = [
+            'current_password' => 'required',
+            'new_password' => 'required|confirmed',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+
+
         $user = User::find($token_user->id);
-        // if($request->has('first_name')){
-        //     $user->first_name = $request->first_name;
-        // }
-        // if($request->has('email')){
-        //     $user->email = $request->email;
-        // }
-        // if($request->has('headline')){
-        //     $user->headline = $request->headline;
-        // }
-        // if($request->has('country')){
-        //     $user->country = $request->country;
-        // }
-        // if($request->has('gender')){
-        //     $user->gender = $request->gender;
-        // }
 
-        // $user->update();
+        $check = Hash::check($request->current_password, $user->password);
 
-        $userUpdated = $user->update($request->all());
-
-        return response()->json([
-            'status' => true,
-            'message' => "Profile updated Successfully",
-        ]);
+        if ($check) {
+            $user->password = Hash::make($request->new_password);
+            $user->update();
+            return response()->json([
+                'status' => true,
+                'message' => "Security Settings updated",
+                'user' => $user,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => "Current Password did't matched!",
+            ]);
+        }
     }
 
     public function user_prefrences(Request $request)
@@ -912,23 +926,23 @@ class UserController extends Controller
                 // if (isEmpty($availabilities)) {
                 //     array_push($available_teachers, $teacher);
                 // } else {
-                    $counter = 0;
-                    foreach ($availabilities as $availability) {
+                $counter = 0;
+                foreach ($availabilities as $availability) {
 
-                        $request_from = Carbon::parse($requestedClass->start_time)->format('G:i');
-                        $db_from = Carbon::parse($availability->time_from)->format('G:i');
+                    $request_from = Carbon::parse($requestedClass->start_time)->format('G:i');
+                    $db_from = Carbon::parse($availability->time_from)->format('G:i');
 
-                        $request_to = Carbon::parse($requestedClass->end_time)->format('G:i');
-                        $db_to = Carbon::parse($availability->time_to)->format('G:i');
-                        if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
-                            $counter++;
-                            if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
-                                // echo $classCounter;
-                                array_push($available_teachers, $availability->user_id);
-                                break;
-                            }
+                    $request_to = Carbon::parse($requestedClass->end_time)->format('G:i');
+                    $db_to = Carbon::parse($availability->time_to)->format('G:i');
+                    if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
+                        $counter++;
+                        if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
+                            // echo $classCounter;
+                            array_push($available_teachers, $availability->user_id);
+                            break;
                         }
                     }
+                }
                 // }
             }
         }
@@ -945,26 +959,25 @@ class UserController extends Controller
                 $start_time = Carbon::parse($requestedClass->start_time)->format('G:i');
                 $end_time = Carbon::parse($requestedClass->end_time)->format('G:i');
                 $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->date)->get();
-                 //************ If teacher has no Classes In classes Table ***********
+                //************ If teacher has no Classes In classes Table ***********
                 if (count($teacherClasses) == 0) {
                     $nullCounter++;
-                    if ($nullCounter == count($requestedClasses)){
+                    if ($nullCounter == count($requestedClasses)) {
                         array_push($final_teachers, $available_teacher);
                     }
-                        
                 } else {
                     //************ If teacher has Classes In classes Table ***********
                     $counter1 = 0;
                     foreach ($teacherClasses as $class) {
-                    
+
                         $classStartTime = Carbon::parse($class->start_time)->format('G:i');
                         $classEndTime = Carbon::parse($class->end_time)->format('G:i');
 
                         if (($start_time >= $classStartTime) && ($start_time <= $classEndTime) || ($end_time >= $classStartTime) && ($end_time <= $classEndTime)) {
-                        //    echo 'condition'; 
+                            //    echo 'condition'; 
                         } else {
                             $counter1++;
-                            
+
                             if ($counter1 >= count($teacherClasses)) {
                                 $flag++;
                                 // echo $flag;
@@ -979,10 +992,46 @@ class UserController extends Controller
         }
 
 
-        $selectedTeachers = User::whereIn('id',$final_teachers)->get();
+        $selectedTeachers = User::whereIn('id', $final_teachers)->get();
         return response()->json([
             'success' => true,
             'filtered_teacher' => $selectedTeachers,
+        ]);
+    }
+
+    public function account_setting(Request $request)
+    {
+        $rules = [
+            'first_name' => 'required',
+            'email' => 'required',
+            'headline' => 'required',
+            'country' => 'required',
+            'gender' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = User::find($token_user->id);
+        $user->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Account setting updated Successfully!',
+            'user' => $user,
         ]);
     }
 }

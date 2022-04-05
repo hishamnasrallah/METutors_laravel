@@ -16,7 +16,6 @@ class CreateLevelOfEducationTable extends Migration
         Schema::create('level_of_education', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
-          
             $table->timestamps();
         });
     }

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateAttendancesTable extends Migration
+class CreateTeacherInterviewRequestsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,14 @@ class CreateAttendancesTable extends Migration
      */
     public function up()
     {
-        Schema::create('attendances', function (Blueprint $table) {
+        Schema::create('teacher_interview_requests', function (Blueprint $table) {
             $table->id();
-            $table->integer('academic_class_id');
-            $table->integer('user_id');
-            $table->integer('course_id');
+            $table->integer('user_id');	
+            $table->string('date_for_interview');
+            $table->string('time_for_interview');
+            $table->longText('additional_comments');
             $table->string('status');
+            $table->longText('admin_comments');
             $table->timestamps();
         });
     }
@@ -30,6 +32,6 @@ class CreateAttendancesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('attendances');
+        Schema::dropIfExists('teacher_interview_requests');
     }
 }

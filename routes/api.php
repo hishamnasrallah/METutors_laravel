@@ -17,86 +17,90 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['middleware' => ['cors', 'share', 'jwt.verify']], function () {
 
-Route::get('testing_verify', 'GeneralController@testing_verify');
-
+    Route::get('testing_verify', 'GeneralController@testing_verify');
 });
 
 Route::group(['middleware' => ['cors', 'share']], function () {
 
 
-    
-
-
-//**************** Student routes starts****************
-
-Route::get('student/dashboard', 'Student\DashboardController@dashboard');
-Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
-
-Route::get('student/classroom', 'Student\ClassController@courses');
-Route::get('student/courses/search-course', 'Student\ClassController@search_course');
-Route::get('student/classes/{id}', 'Student\ClassController@course_detail');
-
-//**************** Syllabus routes ****************
-Route::get('student/syllabus/{course_id}', 'Student\SyllabusController@syllabusDashboard');
-
-
-//**************** Assignment routes ****************
-Route::get('student/assignments/{id}', 'Student\AssignmentController@assignmentDashboard');
-Route::get('student/assignment/{id}', 'Teacher\AssignmentController@assignmentDetail');
-
-//**************** Resources routes ****************
-Route::get('student/resources/{course_id}', 'Student\ResourcesController@classResources');
-Route::get('student/resource/{resource_id}', 'Student\ResourcesController@editResource');
-Route::post('student/resource/update/{resource_id}', 'Student\ResourcesController@updateResource');
-
-//**************** Student routes ends****************
 
 
 
+    //**************** Student routes starts****************
+
+    Route::get('student/dashboard', 'Student\DashboardController@dashboard');
+    Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
+
+    Route::get('student/classroom', 'Student\ClassController@courses');
+    Route::get('student/courses/search-course', 'Student\ClassController@search_course');
+    Route::get('student/classes/{id}', 'Student\ClassController@course_detail');
+
+    //**************** Syllabus routes ****************
+    Route::get('student/syllabus/{course_id}', 'Student\SyllabusController@syllabusDashboard');
+
+
+    //**************** Assignment routes ****************
+    Route::get('student/assignments/{id}', 'Student\AssignmentController@assignmentDashboard');
+    Route::get('student/assignment/{id}', 'Student\AssignmentController@assignmentDetail');
+    Route::Post('student/assignment/{id}', 'Student\AssignmentController@submitAssignment');
+    Route::get('student/assignment/{assignment_id}/user', 'Student\AssignmentController@userAssignment');
+
+    //**************** Resources routes ****************
+    Route::get('student/resources/{course_id}', 'Student\ResourcesController@classResources');
+    Route::get('student/resource/{resource_id}', 'Student\ResourcesController@editResource');
+    Route::post('student/resource/update/{resource_id}', 'Student\ResourcesController@updateResource');
+
+    //**************** Student routes ends****************
 
 
 
 
-//**************** Teacher routes starts****************
-
-Route::get('teacher/dashboard', 'Teacher\DashboardController@dashboard');
-Route::get('teacher/classes', 'Teacher\DashboardController@classes_dashboard');
-
-Route::get('teacher/classroom', 'Teacher\ClassController@courses');
-Route::get('teacher/courses/search', 'Teacher\ClassController@search_course');
-Route::get('teacher/classes/{id}', 'Teacher\ClassController@course_detail');
-
-//**************** Syllabus routes ****************
-Route::get('teacher/syllabus/{course_id}', 'Teacher\SyllabusController@syllabusDashboard');
-Route::post('teacher/syllabus/topic', 'Teacher\SyllabusController@addTopic');
-Route::get('teacher/syllabus/topic/{topic_id}', 'Teacher\SyllabusController@editTopic');
-Route::post('teacher/syllabus/topic/update', 'Teacher\SyllabusController@updateTopic');
-Route::delete('teacher/syllabus/topic/{id}', 'Teacher\SyllabusController@deleteTopic');
-
-//**************** Edit class name ****************
-Route::patch('teacher/class/{acadamic_class_id}', 'Teacher\SyllabusController@editTopicClass');
 
 
-//**************** Assignment routes ****************
-Route::get('teacher/assignment/{id}', 'Teacher\AssignmentController@assignmentDetail');
-Route::post('teacher/assignment/update/{id}/', 'Teacher\AssignmentController@updateAssignment');
-Route::delete('teacher/assignment/{id}', 'Teacher\AssignmentController@deleteAssignment');
-Route::post('teacher/assignment', 'Teacher\AssignmentController@addAssignment');
-Route::get('teacher/assignments/{id}', 'Teacher\AssignmentController@assignmentDashboard');
 
-Route::post('student/assignment/{assignment_id}', 'Student\AssignmentController@submitAssignment');
+    //**************** Teacher routes starts****************
 
-//**************** Resources routes ****************
-Route::post('upload', 'Teacher\ResourcesController@uploadFiles');
-Route::delete('file/{id}', 'Teacher\ResourcesController@deleteFile');
-Route::get('teacher/resources/{course_id}', 'Teacher\ResourcesController@classResources');
-Route::post('teacher/resource/update/{resource_id}', 'Teacher\ResourcesController@updateResource');
-Route::get('teacher/resource/{resource_id}', 'Teacher\ResourcesController@editResource');
-Route::delete('teacher/resource/{resource_id}', 'Teacher\ResourcesController@delResource');
-Route::post('teacher/class/{class_id}/resource', 'Teacher\ResourcesController@addResource');
+    Route::get('teacher/dashboard', 'Teacher\DashboardController@dashboard');
+    Route::get('teacher/classes', 'Teacher\DashboardController@classes_dashboard');
+
+    Route::get('teacher/classroom', 'Teacher\ClassController@courses');
+    Route::get('teacher/courses/search', 'Teacher\ClassController@search_course');
+    Route::get('teacher/classes/{id}', 'Teacher\ClassController@course_detail');
+
+    //**************** Syllabus routes ****************
+    Route::get('teacher/syllabus/{course_id}', 'Teacher\SyllabusController@syllabusDashboard');
+    Route::post('teacher/syllabus/topic', 'Teacher\SyllabusController@addTopic');
+    Route::get('teacher/syllabus/topic/{topic_id}', 'Teacher\SyllabusController@editTopic');
+    Route::post('teacher/syllabus/topic/update', 'Teacher\SyllabusController@updateTopic');
+    Route::delete('teacher/syllabus/topic/{id}', 'Teacher\SyllabusController@deleteTopic');
+
+    //**************** Edit class name ****************
+    Route::patch('teacher/class/{acadamic_class_id}', 'Teacher\SyllabusController@editTopicClass');
 
 
-//**************** Teacher routes ends****************
+    //**************** Assignment routes ****************
+    Route::get('teacher/assignment/{id}', 'Teacher\AssignmentController@assignmentDetail');
+    Route::post('teacher/assignment/update/{id}/', 'Teacher\AssignmentController@updateAssignment');
+    Route::delete('teacher/assignment/{id}', 'Teacher\AssignmentController@deleteAssignment');
+    Route::post('teacher/assignment', 'Teacher\AssignmentController@addAssignment');
+    Route::get('teacher/assignments/{id}', 'Teacher\AssignmentController@assignmentDashboard');
+    Route::get('teacher/course/{course_id}/assignees', 'Teacher\AssignmentController@assignees');
+    Route::post('teacher/assignment/{assignment_id}/accept', 'Teacher\AssignmentController@acceptAssignment');
+    Route::post('teacher/assignment/{assignment_id}/reject', 'Teacher\AssignmentController@rejectAssignment');
+    Route::get('teacher/assignment/{assignment_id}/user/{user_id}', 'Teacher\AssignmentController@userAssignment');
+    Route::post('teacher/assignment/{assignment_id}/extend', 'Teacher\AssignmentController@extendDate');
+
+    //**************** Resources routes ****************
+    Route::post('upload', 'Teacher\ResourcesController@uploadFiles');
+    Route::delete('file/{id}', 'Teacher\ResourcesController@deleteFile');
+    Route::get('teacher/resources/{course_id}', 'Teacher\ResourcesController@classResources');
+    Route::post('teacher/resource/update/{resource_id}', 'Teacher\ResourcesController@updateResource');
+    Route::get('teacher/resource/{resource_id}', 'Teacher\ResourcesController@editResource');
+    Route::delete('teacher/resource/{resource_id}', 'Teacher\ResourcesController@delResource');
+    Route::post('teacher/class/{class_id}/resource', 'Teacher\ResourcesController@addResource');
+
+
+    //**************** Teacher routes ends****************
 
 
 
@@ -174,20 +178,19 @@ Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], functio
 
     Route::get('admin/interview-request/{id}', 'InterviewRequestController@interview_requests_details');
 
-     Route::post('/logout', 'LoginController@logout');
+    Route::post('/logout', 'LoginController@logout');
 
 
 
-        Route::get('/testing', 'LoginController@testing');
+    Route::get('/testing', 'LoginController@testing');
 
 
 
-        Route::post('validate-password', 'ResetPasswordController@validate_password');
+    Route::post('validate-password', 'ResetPasswordController@validate_password');
 
-        Route::post('change-password', 'ResetPasswordController@change_password');
-        Route::post('change-email', 'ResetPasswordController@change_email');
-        Route::post('submit-email-withotp', 'ResetPasswordController@submit_email_withOtp');
-
+    Route::post('change-password', 'ResetPasswordController@change_password');
+    Route::post('change-email', 'ResetPasswordController@change_email');
+    Route::post('submit-email-withotp', 'ResetPasswordController@submit_email_withOtp');
 });
 
 Route::get('estimated-price', 'PricingController@estimated_price');
@@ -207,6 +210,7 @@ Route::get('field-of-studies', 'GeneralController@field_of_studies');
 
 
 Route::resource('program', 'ProgramController');
+Route::resource('program-country', 'ProgramCountryController');
 Route::resource('fieldofstudy', 'FieldOfStudyController');
 Route::resource('subject', 'SubjectController');
 
@@ -359,32 +363,33 @@ Route::get('search/{searchQuery}', 'TeacherController@overallSearch');
 
 
 // Route::group(["middleware" => "auth.jwt"], function () {
-  
+
 // });
 
 
 //**************** Account setting routes ****************
-Route::patch('account-setting', 'Web\UserController@account_setting');
-Route::post('user-prefrences', 'Web\UserController@user_prefrences');
+Route::patch('student/account/setting', 'Web\UserController@account_setting');
+Route::post('student/security/setting', 'Web\UserController@security_setting');
+Route::post('student/prefrences', 'Web\UserController@user_prefrences');
 
 //**************** Feedback routes ****************
-Route::post('feedbacks/teacher', 'FeedbackController@feedback');
-Route::post('feedbacks/student', 'FeedbackController@feedback');
+Route::post('teacher/feedback', 'FeedbackController@feedback');
+Route::post('student/feedback', 'FeedbackController@feedback');
 Route::get('feedback/params', 'FeedbackController@feedback_params');
 Route::post('teacher-performance', 'AdminController@teacher_performance');
 Route::get('teachers/teacher-detail/{$teacher_id}', 'FeedbackController@teacher_details');
 Route::get('teacher-profile', 'Web\UserController@teacher_public_profile');
-Route::post('feedback/student/platform', 'FeedbackController@studentPlatform');
+Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
+Route::post('teacher/feedback/platform', 'FeedbackController@userPlatform');
 Route::get('feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
-
 
 //**************** classes routes ****************
 Route::get('class-attendees/{class_id}', 'TeacherController@classAttendees');
 Route::get('todays-classes', 'TeacherController@todaysClasses');
-Route::post('teacher/reschedule-class', 'ClassController@reschedule_class');
-Route::post('student/reschedule-class', 'ClassController@reschedule_class');
+Route::post('teacher/class/reschedule', 'Teacher\ClassController@reschedule_class');
+Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
 
-Route::post('student/course/{course_id}/class', 'Student\ClassController@addClass');
+Route::post('student/course/{course_id}/class', 'Student\ClassController@');
 
 
 //**************** Courses routes ****************
@@ -424,12 +429,11 @@ Route::post('roles/add', 'AdminController@add_role');
 Route::patch('role/{id}', 'AdminController@update_role');
 Route::delete('role/{id}', 'AdminController@delete_role');
 
-
 Route::post('teachers/filter', 'Web\UserController@filterTeacher');
 Route::post('teachers/available', 'Web\UserController@availableTeachers');
 
 //**************** Student routes ****************
-Route::get('teacher/{teacher_id}/availability', 'TeacherAvailabilityController@getAvailability');//get teacher availability
+Route::get('teacher/{teacher_id}/availability', 'TeacherAvailabilityController@getAvailability'); //get teacher availability
 Route::get('student/refund/course/{course_id}', 'Student\CourseController@refundCourse');
 Route::Post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourse');
 Route::get('student/course/{course_id}/attendence', 'Student\CourseController@getCourseAttendence');

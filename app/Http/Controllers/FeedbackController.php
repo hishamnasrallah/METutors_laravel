@@ -99,8 +99,8 @@ class FeedbackController extends Controller
         ]);
     }
 
-    //**************** Student: Platform feedback ****************
-    public function studentPlatform(Request $request)
+    //**************** Platform feedback ****************
+    public function userPlatform(Request $request)
     {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -110,7 +110,7 @@ class FeedbackController extends Controller
         if ($count == 0) {
             $decoded_feedbacks = json_decode($request->feedbacks);
 
-          
+
             foreach ($decoded_feedbacks as $feedback) {
                 $platform = new UserTestimonial();
                 $platform->sender_id = $token_user->id;
@@ -123,12 +123,11 @@ class FeedbackController extends Controller
                 'status' => true,
                 'message' => "You Feedback Submitted Successfully!",
             ]);
-        }
-        else{
+        } else {
             return response()->json([
                 'status' => false,
                 'message' => "You have already added a feedback!",
-            ],400);
+            ], 400);
         }
     }
 

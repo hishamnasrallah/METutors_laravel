@@ -663,16 +663,23 @@ class UserController extends Controller
         
          if ($request->step == 4) {
             
-            $rules['level_of_education'] = 'required';
+           
             $rules['type_of_tutoring'] = 'required|string';
-            $rules['expected_salary_per_hour'] = 'required|string';
+           
             $rules['availability_start_date'] = 'required|string';
             $rules['availability_end_date'] = 'required|string';
             
-            $rules['subjects'] = 'required';
+          
             $rules['availability'] = 'required';
-            $rules['program_id'] = 'required';
+          
             
+           
+        }
+        
+        
+         if ($request->step == 5) {
+            
+            $rules['programs'] = 'required';
            
         }
         
@@ -889,13 +896,13 @@ class UserController extends Controller
                
                $teaching_quali->user_id = $token_user->id;
                $teaching_quali->name_of_university = $request->name_of_university;
-            $teaching_quali->degree_level = $request->degree_level;
-            $teaching_quali->degree_field = $request->degree_field;
+               $teaching_quali->degree_level = $request->degree_level;
+               $teaching_quali->degree_field = $request->degree_field;
            
-            $teaching_quali->computer_skills = $request->computer_skills;
-           $teaching_quali->teaching_experience =$request->teaching_experience;
-           $teaching_quali->current_employer = $request->current_employer;
-           $teaching_quali->current_title = $request->current_title;
+               $teaching_quali->computer_skills = $request->computer_skills;
+               $teaching_quali->teaching_experience =$request->teaching_experience;
+               $teaching_quali->current_employer = $request->current_employer;
+               $teaching_quali->current_title = $request->current_title;
            if($request->hasFile('video')){
                 
               $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
@@ -932,60 +939,17 @@ class UserController extends Controller
              if($teaching_specs == null){
                  $teaching_spec=new TeachingSpecification();
                  $teaching_spec->user_id = $token_user->id;
-                 $teaching_spec->level_of_education = $request->level_of_education;
+                
                  $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
-                 $teaching_spec->expected_salary_per_hour = $request->expected_salary_per_hour;
+                 
                  $teaching_spec->availability_start_date = $request->availability_start_date;
                  $teaching_spec->availability_end_date =$request->availability_end_date;
                  $teaching_spec->save();  
                
                  
-                $teacher_subjects=json_decode($request->subjects);
-               // print_r($teacher_subjects);die;
-               
-               foreach($teacher_subjects as $subj){
-                   
-                       
-                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
-                            
-                        if($sub == null){
-                            
-                            $teacher_sub=new TeacherSubject();
-                            $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->program_id=$subj->program_id;
-                            if($subj->program_id == 3){
-                                $teacher_sub->country_id=$subj->country_id;
-                                $teacher_sub->grade=$subj->grade;
-                            }
-                            $teacher_sub->field_id=$subj->field_id;
-                            $teacher_sub->subject_id=$subj->subject_id;
-                            $teacher_sub->hourly_price=$subj->hourly_price;
-                            $teacher_sub->save();
-                        }else{
-
-
-                           $teacher_sub=TeacherSubject::find($sub->id);
-                           $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->program_id=$subj->program_id;
-                            if($subj->program_id == 3){
-                                $teacher_sub->country_id=$subj->country_id;
-                                $teacher_sub->grade=$subj->grade;
-                            }
-                            $teacher_sub->field_id=$subj->field_id;
-                            $teacher_sub->subject_id=$subj->subject_id;
-                            $teacher_sub->hourly_price=$subj->hourly_price;
-                            $sub->update();
-                        }
-                       
-                  
-                  
-                 
-               }
-               
-           $availabilities=json_decode($request->availability);
+               $availabilities=json_decode($request->availability);
             
             
-               
                foreach($availabilities as $availability){
 
                 // print_r($availability->time_slots);die;
@@ -1025,8 +989,6 @@ class UserController extends Controller
                 $user->profile_completed_step=4;
                $user->update();
 
-       
-               
                  $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
                    
                 $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
@@ -1042,15 +1004,13 @@ class UserController extends Controller
              }else{
                   
                
-               $teaching_specs->level_of_education = $request->level_of_education;
-               $teaching_specs->field_of_study = $request->field_of_study;
-               $teaching_specs->subject = $request->subject;
+             
                $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
-               $teaching_specs->expected_salary_per_hour = $request->expected_salary_per_hour;
+              
                $teaching_specs->availability_start_date = $request->availability_start_date;
                $teaching_specs->availability_end_date =$request->availability_end_date;
-               $teaching_specs->teaching_days = $request->teaching_days;
-               $teaching_specs->teaching_hours = $request->teaching_hours;
+              
+              
                $teaching_specs->update();  
                
                
@@ -1058,47 +1018,7 @@ class UserController extends Controller
                $teacher_subjects=json_decode($request->subjects);
                // print_r($teacher_subjects);die;
                
-               foreach($teacher_subjects as $subj){
-                   
-                       
-                         $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
-
-                         // print_r($sub);die;
-                            
-                        if($sub == null){
-
-                            // return 'hello';
-                            
-                            $teacher_sub=new TeacherSubject();
-                            $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->program_id=$subj->program_id;
-                            if($subj->program_id == 3){
-                                $teacher_sub->country_id=$subj->country_id;
-                                $teacher_sub->grade=$subj->grade;
-                            }
-                            $teacher_sub->field_id=$subj->field_id;
-                            $teacher_sub->subject_id=$subj->subject_id;
-                            $teacher_sub->hourly_price=$subj->hourly_price;
-                            $teacher_sub->save();
-                        }else{
-                            $teacher_sub=TeacherSubject::find($sub->id);
-                           $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->program_id=$subj->program_id;
-                            if($subj->program_id == 3){
-                                $teacher_sub->country_id=$subj->country_id;
-                                $teacher_sub->grade=$subj->grade;
-                            }
-                            $teacher_sub->field_id=$subj->field_id;
-                            $teacher_sub->subject_id=$subj->subject_id;
-                            $teacher_sub->hourly_price=$subj->hourly_price;
-                            $sub->update();
-                        }
-                       
-                  
-                  
-                 
-               }
-               
+           
                 $availabilities=json_decode($request->availability);
             
             
@@ -1163,18 +1083,82 @@ class UserController extends Controller
             
         
         }
+        if ($request->step == 5) {
+
+
+               $teacher_programs=json_decode(json_encode($request->programs));
+
+               foreach($teacher_programs as $program){
+
+                // print_r($program);die;
+
+                       foreach($program->subjects as $subj){
+
+
+                             $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$program->program_id)->where('field_id',$program->field_id)->where('subject_id',$subj->subject_id)->first();
+                            
+                                if($sub == null){
+                                    
+                                    $teacher_sub=new TeacherSubject();
+                                    $teacher_sub->user_id=$token_user->id;
+                                    $teacher_sub->program_id=$program->program_id;
+                                    $teacher_sub->field_id=$program->field_id;
+                                     if($program->program_id == 3){
+                                        $teacher_sub->country_id=$subj->country_id;
+                                        $teacher_sub->grade=$subj->grade;
+                                    }
+                                    $teacher_sub->subject_id=$subj->subject_id;
+                                    $teacher_sub->hourly_price=$subj->hourly_price;
+                                    $teacher_sub->save();
+
+                                }else{
+
+                                    $sub->user_id=$token_user->id;
+                                    $sub->program_id=$program->program_id;
+                                    $sub->field_id=$program->field_id;
+                                     if($program->program_id == 3){
+                                        $sub->country_id=$subj->country_id;
+                                        $sub->grade=$subj->grade;
+                                    }
+                                    $sub->subject_id=$subj->subject_id;
+                                    $sub->hourly_price=$subj->hourly_price;
+                                    $sub->update();
+                                }
+                       
+                               
+                 }      
+
+               
+                  
+                  
+                 
+           }
+               
+               
+              $user=User::find($token_user->id);
+                $user->profile_completed_step=5;
+               $user->update();
+           
+                            
+               
+         $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                    
+        $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+               
+                 return response()->json([
+                
+                'status' => true,
+                'message' => 'data updated succesfully',
+                'token' => $token,
+                ]) ;
+                 
+            
+        
+        }
         
         
         
         
-        
-      
-      
-      
-      
-      
-      
-      
       
     }
     

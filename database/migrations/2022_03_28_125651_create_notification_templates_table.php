@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateResourcesTable extends Migration
+class CreateNotificationTemplatesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,10 @@ class CreateResourcesTable extends Migration
      */
     public function up()
     {
-        Schema::create('resources', function (Blueprint $table) {
+        Schema::create('notification_templates', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id');     
-            $table->longText('description');
-            $table->longText('urls')->nullable();
-            $table->string('files')->nullable();
+            $table->string('title');
+            $table->longText('template');
             $table->timestamps();
         });
     }
@@ -30,6 +28,6 @@ class CreateResourcesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('resources');
+        Schema::dropIfExists('notification_templates');
     }
 }

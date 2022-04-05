@@ -10,13 +10,14 @@ use App\Models\UserMeta;
 use App\Models\UserOccupation;
 use App\Models\UserZoomApi;
 use App\Models\LevelOfEducation;
+use App\Models\ProgramCountry;
 use App\User;
 use App\Subject;
 use App\Country;
 use App\City;
-
+use App\Program;
 use App\TimeZone;
-
+use App\FieldOfStudy;
 use App\TeacherInterviewRequest;
 use App\TeachingSpecification;
 use App\TeachingQualification;
@@ -28,7 +29,7 @@ use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
 
-class SubjectController extends Controller
+class ProgramCountryController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -37,19 +38,12 @@ class SubjectController extends Controller
      */
     public function index()
     {
-
-          $subjects=Subject::with('program','country')->get();
-         // $subjects=Subject::all();
-
-         if(isset($request->field_id)){
-
-            $subjects=Subject::where('field_id',$request->field_id)->get();
-         }
+         $program_countries=ProgramCountry::all();
 
        return response()->json([
 
                 'status' => true,
-                'subject' => $subjects,
+                'program_countries' => $program_countries,
                 ]);
     }
 
@@ -74,19 +68,10 @@ class SubjectController extends Controller
     {
          $rules = [
 
-            'program_id' => 'required',
-         
-            'field_id' => 'required',
             'name' => 'required',
-            'price_per_hour' => 'required',
         ];
 
-            if($request->program_id == 3){
-
-                  $rules['country_id'] = 'required';
-                  $rules['grade'] = 'required';
-            }
-
+        
         $validator=Validator::make($request->all(),$rules);
 
         if($validator->fails())
@@ -102,22 +87,14 @@ class SubjectController extends Controller
            
         }
 
-        $subject=new subject();
-        $subject->program_id=$request->program_id;
-        $subject->field_id=$request->field_id;
-        if($request->program_id == 3){
-
-                 $FieldOfStudy->country_id=$request->country_id;
-                 $FieldOfStudy->grade=$request->grade;
-            }
-        $subject->name=$request->name;
-        $subject->price_per_hour=$request->price_per_hour;
-        $subject->save();
+        $program_country=new ProgramCountry();
+        $program_country->name=$request->name;
+        $program_country->save();
 
         return response()->json([
             'success' => true,
-            'message' => "subject stored successfully",
-            'subject' => $subject,
+            'message' => "Program_country stored successfully",
+            'program_country' => $program_country,
         ]);
     }
 
@@ -130,14 +107,14 @@ class SubjectController extends Controller
     public function show($id)
     {
         
-         $subject = Subject::find($id);
-        if (is_null($subject)) {
+         $program_country = ProgramCountry::find($id);
+        if (is_null($program_country)) {
             return response()->json('Data not found', 404); 
         }
          return response()->json([
             'success' => true,
-            'message' => "subject data  retrieved successfully",
-            'subject' => $subject,
+            'message' => "Program data  retrieved successfully",
+            'program_country' => $program_country,
         ]);
     }
 
@@ -161,40 +138,15 @@ class SubjectController extends Controller
      */
     public function update(Request $request, $id)
     {
-          $rules = [
-
-           
-        ];
-
-         
-
-
-        
-        $validator=Validator::make($request->all(),$rules);
-
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-
-            return response()->json([
-
-                'status' => 'false',
-                'errors' => $errors,
-                ],400) ;
-           
-        }
-
-
-        $subject=Subject::find($id);
-        if (is_null($subject)) {
+        $program_country=ProgramCountry::find($id);
+        if (is_null($program_country)) {
             return response()->json(['message'=>'Data not found'], 404); 
         }
-        $subject->update($request->all());
+        $program_country->update($request->all());
          return response()->json([
             'success' => true,
-            'message' => "subject data updated successfully",
-            'subject' => $subject,
+            'message' => "Program data updated successfully",
+            'program_country' => $program_country,
         ]);
     }
 
@@ -207,14 +159,14 @@ class SubjectController extends Controller
     public function destroy($id)
     {
            
-         $subject = Subject::find($id);
-        if (is_null($subject)) {
+         $program_country = ProgramCountry::find($id);
+        if (is_null($program_country)) {
             return response()->json('Data not found', 404); 
         }
-        $subject->delete();
+        $program_country->delete();
          return response()->json([
             'success' => true,
-            'message' => "subject deleted successfully",
+            'message' => "Program_country deleted successfully",
         ]);
     }
 }

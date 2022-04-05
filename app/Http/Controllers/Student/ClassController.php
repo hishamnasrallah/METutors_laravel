@@ -7,6 +7,7 @@ use App\Country;
 use App\FieldOfStudy;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
+use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\ClassSession;
 use App\Models\Feedback;
@@ -571,6 +572,8 @@ class ClassController extends Controller
             $userrole = 'student_id';
         }
 
+        $classroom = ClassRoom::where($userrole, $token_user->id)->pluck('course_id');
+
         $programs = Program::all();
         if (count($request->all()) >= 1) {
 
@@ -580,9 +583,9 @@ class ClassController extends Controller
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->get();
-                $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
+                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
+                $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
 
                 return response()->json([
                     'success' => true,
@@ -604,9 +607,9 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
-                    $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
+                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+                    $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
 
 
 
@@ -629,9 +632,9 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
-                    $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->orderBy('updated_at', 'desc')->first();
+                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
                     return response()->json([
                         'success' => true,
@@ -656,9 +659,9 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
-                $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->orderBy('updated_at', 'desc')->first();
+                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
+                $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
                 return response()->json([
                     'success' => true,
@@ -674,9 +677,10 @@ class ClassController extends Controller
         } else {
 
             $program = Program::where('code', $request->program)->first();
-            $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->get();
-            $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
-            $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->where($userrole, $token_user->id)->orderBy('updated_at', 'desc')->first();
+
+            $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->get();
+            $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->get();
+            $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
             return response()->json([
                 'success' => true,
@@ -750,10 +754,10 @@ class ClassController extends Controller
         //************ If class date passed then roll call attendence ************
         foreach ($course['classes'] as $class) {
             $classStart = Carbon::parse($class->start_date)->format('Y-m-d');
-            if ($classStart <= $current_date ) {
+            if ($classStart <= $current_date) {
                 //for students
                 foreach ($class->participants as $participant) {
-                     $attendance = Attendance::where('user_id', $participant->student_id)->where('academic_class_id', $class->id)->first();
+                    $attendance = Attendance::where('user_id', $participant->student_id)->where('academic_class_id', $class->id)->first();
 
                     if ($attendance == null) {
                         $userAttendence = new Attendance();
@@ -774,8 +778,7 @@ class ClassController extends Controller
                     $userAttendence->status = 'absent';
                     $userAttendence->save();
                 }
-
-            } 
+            }
         }
         // ************************************************
 
@@ -895,7 +898,7 @@ class ClassController extends Controller
         }
     }
 
-    //*********/ Teacher: Reschedule Class *********
+    //*********/ Student: Reschedule Class *********
     public function reschedule_class(Request $request)
     {
 
@@ -973,6 +976,22 @@ class ClassController extends Controller
 
 
             if ($totalDuration > 48) {
+                //checking teacher availability
+                $availabilities = TeacherAvailability::where('user_id', $class->teacher->id)->where('day', $request->day)->get();
+                $req_startTime = Carbon::parse($request->start_time);
+                $req_endTime = Carbon::parse($request->end_time);
+                foreach ($availabilities as $availability) {
+                    $ava_startTime = Carbon::parse($availability->time_from);
+                    $ava_endTime = Carbon::parse($availability->time_to);
+
+                    if (($req_startTime >= $ava_startTime) && ($req_startTime <= $ava_endTime) || ($req_endTime >= $ava_startTime) && ($req_endTime <= $ava_endTime)) {
+                        return response()->json([
+                            'status' => false,
+                            'errors' => "Teacher not Available at this time!",
+                        ], 400);
+                    }
+                }
+
                 // if class is not scheduled by braincert
                 if ($class->class_id == null) {
                     $class->start_time = $request->start_time;
@@ -1009,7 +1028,8 @@ class ClassController extends Controller
                     $class->update();
                     return response()->json([
                         'status' => true,
-                        'errors' => "Class Rescheduled Successfully!",
+                        'message' => "Class Rescheduled Successfully!",
+                        'class' => $class,
                     ]);
                 }
             } else {
@@ -1059,9 +1079,9 @@ class ClassController extends Controller
             'feedbacks' => $feedbacks,
         ]);
     }
-    
-     //************* Student: Add class  *************
-    public function addClass($course_id,Request $request)
+
+    //************* Student: Add class  *************
+    public function addClass($course_id, Request $request)
     {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -1070,30 +1090,84 @@ class ClassController extends Controller
 
         $start_time = $request->start_time;
         $end_time = $request->end_time;
-
-        $availability = TeacherAvailability::where('user_id',$course->teacher_id)->get();
-        $weekdays = json_decode($request->weekdays);
-        foreach($weekdays as $weekday){
-            $weekAvailabilities= $availability->where('day',$weekday);
-            foreach($weekAvailabilities as $weekAvailability){
-                // return $weekAvailability;
+        // checking teacher availabilty
+        $availability = TeacherAvailability::where('user_id', $course->teacher_id)->get();
+        // $weekdays = json_decode($request->weekdays);
+        $requestedClasses = json_decode($request->classes);
+        foreach ($requestedClasses as $class) {
+            //  $class->day;
+            $weekAvailabilities = $availability->where('day', $class->day);
+            // echo count($weekAvailabilities);
+            if (count($weekAvailabilities) == 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Teacher not available at this day!',
+                ], 400);
+            }
+            $flag = 0;
+            foreach ($weekAvailabilities as $weekAvailability) {
                 $start_time = Carbon::parse($weekAvailability->time_from)->format('G:i');
                 $end_time = Carbon::parse($weekAvailability->time_to)->format('G:i');
-                $request_startTime = Carbon::parse($request->start_time)->format('G:i');
-                $request_endTime = Carbon::parse($request->end_time)->format('G:i');
+                $request_startTime = Carbon::parse($class->start_time)->format('G:i');
+                $request_endTime = Carbon::parse($class->end_time)->format('G:i');
 
-                if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Teacher not available at this time!',
-                    ],400);
+                if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) && ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
+                    break;
+                } else {
+                    $flag++;
+                    if ($flag == count($weekAvailabilities))
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'Teacher not available at this time!',
+                        ], 400);
                 }
             }
-            return $classes = AcademicClass::where('day', $weekday)->where('teacher_id',$course->teacher_id)->where('start_date',$request->start_date)->get();
-            
+            // Checking if teacher is booked
+            $classes = AcademicClass::where('day', $class->day)->where('teacher_id', $course->teacher_id)->where('start_date', $request->start_date)->get();
+            if (count($classes) > 0) {
+                $flag = 0;
+                foreach ($classes as $academicClass) {
+                    $start_time = Carbon::parse($academicClass->start_time)->format('G:i');
+                    $end_time = Carbon::parse($academicClass->end_time)->format('G:i');
+                    $request_startTime = Carbon::parse($class->start_time)->format('G:i');
+                    $request_endTime = Carbon::parse($class->end_time)->format('G:i');
+
+                    if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'Teacher has Already booked!',
+                        ], 400);
+                    }
+                }
+            }
         }
 
+        $course->total_classes = $course->total_classes + $request->total_classes;
+        $course->total_price = $course->total_price + $request->total_price;
+        $course->total_hours = $course->total_hours + $request->total_hours;
 
-        
+        foreach ($requestedClasses as $reqClass) {
+            $academicClass = new AcademicClass();
+            $academicClass->start_date = $request->start_date;
+            $academicClass->end_date = $request->end_date;
+            $academicClass->day = $reqClass->day;
+            $academicClass->start_time = $reqClass->start_time;
+            $academicClass->end_time = $reqClass->end_time;
+            $academicClass->duration = $reqClass->duration;
+            $academicClass->status = 'pending';
+            $academicClass->student_id = $token_user->id;
+            $academicClass->teacher_id = $course->teacher_id;
+            $academicClass->course_id = $course_id;
+            $academicClass->save();
+        }
+        $course->update();
+
+        $course = Course::with('classes')->find($course_id);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Class Added Successfully',
+            'course' => $course,
+        ]);
     }
 }

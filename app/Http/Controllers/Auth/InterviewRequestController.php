@@ -22,13 +22,13 @@ class InterviewRequestController extends Controller
           
           if(isset($id)){
               
-              $interviewRequests=TeacherInterviewRequest::with('user','user.userMetas','user.teacherSpecifications','user.teacherQualifications','user.spokenLanguages','user.teacher_subjects','user.teacher_subjects.program','user.teacher_subjects.field','user.teacher_subjects.subject')->where('id',$id)->get();
+              $interviewRequests=TeacherInterviewRequest::with('user','user.userMetas','user.teacherSpecifications','user.teacherQualifications','user.spokenLanguages','user.spokenLanguages.language','user.teacher_subjects','user.teacher_subjects.program','user.teacher_subjects.field','user.teacher_subjects.subject')->where('id',$id)->first();
           
           }
         
             return response()->json([
                 'status'=>true,
-                'interview_requests'=> $interviewRequests,
+                'interview_request'=> $interviewRequests,
                
                 ]);
           
@@ -38,40 +38,12 @@ class InterviewRequestController extends Controller
     {
         
         
-          $interviewRequests=TeacherInterviewRequest::all();
+          $interviewRequests=TeacherInterviewRequest::with('user','user.teacherSpecifications','user.teacherQualifications')->get();
           
           
         //   return $_GET['teacher_name'];
           
-          if(isset($_GET['teacher_name']) && isset($_GET['request_date'])){
-              
-              
-              
-          }
-          
-          foreach($interviewRequests as $interviewRequest){
-              
-              
-                $users=User::find($interviewRequest->user_id);
-              
-             $user_meta= $users->userMetas;
-             $user_spec= $users->teacherSpecifications;
-             $user_quali= $users->teacherQualifications;
-             $user_spoken_language= $users->spokenLanguages;
-             
-             
-             
-              
-              $interviewRequest->user=$users;
-              // $interviewRequest->teacherSpecifications=$user_spec;
-              // $interviewRequest->teacherQualifications=$user_quali;
-              // $interviewRequest->spokenLanguages=$user_spoken_language;
-              
-              
-              
-                $interviewRequest->user=$interviewRequest->user;
-              
-          }
+         
           
             return response()->json([
                 'status'=>true,

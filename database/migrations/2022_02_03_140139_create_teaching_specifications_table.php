@@ -17,14 +17,14 @@ class CreateTeachingSpecificationsTable extends Migration
             $table->increments('id');
             $table->integer('user_id')->unsigned();
             $table->string('level_of_education');
-            $table->string('field_of_study');
-            $table->string('subject');
+            $table->string('field_of_study')->nullable();
+            $table->string('subject')->nullable();
             $table->string('type_of_tutoring');
             $table->string('expected_salary_per_hour');
             $table->string('availability_start_date');
             $table->string('availability_end_date');
-            $table->string('teaching_days');
-            $table->string('teaching_hours');
+            $table->string('teaching_days')->nullable();
+            $table->string('teaching_hours')->nullable();
             $table->timestamps();
         });
     }

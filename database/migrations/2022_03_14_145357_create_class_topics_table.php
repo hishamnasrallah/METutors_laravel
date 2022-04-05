@@ -17,7 +17,7 @@ class CreateClassTopicsTable extends Migration
             $table->id();
             $table->integer('course_id');
             $table->integer('class_id');
-            $table->integer('topic_id');
+            $table->integer('topic_id')->nullable();
             $table->integer('user_id');
             $table->timestamps();
         });

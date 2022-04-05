@@ -37,9 +37,19 @@ class FieldOfStudyController extends Controller
      */
     public function index()
     {
-         $FieldOfStudys=FieldOfStudy::all();
+         $FieldOfStudys=FieldOfStudy::with('program','country')->get();
 
-       return response()->json([
+         if(isset($request->country_id) && isset($request->grade)){
+
+             $FieldOfStudys=FieldOfStudy::where('country_id',$request->country_id)->whereIn('grade',$request->grade)->get();
+         }
+
+        if(isset($request->program_id)){
+
+             $FieldOfStudys=FieldOfStudy::where('program_id',$request->program_id)->get();
+         }
+
+         return response()->json([
 
                 'status' => true,
                 'FieldOfStudy' => $FieldOfStudys,
@@ -74,6 +84,7 @@ class FieldOfStudyController extends Controller
          if($request->program_id == 3){
 
                   $rules['country_id'] = 'required';
+                  $rules['grade'] = 'required';
             }
 
 
@@ -98,6 +109,7 @@ class FieldOfStudyController extends Controller
          if($request->program_id == 3){
 
                  $FieldOfStudy->country_id=$request->country_id;
+                 $FieldOfStudy->grade=$request->grade;
             }
         $FieldOfStudy->name=$request->name;
         $FieldOfStudy->save();
