@@ -21,6 +21,5 @@ RUN mv .env.example .env
 RUN composer install
 RUN composer update
 RUN php artisan optimize
-RUN php artisan migrate
 
 ENTRYPOINT ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
