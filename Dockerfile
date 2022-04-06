@@ -21,5 +21,6 @@ RUN mv .env.example .env
 RUN composer install
 RUN composer update
 RUN php artisan optimize
+RUN chmod +x /var/www/html/entry.sh
 
-ENTRYPOINT ["php artisan migrate && /usr/sbin/apache2ctl", "-DFOREGROUND"]
+ENTRYPOINT ["/var/www/html/entry.sh"]
