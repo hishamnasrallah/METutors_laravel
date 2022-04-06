@@ -18,7 +18,9 @@ RUN echo "</Directory>" >> /etc/apache2/sites-enabled/000-default.conf
 RUN echo 'Header set Access-Control-Allow-Origin "*"'>> /etc/apache2/sites-enabled/000-default.conf
 RUN echo "</VirtualHost>" >> /etc/apache2/sites-enabled/000-default.conf
 RUN mv .env.example .env
-RUN composer update
 RUN composer install
+RUN composer update
 RUN php artisan optimize
+RUN php artisan migrate
+
 ENTRYPOINT ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
