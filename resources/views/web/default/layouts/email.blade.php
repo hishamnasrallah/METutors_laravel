@@ -1,8 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     {{-- <link rel="stylesheet" type="text/css" href="{{ url('/css/email.css') }}"> --}}
     <style type="text/css">
         /* /\/\/\/\/\/\/\/\/ CLIENT-SPECIFIC STYLES /\/\/\/\/\/\/\/\/ */
@@ -20,18 +22,30 @@
         }
 
         /* Force Hotmail to display emails at full width */
-        .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {
+        .ExternalClass,
+        .ExternalClass p,
+        .ExternalClass span,
+        .ExternalClass font,
+        .ExternalClass td,
+        .ExternalClass div {
             line-height: 100%;
         }
 
         /* Force Hotmail to display normal line spacing */
-        body, table, td, p, a, li, blockquote {
+        body,
+        table,
+        td,
+        p,
+        a,
+        li,
+        blockquote {
             -webkit-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
         }
 
         /* Prevent WebKit and Windows mobile changing default text sizes */
-        table, td {
+        table,
+        td {
             mso-table-lspace: 0pt;
             mso-table-rspace: 0pt;
         }
@@ -60,7 +74,9 @@
             border-collapse: collapse !important;
         }
 
-        body, #bodyTable, #bodyCell {
+        body,
+        #bodyTable,
+        #bodyCell {
             height: 100% !important;
             margin: 0;
             padding: 0;
@@ -81,7 +97,8 @@
             width: 600px;
         }
 
-        body, #bodyTable {
+        body,
+        #bodyTable {
             background-color: #F5F6F7;
         }
 
@@ -164,7 +181,8 @@
             text-align: right;
         }
 
-        .preheaderContent a:link, .preheaderContent a:visited,
+        .preheaderContent a:link,
+        .preheaderContent a:visited,
         .preheaderContent a .yshortcuts {
             color: #606060;
             font-weight: normal;
@@ -188,7 +206,8 @@
             vertical-align: middle;
         }
 
-        .headerContent a:link, .headerContent a:visited,
+        .headerContent a:link,
+        .headerContent a:visited,
         .headerContent a .yshortcuts {
             color: #43d477;
             font-weight: normal;
@@ -220,7 +239,8 @@
             text-align: left;
         }
 
-        .bodyContent a:link, .bodyContent a:visited,
+        .bodyContent a:link,
+        .bodyContent a:visited,
         .bodyContent a .yshortcuts {
             color: #43d477;
             font-weight: normal;
@@ -251,8 +271,10 @@
             text-align: center;
         }
 
-        .footerContent a:link, .footerContent a:visited,
-        .footerContent a .yshortcuts, .footerContent a span {
+        .footerContent a:link,
+        .footerContent a:visited,
+        .footerContent a .yshortcuts,
+        .footerContent a span {
             color: #999999;
             font-weight: normal;
             text-decoration: none;
@@ -260,8 +282,15 @@
 
         /* /\/\/\/\/\/\/\/\/ MOBILE STYLES /\/\/\/\/\/\/\/\/ */
         @media only screen and (max-width: 480px) {
+
             /* /\/\/\/\/\/\/ CLIENT-SPECIFIC MOBILE STYLES /\/\/\/\/\/\/ */
-            body, table, td, p, a, li, blockquote {
+            body,
+            table,
+            td,
+            p,
+            a,
+            li,
+            blockquote {
                 -webkit-text-size-adjust: none !important;
             }
 
@@ -443,7 +472,8 @@
             text-align: right;
         }
 
-        .leftColumnContent a:link, .leftColumnContent a:visited,
+        .leftColumnContent a:link,
+        .leftColumnContent a:visited,
         .leftColumnContent a .yshortcuts {
             font-weight: bold;
             text-decoration: none;
@@ -481,13 +511,15 @@
         @tip
         Set the styling for your email's right column content links. Choose a color that helps them stand out from your text.
                 */
-        .rightColumnContent a:link, .rightColumnContent a:visited,
+        .rightColumnContent a:link,
+        .rightColumnContent a:visited,
         .rightColumnContent a .yshortcuts {
             font-weight: bold;
             text-decoration: none;
         }
 
-        .leftColumnContent img, .rightColumnContent img {
+        .leftColumnContent img,
+        .rightColumnContent img {
             display: inline;
             height: auto;
             max-width: 260px;
@@ -499,74 +531,80 @@
             border: 1px solid transparent;
             border-radius: 4px;
         }
+
         .alert-info {
             color: #31708f;
             background-color: #d9edf7;
             border-color: #bce8f1;
         }
+
         .emailConfigCode {
             text-align: center;
-            font-size: 25px;
+            font-size: 25px
         }
 
     </style>
-    <title>{{ $generalSettings['site_name'] }}</title>
+    {{-- <title>{{ $generalSettings['site_name'] }}</title> --}}
+    <title>METUTOR</title>
 </head>
-<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0">
-<center>
-    <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
-        <tr>
-            <td align="center" valign="top" id="bodyCell">
-                <!-- BEGIN TEMPLATE // -->
-                <table border="0" cellpadding="0" cellspacing="0" id="templateContainer">
-                    <tr>
-                        <td align="center" valign="top">
-                            <!-- BEGIN PREHEADER // -->
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templatePreheader">
-                                <tr>
-                                    <td class="headerContent" width="100%">
-                                        <a href=""><img src="{{ url($generalSettings['logo']) }}" style="max-width:128px;margin-bottom: 8px;margin-top: 24px" id="headerImage campaign-icon" mc:label="header_image" mc:edit="header_image" mc:allowtext/></a>
-                                    </td>
-                                </tr>
-                            </table>
-                            <!-- // END PREHEADER -->
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" valign="top">
-                            <!-- BEGIN BODY // -->
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templateBody">
-                                <tr>
-                                    @yield('body')
 
-                                </tr>
-                            </table>
-                            <!-- // END BODY -->
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" valign="top">
-                            <!-- BEGIN FOOTER // -->
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templateFooter">
-                                <tr>
-                                    <td valign="top" class="footerContent" style="padding-top:0; padding-bottom:40px;" mc:edit="footer_content02">
-                                        @yield('cancel')
-                                    </td>
-                                </tr>
-                                {{--   <tr>
+<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0">
+    <center>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
+            <tr>
+                <td align="center" valign="top" id="bodyCell">
+                    <!-- BEGIN TEMPLATE // -->
+                    <table border="0" cellpadding="0" cellspacing="0" id="templateContainer">
+                        <tr>
+                            <td align="center" valign="top">
+                                <!-- BEGIN PREHEADER // -->
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templatePreheader">
+                                    <tr>
+                                        <td class="headerContent" width="100%">
+                                            {{-- <a href=""><img src="{{ url($generalSettings['logo']) }}" style="max-width:128px;margin-bottom: 8px;margin-top: 24px" id="headerImage campaign-icon" mc:label="header_image" mc:edit="header_image" mc:allowtext/></a> --}}
+                                        </td>
+                                    </tr>
+                                </table>
+                                <!-- // END PREHEADER -->
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" valign="top">
+                                <!-- BEGIN BODY // -->
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templateBody">
+                                    <tr>
+                                        @yield('body')
+
+                                    </tr>
+                                </table>
+                                <!-- // END BODY -->
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" valign="top">
+                                <!-- BEGIN FOOTER // -->
+                                <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templateFooter">
+                                    <tr>
+                                        <td valign="top" class="footerContent"
+                                            style="padding-top:0; padding-bottom:40px;" mc:edit="footer_content02">
+                                            @yield('cancel')
+                                        </td>
+                                    </tr>
+                                    {{-- <tr>
                                        <td valign="top" class="footerContent" mc:edit="footer_content00">
                                            <a href="*|TWITTER:PROFILEURL|*">Follow on Twitter</a>&nbsp;&nbsp;&nbsp;<a href="*|FACEBOOK:PROFILEURL|*">Friend on Facebook</a>&nbsp;&nbsp;&nbsp;<a href="*|FORWARD|*">Forward to Friend</a>&nbsp;
                                        </td>
-                                   </tr>--}}
-                            </table>
-                            <!-- // END FOOTER -->
-                        </td>
-                    </tr>
-                </table>
-                <!-- // END TEMPLATE -->
-            </td>
-        </tr>
-    </table>
-</center>
+                                   </tr> --}}
+                                </table>
+                                <!-- // END FOOTER -->
+                            </td>
+                        </tr>
+                    </table>
+                    <!-- // END TEMPLATE -->
+                </td>
+            </tr>
+        </table>
+    </center>
 </body>
+
 </html>

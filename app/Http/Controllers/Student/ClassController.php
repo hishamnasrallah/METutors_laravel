@@ -23,6 +23,7 @@ use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use JWTAuth;
@@ -51,7 +52,6 @@ class ClassController extends Controller
             'classes' =>  'required',
 
         ];
-
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
@@ -162,6 +162,35 @@ class ClassController extends Controller
 
 
         $course->update();
+
+        $user = User::find($token_user);
+        $teacher = User::find($request->teacher_id);
+
+        //*********** Sending email to Student ************\\
+        $user_name = $user->name;
+        $user_email = $user->email;
+        $to_name = $user_name;
+        $to_email = $user_email;
+        $data = array('user' => $user_name, 'course' => $course->course_name, 'start_time' => $course->start_time, 'end_time' => $course->end_time, 'end_date' => $course->end_date, 'start_date' => $course->start_date);
+        Mail::send('email.student_course', $data, function ($message) use ($to_name, $to_email) {
+            $message->to($to_email, $to_name)
+                ->subject('Course Booking');
+            $message->from('metutorsmail@gmail.com', 'MeTutors');
+        });
+        //********* Sending email ends **********//
+
+        //*********** Sending email to Teacher ************\\
+        $user_name = $teacher->name;
+        $user_email = $teacher->email;
+        $to_name = $user_name;
+        $to_email = $user_email;
+        $data = array('user' => $user_name, 'course' => $course->course_name, 'start_time' => $course->start_time, 'end_time' => $course->end_time, 'end_date' => $course->end_date, 'start_date' => $course->start_date);
+        Mail::send('email.teacher_course', $data, function ($message) use ($to_name, $to_email) {
+            $message->to($to_email, $to_name)
+                ->subject('Course Added');
+            $message->from('metutorsmail@gmail.com', 'MeTutors');
+        });
+        //********* Sending email ends **********//
 
         return response()->json([
             'message' => "Course data added Successfully!",

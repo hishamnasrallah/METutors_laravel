@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\UpdateProfile;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
 use App\Models\Course;
@@ -52,26 +53,25 @@ class DashboardController extends Controller
             $total_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'completed')->count();
 
-            $newly_assigned_courses = Course::with('subject', 'student','program','classes',)
-                ->whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status','pending')->get();
+            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes',)
+                ->whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
-            $todays_classes = AcademicClass::select('id','class_id','title', "start_date", "end_date", "start_time", "end_time", "course_id", "status","duration")->with('course','course.subject','course.student','course.program','attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             //checking if class has completed
-            $currentTime=Carbon::now()->format('H:i:s');
-            foreach($todays_classes as $class){
+            $currentTime = Carbon::now()->format('H:i:s');
+            foreach ($todays_classes as $class) {
                 // return $class;
                 $classTime = Carbon::parse($class->end_time)->format('H:i:s');
-                $attend = $class->attendence->where('user_id',$user_id );
-                if($currentTime >= $classTime &&  count($attend) > 0)
-                {
-                    $class->status="completed";
+                $attend = $class->attendence->where('user_id', $user_id);
+                if ($currentTime >= $classTime &&  count($attend) > 0) {
+                    $class->status = "completed";
                     $class->update();
                 }
             }
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->whereBetween('created_at', [$endDate, $current_date])->where('reciever_id', $user_id)->get();
 
-            $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status','pending')->count();
-            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date','<',$current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status','!=','completed')->count();
+            $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->count();
+            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status', '!=', 'completed')->count();
             return response()->json([
                 "status" => true,
                 "message" => "todays classes",
@@ -92,14 +92,14 @@ class DashboardController extends Controller
 
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
-            $todays_classes = AcademicClass::select('id','class_id','title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course','course.subject','course.student','course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'course.subject', 'course.student', 'course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->where('reciever_id', $user_id)->get();
 
-            $newly_assigned_courses = Course::with('subject', 'student','program','classes')
-            ->where('teacher_id', $user_id)->where('status','pending')->get();
+            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
+                ->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
-            $total_newly_courses = Course::where('teacher_id', $user_id)->where('status','pending')->count();
-            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date','<',$current_date)->where('status','!=','completed')->count();
+            $total_newly_courses = Course::where('teacher_id', $user_id)->where('status', 'pending')->count();
+            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->where('status', '!=', 'completed')->count();
 
             return response()->json([
                 "status" => true,
@@ -133,7 +133,7 @@ class DashboardController extends Controller
             return response()->json([
                 'status' => false,
                 'errors' => $errors,
-            ],400);
+            ], 400);
         }
 
         //*********** Sending Invoive Email  ************\\
@@ -222,7 +222,7 @@ class DashboardController extends Controller
             return response()->json([
                 'status' => false,
                 'errors' => $errors,
-            ],400);
+            ], 400);
         }
 
         $token_1 = JWTAuth::getToken();
@@ -240,13 +240,18 @@ class DashboardController extends Controller
             $user->avatar = $imageName;
             //************ Profile image ends *********\\
         }
+
+        $message = "Profile updated Successfully";
+
+        //*********** Sending Rejection Email to Student  ************\\
+       
         $user->update();
+
+        event(new UpdateProfile($user, $user->id, $message));
 
         return response()->json([
             'status' => true,
             'message' => 'Profile Updated Successfully!'
         ]);
     }
-
-    
 }

@@ -101,7 +101,7 @@ class AssignmentController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $assignment = Assignment::with('assignees', 'assignees.user')->find($assignment_id);
-        $user_assignment = UserAssignment::where('user_id', $token_user->id)->where('assignment_id', $assignment_id)->first();
+        $user_assignment = UserAssignment::where('user_id', $token_user->id)->where('assignment_id', $assignment_id)->latest()->first();
         $assignment->user_assignment_status = $user_assignment->status;
         // return $assignment->course_id;
 
@@ -134,12 +134,29 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $userAssignment = UserAssignment::where('assignment_id', $assignment_id)->where('user_id', $token_user->id)->first();
+        $userAssignment = UserAssignment::where('assignment_id', $assignment_id)->where('user_id', $token_user->id)->latest()->first();
 
-        $userAssignment->description = $request->description;
+        if ($userAssignment->status == 'rejected') {
+            $user_assignment = new UserAssignment();
+            $user_assignment->user_id = $userAssignment->user_id;
+            $user_assignment->assignment_id = $userAssignment->assignment_id;
+            $user_assignment->description = $request->description;
+            if ($request->has('file')) {
+                $user_assignment->file = $request->file;
+            }
+            $user_assignment->status = 'resubmitted';
+            $user_assignment->save();
 
+            return response()->json([
+                'status' => true,
+                'message' => 'Assignment ReSubmitted SuccessFully',
+                'assignment' =>  $user_assignment,
+            ]);
+        } else {
+            $userAssignment->description = $request->description;
+        }
         if ($request->has('file')) {
-            
+
             $userAssignment->file = $request->file;
         }
         $userAssignment->status = 'submitted';
@@ -159,9 +176,9 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $assignmnet = UserAssignment::with(['user','feedback' => function ($q) use ($assignment_id, $token_user) {
+        $assignmnet = UserAssignment::with(['user', 'feedback' => function ($q) use ($assignment_id, $token_user) {
             $q->where(['student_id' =>  $token_user->id, 'assignment_id' => $assignment_id]);
-        }])->where(['user_id' =>  $token_user->id, 'assignment_id' => $assignment_id])->first();
+        }])->where(['user_id' =>  $token_user->id, 'assignment_id' => $assignment_id])->latest()->first();
 
         return response()->json([
             'status' => true,

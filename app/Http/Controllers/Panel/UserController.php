@@ -679,7 +679,7 @@ class UserController extends Controller
         
          if ($request->step == 5) {
             
-            $rules['programs'] = 'required';
+            $rules['subjects'] = 'required';
            
         }
         

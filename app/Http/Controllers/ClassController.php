@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Country;
+use App\Events\CourseBooked;
+use App\Events\NewCourse;
 use App\FieldOfStudy;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
@@ -21,6 +23,7 @@ use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use JWTAuth;
@@ -45,6 +48,8 @@ class ClassController extends Controller
             'teacher_id' =>  'required',
             'start_date' =>  'required',
             'end_date' =>  'required',
+            'start_time' =>  'required',
+            'end_time' =>  'required',
             'class_type' =>  'required',
             'classes' =>  'required',
 
@@ -124,6 +129,8 @@ class ClassController extends Controller
         $course->weekdays = $request->weekdays;
         $course->start_date = $request->start_date;
         $course->end_date = $request->end_date;
+        $course->start_time = $request->start_time;
+        $course->end_time = $request->end_time;
         $course->status = 'pending';
         $course->save();
 
@@ -146,11 +153,13 @@ class ClassController extends Controller
         }
         $program = Program::find($request->program_id);
         $subject = Subject::find($request->subject_id);
-        $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->count();
+        $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->latest()->first();
+        $course_count = substr($course_count->course_code, 7) + 1;
+
 
         $course = Course::with('subject', 'language', 'field', 'teacher', 'program')->find($course->id);
         // $findcourse = Course::where('subject_id',$subject->id)->
-        $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '-') . ($course_count++);
+        $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '-') . ($course_count);
 
         if ($course_count == 0) {
             $course->course_name = $subject->name . "0001";
@@ -167,6 +176,16 @@ class ClassController extends Controller
         $classRoom->student_id = $token_user->id;
         $classRoom->status = 'pending';
         $classRoom->save();
+
+        $user = User::find($token_user->id);
+        $teacher = User::find($request->teacher_id);
+
+        // Event notification
+        $teacher_message = 'New Course Created!';
+        $student_message = 'Course Created Successfully!';
+
+        event(new NewCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new NewCourse($course, $course->student_id, $student_message, $user));
 
         return response()->json([
             'message' => "Course data added Successfully!",
@@ -489,8 +508,8 @@ class ClassController extends Controller
         $students = User::withCount(['courses' => function ($q) {
             $q->where('status', 'completed');
         }])
-        ->where("role_name", 'student')->get();
-        
+            ->where("role_name", 'student')->get();
+
         return response()->json([
             'success' => true,
             'students' => $students,

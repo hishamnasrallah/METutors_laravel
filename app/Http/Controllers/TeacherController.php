@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AcceptCourse;
+use App\Events\CancelCourse;
+use App\Events\RejectCourse;
+use App\Events\StudentAcceptCourse;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\CanceledCourse;
+use App\Models\ClassRoom;
 use App\Models\ClassTopic;
 use App\Models\Course;
 use App\Models\RejectedCourse;
@@ -228,6 +233,7 @@ class TeacherController extends Controller
 
         $course = Course::find($course_id);
         $user = User::find($course->student_id);
+        $teacher = User::find($course->teacher_id);
 
         // $class = AcademicClass::where('course_id', $course->id)->get();
         $classes = AcademicClass::where('course_id', $course->id)->get();
@@ -295,24 +301,22 @@ class TeacherController extends Controller
             $counter++;
         }
 
-        //*********** Sending Acceptence Email  ************\\
-        $user_email = $user->email;
-        $courseMessage = "Teacher Has accepted your Course";
-        $to_email = $user_email;
+        $clasroom = ClassRoom::where('course_id', $course_id)->get();
+        foreach ($clasroom as $room) {
+            $room->status = 'active';
+            $room->update();
+        }
 
-        $data = array('email' =>  $user_email, 'courseMessage' =>  $courseMessage);
+        $teacher_message = 'Course Accepted Successfully!';
+        $student_message = 'Teacher Accepted Your Course!';
 
-        Mail::send('email.course_confirmation', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Accepted');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
-        });
-
-        //********* Sending Acceptence Email ends **********//
-
+        event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new AcceptCourse($course, $course->student_id, $student_message, $user));
 
         return response()->json([
             'success' => true,
             'message' => 'Course Accepted!',
+            'course' => $course,
         ]);
     }
 
@@ -339,22 +343,16 @@ class TeacherController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $course = Course::find($course_id);
+        if ($course->teacher_id == null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Currently no teacher assigned to this course!',
+            ], 400);
+        }
         $user = User::find($course->student_id);
-        //*********** Sending Rejection Email  ************\\
-        $user_email = $user->email;
-        $courseMessage = "Teacher Has Rejected your Course. Reffer another tutor for course";
-        $to_email = $user_email;
+        $teacher = User::find($course->teacher_id);
 
-        $data = array('email' =>  $user_email, 'courseMessage' =>  $courseMessage);
 
-        Mail::send('email.course_confirmation', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Accepted');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
-        });
-
-        //********* Sending Rejection Email ends **********//
-        $course->status = "rejected";
-        $course->teacher_id = null;
         $rejected = new RejectedCourse();
         $rejected->course_id = $course->id;
         $rejected->course_id = $course->id;
@@ -363,6 +361,7 @@ class TeacherController extends Controller
         $rejected->reason = $request->reason;
         $rejected->save();
 
+
         $classes = AcademicClass::where('course_id', $course->id)->where('teacher_id', $user->id)->get();
         foreach ($classes as $class) {
             $cls = AcademicClass::find($class->id);
@@ -370,11 +369,27 @@ class TeacherController extends Controller
             $cls->teacher_id = null;
             $cls->update();
         }
+
+        $clasroom = ClassRoom::where('course_id', $course_id)->get();
+        foreach ($clasroom as $room) {
+            $room->status = 'rejected';
+            $room->update();
+        }
+        $teacher_message = "Course Rejected Successfully";
+        $student_message = "Teacher Rejected your Course";
+
+        event(new RejectCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new RejectCourse($course, $course->student_id, $student_message, $user));
+
+        $course->status = "rejected";
+        $course->teacher_id = null;
         $course->update();
+
 
         return response()->json([
             'success' => true,
             'message' => 'Course Rejected!',
+            'course' => $course,
         ]);
     }
 
@@ -444,37 +459,37 @@ class TeacherController extends Controller
                     $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
 
                     $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                    $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
+                    $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
                     $total = AcademicClass::where('topic_id', $topic->id)->get();
-            
+
                     $totaltopicHours = 0;
                     foreach ($total as $class) {
                         $totaltopicHours = $totaltopicHours + $class->duration;
                     }
-            
+
                     $topicProgress = 0;
                     if ($totalTopicClases > 0) {
                         $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
                     }
-    
+
 
 
                     return response()->json([
                         'success' => true,
                         'message' => 'Topic Added Successfully!',
-                        
+
                         'unclassified_classes' => $academic_classes_count,
-                        
 
-                         'topic_detail' => [
 
-                                    'topic' => $topicClasses,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
+                        'topic_detail' => [
 
-                                ],
+                            'topic' => $topicClasses,
+                            'total_classes' => $totalTopicClases,
+                            'completedTopicClases' => $completedTopicClases,
+                            'total_topic_hours' => $totaltopicHours,
+                            "topic_progress" => $topicProgress,
+
+                        ],
                     ]);
                 }
                 $counter++;
@@ -501,17 +516,17 @@ class TeacherController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Topic Added Successfully!',
-               
+
                 'unclassified_classes' => $academic_classes_count,
                 'topic_detail' => [
 
-                                    'topic' => $topicClasses,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
+                    'topic' => $topicClasses,
+                    'total_classes' => $totalTopicClases,
+                    'completedTopicClases' => $completedTopicClases,
+                    'total_topic_hours' => $totaltopicHours,
+                    "topic_progress" => $topicProgress,
 
-                                ],
+                ],
             ]);
         }
     }
@@ -521,11 +536,11 @@ class TeacherController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-         if($token_user->role_name == 'teacher'){
-            $userrole='teacher_id';
-       }elseif($token_user->role_name == 'student') {
-         $userrole='student_id';
-        } 
+        if ($token_user->role_name == 'teacher') {
+            $userrole = 'teacher_id';
+        } elseif ($token_user->role_name == 'student') {
+            $userrole = 'student_id';
+        }
 
         $teacher = User::find($token_user->id);
         $course = Course::with('subject', 'language', 'program', 'student', 'student')->find($course_id);
@@ -900,6 +915,8 @@ class TeacherController extends Controller
         $token_user = JWTAuth::toUser($token_1);
         $teacher = User::find($token_user->id);
         $course = Course::where('teacher_id', $teacher->id)->where('id', $course_id)->first();
+        $user = User::find($course->student_id);
+        $teacher = User::find($course->teacher_id);
 
         if ($course == null) {
             return response()->json([
@@ -914,9 +931,9 @@ class TeacherController extends Controller
             if ($class->status != 'completed') {
                 $cls = AcademicClass::find($class->id);
                 $cls->teacher_id = null;
+                $cls->status = 'canceled';
             }
         }
-        $course->teacher_id = null;
 
         $canceledCourse = new CanceledCourse();
         $canceledCourse->user_id = $token_user->id;
@@ -925,11 +942,25 @@ class TeacherController extends Controller
         $canceledCourse->reason = $request->reason;
         $canceledCourse->save();
 
+        $teacher_message = "Course Canceled Successfully";
+        $student_message = "Teacher Canceled Course";
+
+        event(new CancelCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new CancelCourse($course, $course->student_id, $student_message, $user));
+
+        $course->teacher_id = null;
+        $course->status = 'canceled';
+        $clasroom = ClassRoom::where('course_id', $course_id)->get();
+        foreach ($clasroom as $room) {
+            $room->status = 'canceled';
+            $room->update();
+        }
         $course->update();
 
         return response()->json([
             'status' => true,
             'message' => 'Course cancelled successfully!',
+            'course' => $course,
         ]);
     }
 
@@ -1007,28 +1038,28 @@ class TeacherController extends Controller
                             $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
                             // $classified_classes = AcademicClass::where('topic_id',$topic->id )->where('course_id', $course->id)->get();
 
-                              $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
-                                $total = AcademicClass::where('topic_id', $topic->id)->get();
-                        
-                                $totaltopicHours = 0;
-                                foreach ($total as $class) {
-                                    $totaltopicHours = $totaltopicHours + $class->duration;
-                                }
-                        
-                                $topicProgress = 0;
-                                if ($totalTopicClases > 0) {
-                                    $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
-                                }
-                                   
+                            $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+                            $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
+                            $total = AcademicClass::where('topic_id', $topic->id)->get();
+
+                            $totaltopicHours = 0;
+                            foreach ($total as $class) {
+                                $totaltopicHours = $totaltopicHours + $class->duration;
+                            }
+
+                            $topicProgress = 0;
+                            if ($totalTopicClases > 0) {
+                                $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
+                            }
+
 
                             return response()->json([
                                 'success' => true,
                                 'message' => 'Topic Added Successfully!',
-                                
+
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
-                                 'topic_detail' => [
+                                'topic_detail' => [
 
                                     'topic' => $classTopic,
                                     'total_classes' => $totalTopicClases,
@@ -1075,23 +1106,23 @@ class TeacherController extends Controller
                             $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
                             // $classified_classes = AcademicClass::where('topic_id',$topic->id )->where('course_id', $course->id)->get();
 
-                              $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
-                                $total = AcademicClass::where('topic_id', $topic->id)->get();
-                        
-                                $totaltopicHours = 0;
-                                foreach ($total as $class) {
-                                    $totaltopicHours = $totaltopicHours + $class->duration;
-                                }
-                        
-                                $topicProgress = 0;
-                                if ($totalTopicClases > 0) {
-                                    $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
-                                }
+                            $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+                            $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
+                            $total = AcademicClass::where('topic_id', $topic->id)->get();
+
+                            $totaltopicHours = 0;
+                            foreach ($total as $class) {
+                                $totaltopicHours = $totaltopicHours + $class->duration;
+                            }
+
+                            $topicProgress = 0;
+                            if ($totalTopicClases > 0) {
+                                $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
+                            }
                             return response()->json([
                                 'success' => true,
                                 'message' => 'Topic Added Successfully!',
-                                
+
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
                                 'topic_detail' => [
@@ -1123,15 +1154,15 @@ class TeacherController extends Controller
                 $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
                 // $classified_classes = AcademicClass::where('topic_id',$topic->id )->where('course_id', $course->id)->get();
 
-                 $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
+                $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
                 $total = AcademicClass::where('topic_id', $topic->id)->get();
-        
+
                 $totaltopicHours = 0;
                 foreach ($total as $class) {
                     $totaltopicHours = $totaltopicHours + $class->duration;
                 }
-        
+
                 $topicProgress = 0;
                 if ($totalTopicClases > 0) {
                     $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
@@ -1140,18 +1171,18 @@ class TeacherController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Topic updated successfully',
-                    
+
                     // 'classified_classes' => $classified_classes,
                     'unclassified_classes' => $academic_classes_count,
-                     'topic_detail' => [
+                    'topic_detail' => [
 
-                                    'topic' => $classTopic,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
+                        'topic' => $classTopic,
+                        'total_classes' => $totalTopicClases,
+                        'completedTopicClases' => $completedTopicClases,
+                        'total_topic_hours' => $totaltopicHours,
+                        "topic_progress" => $topicProgress,
 
-                                ],
+                    ],
                 ]);
             }
         }
@@ -1168,8 +1199,8 @@ class TeacherController extends Controller
         $classTopic->update();
         $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
 
-       $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-        $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
+        $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+        $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
         $total = AcademicClass::where('topic_id', $topic->id)->get();
 
         $totaltopicHours = 0;
@@ -1186,17 +1217,17 @@ class TeacherController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Topic updated successfully',
-            
+
             'unclassified_classes' => $academic_classes_count,
             'topic_detail' => [
 
-                                    'topic' => $classTopic,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
+                'topic' => $classTopic,
+                'total_classes' => $totalTopicClases,
+                'completedTopicClases' => $completedTopicClases,
+                'total_topic_hours' => $totaltopicHours,
+                "topic_progress" => $topicProgress,
 
-                                ],
+            ],
         ]);
     }
 
@@ -1332,23 +1363,22 @@ class TeacherController extends Controller
         $assignment->start_date = $request->start_date;
         $assignment->deadline = $request->deadline;
         if ($request->has('urls')) {
-            $new_urls=[];
-            $common_urls=[];
-            $final_urls=[];
+            $new_urls = [];
+            $common_urls = [];
+            $final_urls = [];
             $resource_urls = json_decode($request->urls);
             $db_urls = json_decode($assignment->urls);
-            foreach($resource_urls as $url){
-                if(in_array($url,$db_urls)){
-                    array_push($common_urls,$url);
-                }
-                else{
-                    array_push($new_urls,$url);
+            foreach ($resource_urls as $url) {
+                if (in_array($url, $db_urls)) {
+                    array_push($common_urls, $url);
+                } else {
+                    array_push($new_urls, $url);
                 }
             }
-        
+
             $final_urls = array_merge($common_urls, $new_urls);
 
-            $assignment->urls=$final_urls;
+            $assignment->urls = $final_urls;
             // return response()->json([
             //     'common_urls'=>$common_urls,
             //     'new_urls'=>$new_urls,
@@ -1383,14 +1413,14 @@ class TeacherController extends Controller
         $assignment = Assignment::with('assignees')->find($assignment_id);
 
         $db_assignees = [];
-         foreach($assignment['assignees'] as $assignee){
+        foreach ($assignment['assignees'] as $assignee) {
             array_push($db_assignees, $assignee->user->id);
-         }
+        }
 
         //******** Requested Array loop ********
         foreach ($assignees as $assignee) {
-            if (in_array($assignee, $db_assignees)) {    
-            } else{
+            if (in_array($assignee, $db_assignees)) {
+            } else {
                 $user_assignment = new UserAssignment();
                 $user_assignment->user_id =  $assignee;
                 $user_assignment->assignment_id = $assignment->id;
