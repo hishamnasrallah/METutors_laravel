@@ -22,4 +22,4 @@ RUN composer install
 RUN composer update
 RUN php artisan optimize
 
-ENTRYPOINT ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
+ENTRYPOINT ["php artisan migrate && /usr/sbin/apache2ctl", "-DFOREGROUND"]
