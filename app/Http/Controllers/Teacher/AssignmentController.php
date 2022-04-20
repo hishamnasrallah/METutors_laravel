@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Events\AcceptAssignment;
+use App\Events\RejectAssignment;
 use App\Http\Controllers\Controller;
 
 use App\Models\AcademicClass;
@@ -87,7 +89,7 @@ class AssignmentController extends Controller
             $user_assignment->save();
         }
 
-        $assignment = Assignment::with('assignees','assignees.user')->find($assignment->id);
+        $assignment = Assignment::with('assignees', 'assignees.user')->find($assignment->id);
 
         return response()->json([
             'status' => true,
@@ -104,7 +106,10 @@ class AssignmentController extends Controller
 
         $corse = Course::find($course_id);
 
-        $course = Course::with('participants', 'participants.user',  'assignments', 'assignments.assignees', 'assignments.assignees.user')
+        $course = Course::with('participants', 'participants.user',  'assignments')
+            ->with(['assignments.assignees.user' => function ($q) {
+                $q->latest();
+            }])
             ->find($course_id);
 
         $total_assinments = 0;
@@ -119,7 +124,17 @@ class AssignmentController extends Controller
                 $completed_assignments = $completed_assignments + 1;
             }
             $total_assinments++;
+
+            $users = [];
+            $assignees = $assignment->assignees;
+            foreach ($assignees as $assignee) {
+                $user = $assignees->whereIn('user_id', $users)->first();
+                if ($user == null) {
+                    $assignment->assignees = $user;
+                }
+            }
         }
+
 
         if (count($request->all()) >= 1) {
 
@@ -275,8 +290,9 @@ class AssignmentController extends Controller
         $rules = [
             'review' =>  'required|string',
             'rating' =>  'required|integer',
-            'file' =>  'required',
+            // 'file' =>  'required',
             'student_id' =>  'required',
+            'user_assignment_id' =>  'required',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -294,13 +310,13 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $assignment_feedback = AssignmentFeedback::where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->count();
+        $assignment_feedback = AssignmentFeedback::where('user_assignment_id', $request->user_assignment_id)->where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->count();
         if ($assignment_feedback == 0) {
             $feedback = new AssignmentFeedback();
         } else {
-            $feedback = AssignmentFeedback::where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
+            $feedback = AssignmentFeedback::where('user_assignment_id', $request->user_assignment_id)->where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->orderBy('id', 'desc')->first();
         }
-        $user_assignment = UserAssignment::where('user_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
+        $user_assignment = UserAssignment::where('id', $request->user_assignment_id)->where('user_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
         $user_assignment->status = 'completed';
 
 
@@ -309,10 +325,10 @@ class AssignmentController extends Controller
         $feedback->student_id = $request->student_id;
         $feedback->feedback_by = $token_user->id;
         $feedback->rating = $request->rating;
+        $feedback->user_assignment_id = $request->user_assignment_id;
         $feedback->status = 'completed';
 
         if ($request->has('file')) {
-          
             $feedback->file = $request->file;
         }
         if ($assignment_feedback == 0) {
@@ -322,6 +338,15 @@ class AssignmentController extends Controller
         }
 
         $user_assignment->update();
+
+        // Event notification
+        $teacher_message = 'Assignment Accepted!';
+        $student_message = 'Assignment Accepted Successfully!';
+        $teacher = User::find($token_user->id);
+        $student = User::find($request->student_id);
+
+        // event(new AcceptAssignment($teacher, $teacher_message, $feedback));
+        // event(new AcceptAssignment($student, $student_message, $feedback));
 
         return response()->json([
             'status' => true,
@@ -335,8 +360,9 @@ class AssignmentController extends Controller
         $rules = [
             'review' =>  'required|string',
             'rating' =>  'required|integer',
-            'file' =>  'required',
+            // 'file' =>  'required',
             'student_id' =>  'required',
+            'user_assignment_id' =>  'required',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -355,13 +381,13 @@ class AssignmentController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
 
-        $assignment_feedback = AssignmentFeedback::where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->count();
+        $assignment_feedback = AssignmentFeedback::where('user_assignment_id', $request->user_assignment_id)->where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->count();
         if ($assignment_feedback == 0) {
             $feedback = new AssignmentFeedback();
         } else {
-            $feedback = AssignmentFeedback::where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
+            $feedback = AssignmentFeedback::where('user_assignment_id', $request->user_assignment_id)->where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->orderBy('id', 'desc')->first();
         }
-        $user_assignment = UserAssignment::where('user_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
+        $user_assignment = UserAssignment::where('id', $request->user_assignment_id)->where('user_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
         $user_assignment->status = 'rejected';
 
 
@@ -370,10 +396,10 @@ class AssignmentController extends Controller
         $feedback->student_id = $request->student_id;
         $feedback->feedback_by = $token_user->id;
         $feedback->rating = $request->rating;
+        $feedback->user_assignment_id = $request->user_assignment_id;
         $feedback->status = 'rejected';
 
         if ($request->has('file')) {
-          
             $feedback->file = $request->file;
         }
         if ($assignment_feedback == 0) {
@@ -384,6 +410,15 @@ class AssignmentController extends Controller
 
         $user_assignment->update();
 
+        // Event notification
+        $teacher_message = 'Assignment Rejected!';
+        $student_message = 'Your Assignment has been Rejected!';
+        $teacher = User::find($token_user->id);
+        $student = User::find($request->student_id);
+
+        // event(new RejectAssignment($teacher, $teacher_message, $feedback));
+        // event(new RejectAssignment($student, $student_message, $feedback));
+
         return response()->json([
             'status' => true,
             'message' => 'Assignment Rejected!',
@@ -393,9 +428,12 @@ class AssignmentController extends Controller
 
     public function userAssignment($assignment_id, $user_id)
     {
-        $assignmnet = UserAssignment::with(['user','feedback' => function ($q) use ($assignment_id, $user_id) {
-            $q->where(['student_id' => $user_id, 'assignment_id' => $assignment_id]);
-        }])->where(['user_id' => $user_id, 'assignment_id' => $assignment_id])->first();
+        $ass_array = [];
+        $assignmnet = UserAssignment::with('user')->where(['user_id' => $user_id, 'assignment_id' => $assignment_id])->get();
+        foreach ($assignmnet as $ass) {
+            $feedback = AssignmentFeedback::where('user_assignment_id', $ass->id)->get();
+            $ass->feedback = $feedback;
+        }
 
         return response()->json([
             'status' => true,

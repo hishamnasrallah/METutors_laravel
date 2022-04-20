@@ -3,6 +3,7 @@
 namespace App;
 
 use App\UserCode;
+use App\TeacherInterviewRequest;
 use App\Models\Accounting;
 use App\Models\Badge;
 use App\Models\Meeting;
@@ -21,6 +22,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use \App\Mail\SendMailOtp;
 use App\Models\ClassRoom;
+use App\Models\Course;
 use App\Models\UserFeedback;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use JWTAuth;
@@ -73,6 +75,10 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function teacher_interview_request()
+    {
+        return $this->hasOne('App\TeacherInterviewRequest');
+    }
     public function teacher_qualification()
     {
         return $this->hasOne('App\TeachingQualification');
@@ -116,7 +122,10 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(TeacherSubject::class);
     }
 
-
+     public function country()
+    {
+        return $this->belongsTo('App\Country', 'country', 'id')->select('id','name');
+    }
 
 
 
@@ -369,7 +378,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function feedbacks()
     {
-        return $this->hasMany(UserFeedback::class, 'reciever_id', 'id');
+        return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
     }
 
 
@@ -383,5 +392,20 @@ class User extends Authenticatable implements JWTSubject
     public function courses()
     {
         return $this->hasMany(ClassRoom::class, 'student_id', 'id');
+    }
+
+    public function teacher_courses()
+    {
+        return $this->hasMany(ClassRoom::class, 'teacher_id', 'id');
+    }
+
+    public function course()
+    {
+        return $this->hasMany(Course::class, 'teacher_id', 'id');
+    }
+
+    public function student_courses()
+    {
+        return $this->hasMany(Course::class, 'student_id', 'id');
     }
 }

@@ -35,7 +35,7 @@ class ClassController extends Controller
     {
         $rules = [
             'field_of_study' =>  'required',
-            'course_level' =>  'required',
+           
             'language_id' =>  'required',
             // 'book_type' =>  'required',
             'book_info' =>  'required',
@@ -117,7 +117,7 @@ class ClassController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $course->field_of_study = $request->field_of_study;
-        $course->course_level = $request->course_level;
+       
         $course->language_id = $request->language_id;
         // $course->book_type = $request->book_type;
         $course->total_price = $request->total_price;
@@ -154,17 +154,21 @@ class ClassController extends Controller
         $program = Program::find($request->program_id);
         $subject = Subject::find($request->subject_id);
         $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->latest()->first();
-        $course_count = substr($course_count->course_code, 7) + 1;
+        if ($course_count != null) {
+            $course_count = substr($course_count->course_code, 7) + 1;
+        } else {
+            $course_count = 1;
+        }
+
 
 
         $course = Course::with('subject', 'language', 'field', 'teacher', 'program')->find($course->id);
-        // $findcourse = Course::where('subject_id',$subject->id)->
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '-') . ($course_count);
 
-        if ($course_count == 0) {
+        if ($course_count == null) {
             $course->course_name = $subject->name . "0001";
         } else {
-            $course->course_name = $subject->name . "000" . --$course_count;
+            $course->course_name = $subject->name . "000" . $course_count;
         }
 
 
@@ -184,8 +188,8 @@ class ClassController extends Controller
         $teacher_message = 'New Course Created!';
         $student_message = 'Course Created Successfully!';
 
-        event(new NewCourse($course, $course->teacher_id, $teacher_message, $teacher));
-        event(new NewCourse($course, $course->student_id, $student_message, $user));
+        // event(new NewCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        // event(new NewCourse($course, $course->student_id, $student_message, $user));
 
         return response()->json([
             'message' => "Course data added Successfully!",
@@ -268,14 +272,14 @@ class ClassController extends Controller
         $teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'kudos_points')
             ->with('teacher_qualification', 'teacher_specification', 'spoken_languages', 'teacher_subjects')
             ->with(['feedbacks' => function ($query) use ($teacher_id) {
-                $query->where('reciever_id', $teacher_id);
+                $query->where('receiver_id', $teacher_id);
             }])
             // ->with('feedbacks.user')
             ->find($teacher_id);
 
-        $total_feedbacks = UserFeedback::where('reciever_id', $teacher_id)->count();
+        $total_feedbacks = UserFeedback::where('receiver_id', $teacher_id)->count();
         if ($total_feedbacks > 0) {
-            $total_rating = UserFeedback::where('reciever_id', $teacher_id)->sum('rating');
+            $total_rating = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
             $average_feedback = $total_rating / $total_feedbacks;
         }
 
@@ -283,30 +287,30 @@ class ClassController extends Controller
         $courses_created = Course::where('teacher_id', $teacher_id)->count();
 
         $expert_rating = 0;
-        $expert_rating_total = UserFeedback::where('feedback_id', 1)->where('reciever_id', $teacher_id)->count();
+        $expert_rating_total = UserFeedback::where('feedback_id', 1)->where('receiver_id', $teacher_id)->count();
         if ($expert_rating_total > 0) {
-            $expert_rating_sum = UserFeedback::where('feedback_id', 1)->where('reciever_id', $teacher_id)->sum('rating');
+            $expert_rating_sum = UserFeedback::where('feedback_id', 1)->where('receiver_id', $teacher_id)->sum('rating');
             $expert_rating = $expert_rating_sum / $expert_rating_total;
         }
 
         $complexity_rating = 0;
-        $complexity_rating_total = UserFeedback::where('feedback_id', 2)->where('reciever_id', $teacher_id)->count();
+        $complexity_rating_total = UserFeedback::where('feedback_id', 2)->where('receiver_id', $teacher_id)->count();
         if ($complexity_rating_total > 0) {
-            $complexity_rating_sum = UserFeedback::where('feedback_id', 2)->where('reciever_id', $teacher_id)->sum('rating');
+            $complexity_rating_sum = UserFeedback::where('feedback_id', 2)->where('receiver_id', $teacher_id)->sum('rating');
             $complexity_rating = $complexity_rating_sum / $complexity_rating_total;
         }
 
         $skillfull_rating = 0;
-        $skillfull_rating_total = UserFeedback::where('feedback_id', 3)->where('reciever_id', $teacher_id)->count();
+        $skillfull_rating_total = UserFeedback::where('feedback_id', 3)->where('receiver_id', $teacher_id)->count();
         if ($skillfull_rating_total > 0) {
-            $skillfull_rating_sum = UserFeedback::where('feedback_id', 3)->where('reciever_id', $teacher_id)->sum('rating');
+            $skillfull_rating_sum = UserFeedback::where('feedback_id', 3)->where('receiver_id', $teacher_id)->sum('rating');
             $skillfull_rating = $skillfull_rating_sum / $skillfull_rating_total;
         }
 
         $onTime_rating = 0;
-        $onTime_rating_total = UserFeedback::where('feedback_id', 4)->where('reciever_id', $teacher_id)->count();
+        $onTime_rating_total = UserFeedback::where('feedback_id', 4)->where('receiver_id', $teacher_id)->count();
         if ($onTime_rating_total > 0) {
-            $onTime_rating_sum = UserFeedback::where('feedback_id', 4)->where('reciever_id', $teacher_id)->sum('rating');
+            $onTime_rating_sum = UserFeedback::where('feedback_id', 4)->where('receiver_id', $teacher_id)->sum('rating');
             $onTime_rating = $onTime_rating_sum / $onTime_rating_total;
         }
 
@@ -343,9 +347,9 @@ class ClassController extends Controller
 
         $average_rating = 0;
         $teacher_id = $request->teacher_id;
-        $total_feedbacks = UserFeedback::where('reciever_id', $teacher_id)->count();
+        $total_feedbacks = UserFeedback::where('receiver_id', $teacher_id)->count();
         if ($total_feedbacks != 0) {
-            $total_rating = UserFeedback::where('reciever_id', $teacher_id)->sum('rating');
+            $total_rating = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
             $average_rating = $total_rating / $total_feedbacks;
         }
 
@@ -382,7 +386,7 @@ class ClassController extends Controller
 
         $apiURL = 'https://api.braincert.com/v2/schedule';
         $postInput = [
-            'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+            'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
             'title' =>  $request->title,
             'timezone' => 90,
             'start_time' => $class->start_time,
@@ -447,6 +451,19 @@ class ClassController extends Controller
                 'message' => 'class not found'
             ], 400);
         }
+        if ($class->status == 'canceled') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Class has been Canceled!'
+            ], 400);
+        }
+
+        if ($class->teacher_id == null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Teacher not assigned yet!'
+            ], 400);
+        }
 
         if ($token_user->role_name == "teacher") {
             $flag = 1;
@@ -455,7 +472,7 @@ class ClassController extends Controller
         }
         $apiURL = 'https://api.braincert.com/v2/getclasslaunch';
         $postInput = [
-            'apikey' => "PU0MLbUZrGbmonA3PHny",
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
             'class_title' =>  $class->title,
             'class_id' => $class->class_id,
             'userId' => $token_user->id,
@@ -856,7 +873,7 @@ class ClassController extends Controller
 
         $apiURL = 'https://api.braincert.com/v2/listclass';
         $postInput = [
-            'apikey' => "PU0MLbUZrGbmonA3PHny",
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
             'search' => $request->search,
         ];
 
@@ -989,7 +1006,7 @@ class ClassController extends Controller
 
                     $apiURL = 'https://api.braincert.com/v2/updateclass';
                     $postInput = [
-                        'apikey' => "PU0MLbUZrGbmonA3PHny",
+                        'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                         'id' => $class->class_id,
                         'start_time' => $request->start_time,
                         'end_time' => $request->end_time,
@@ -1045,7 +1062,7 @@ class ClassController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $teacher = User::find($token_user->id);
-        $feedbacks = UserFeedback::with('sender', 'feedback')->where('reciever_id', $token_user->id)->get();
+        $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
             'message' => 'Teacher Kudos points',

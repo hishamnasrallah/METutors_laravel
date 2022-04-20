@@ -114,6 +114,8 @@ class FieldOfStudyController extends Controller
         $FieldOfStudy->name=$request->name;
         $FieldOfStudy->save();
 
+        $FieldOfStudy=FieldOfStudy::with('program','country')->find($FieldOfStudy->id);
+
         return response()->json([
             'success' => true,
             'message' => "FieldOfStudy stored successfully",
@@ -194,6 +196,8 @@ class FieldOfStudyController extends Controller
             return response()->json(['message'=>'Data not found'], 404); 
         }
         $FieldOfStudy->update($request->all());
+
+           $FieldOfStudy=FieldOfStudy::with('program','country')->find($FieldOfStudy->id);
          return response()->json([
             'success' => true,
             'message' => "FieldOfStudy data updated successfully",

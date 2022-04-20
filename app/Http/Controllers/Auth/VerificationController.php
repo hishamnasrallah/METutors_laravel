@@ -259,13 +259,25 @@ class VerificationController extends Controller
             if (!empty($authUser)) {
                 if (\Auth::loginUsingId($authUser->id)) {
 
+                    $user1=User::find($authUser->id);
+                    $user1->status = 'active';
+                    $user1->verified = 1;
+                    $user1->update();
+
                      return response()->json([
                         'status'=>true,
                         'message'=>'Email verified Successfully!!' ,
-                        // 'user'=> $authUser,
+                        
                         
                         ]);
                 }
+            }else{
+                     return response()->json([
+                        'status'=>false,
+                        'message'=>'user not found!!' ,
+                        
+                        ],404);
+
             }
 
               return response()->json([

@@ -54,10 +54,7 @@ class UserController extends Controller
 
         $teacher_subject_id = $request->teacher_subject_id;
 
-        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', '!=', 'admin')->where('role_name', '!=', 'student')
-
-
-            ->where('role_name', 'teacher')->where('verified', 0)->get();
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', 'teacher')->where('verified', 1)->get();
 
         return response()->json([
             'success' => true,
@@ -1001,26 +998,7 @@ class UserController extends Controller
 
     public function account_setting(Request $request)
     {
-        $rules = [
-            'first_name' => 'required',
-            'email' => 'required',
-            'headline' => 'required',
-            'country' => 'required',
-            'gender' => 'required',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            $messages = $validator->messages();
-            $errors = $messages->all();
-
-            return response()->json([
-
-                'status' => 'false',
-                'errors' => $errors,
-            ], 400);
-        }
+       
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -1032,6 +1010,20 @@ class UserController extends Controller
             'success' => true,
             'message' => 'Account setting updated Successfully!',
             'user' => $user,
+        ]);
+    }
+    public function student_get_profile(Request $request)
+    {
+        
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = User::find($token_user->id);
+      
+        return response()->json([
+            'success' => true,
+            'message' => 'student profile',
+            'profile' => $user,
         ]);
     }
 }

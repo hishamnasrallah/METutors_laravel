@@ -9,17 +9,18 @@ class Assignment extends Model
 {
     use HasFactory;
 
-     protected $casts = [
+    protected $casts = [
         'urls' => 'array',
         'files' => 'array',
     ];
 
-    public function assignees(){
+    public function assignees()
+    {
         return $this->hasMany(UserAssignment::class);
     }
 
-    public function course(){
+    public function course()
+    {
         return $this->belongsTo(Course::class);
     }
-    
 }

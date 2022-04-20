@@ -38,7 +38,7 @@ class SubjectController extends Controller
     public function index()
     {
 
-          $subjects=Subject::with('program','country')->get();
+          $subjects=Subject::with('program','country','field')->get();
          // $subjects=Subject::all();
 
          if(isset($request->field_id)){
@@ -114,6 +114,8 @@ class SubjectController extends Controller
         $subject->price_per_hour=$request->price_per_hour;
         $subject->save();
 
+        $subject=Subject::with('program','country','field')->find($subject->id);
+
         return response()->json([
             'success' => true,
             'message' => "subject stored successfully",
@@ -130,7 +132,7 @@ class SubjectController extends Controller
     public function show($id)
     {
         
-         $subject = Subject::find($id);
+         $subject = Subject::with('program','country','field')->find($id);
         if (is_null($subject)) {
             return response()->json('Data not found', 404); 
         }
@@ -191,6 +193,9 @@ class SubjectController extends Controller
             return response()->json(['message'=>'Data not found'], 404); 
         }
         $subject->update($request->all());
+
+          $subject=Subject::with('program','country','field')->find($subject->id);
+
          return response()->json([
             'success' => true,
             'message' => "subject data updated successfully",

@@ -9,8 +9,8 @@ class UserAssignment extends Model
 {
     use HasFactory;
 
-     protected $casts = [
-       
+    protected $casts = [
+
         'file' => 'array',
     ];
 

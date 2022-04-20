@@ -26,6 +26,131 @@ use JWTAuth;
 
 class UserController extends Controller
 {
+
+
+
+    public function change_avatar(Request $request)
+    {
+        $rules = [
+
+            'avatar' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        if ($request->hasFile('avatar')) {
+          
+            $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->avatar->getClientOriginalExtension();
+            $request->avatar->move(public_path('uploads/images'), $imageName);
+
+            $user=User::find($token_user->id);
+            $user->avatar=$imageName;
+            $user->update();
+
+
+             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+        
+
+
+          return response()->json([
+            'status' => true,
+            'message' => 'avatar changes successfully',
+            'avatar' => $imageName,
+            'token' => $token
+          
+
+        ]);
+
+
+            //************* Resource files ends **********\\
+        }else{
+
+             return response()->json([
+            'status' => true,
+            'message' => 'file not found',
+          
+
+        ]);
+
+        }
+
+      
+    }
+    
+    
+    public function change_cover(Request $request)
+    {
+        $rules = [
+
+            'cover_img' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        if ($request->hasFile('cover_img')) {
+          
+            $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->cover_img->getClientOriginalExtension();
+            $request->cover_img->move(public_path('uploads/images'), $imageName);
+
+
+            $user=User::find($token_user->id);
+            $user->cover_img=$imageName;
+            $user->update();
+        
+
+
+          return response()->json([
+            'status' => true,
+            'message' => 'cover image changes successfully',
+            'cover_img' => $imageName,
+          
+
+        ]);
+
+
+            //************* Resource files ends **********\\
+        }else{
+
+             return response()->json([
+            'status' => true,
+            'message' => 'file not found',
+          
+
+        ]);
+
+        }
+
+      
+    }
     
     
     public function invite_friends(Request $request)
@@ -87,12 +212,12 @@ class UserController extends Controller
       
         
        
-    } public function teacher_reject(Request $request)
+    } public function teacher_reject(Request $request,$id)
     {
    
         $rules = [
             
-            'interview_request_id' => 'required',
+           
              'admin_comments' => 'required',
          
         ];
@@ -114,7 +239,7 @@ class UserController extends Controller
         }
       
         
-         $interview_req=TeacherInterviewRequest::find($request->interview_request_id);
+         $interview_req=TeacherInterviewRequest::find($id);
          
          if($interview_req != null){
              
@@ -148,7 +273,7 @@ class UserController extends Controller
          }
        
     }  
-    public function teacher_approve(Request $request)
+    public function teacher_approve(Request $request,$id)
     {
        
     //   print_r($request->all());die;
@@ -156,8 +281,8 @@ class UserController extends Controller
     
        
         $rules = [
-            
-            'interview_request_id' => 'required',
+           
+             'subjects' => 'required',
              'admin_comments' => 'required',
          
         ];
@@ -179,11 +304,17 @@ class UserController extends Controller
         }
       
         
-         $interview_req=TeacherInterviewRequest::find($request->interview_request_id);
+         $interview_req=TeacherInterviewRequest::find($id);
          
          if($interview_req != null){
-             
-             
+               $teacher_subjects=json_decode(json_encode($request->subjects));
+                       foreach($teacher_subjects as $subj){
+                         $sub=TeacherSubject::find($subj->id);
+                                if($sub != null){
+                                    $sub->hourly_price=$subj->hourly_price;
+                                    $sub->update();
+                                }
+                 }      
              $interview_req->status='approved';
              $interview_req->admin_comments=$request->admin_comments;
              $interview_req->update();
@@ -254,7 +385,7 @@ class UserController extends Controller
                         $teacher_avail->save();
                   
                    
-                   $teacher_availability=TeacherAvailability::where('user_id',$token_user->id)->where('day',$request->day)->get();
+                   $teacher_availability=TeacherAvailability::where('user_id',$token_user->id)->get();
                    
                     return response()->json([
                 
@@ -276,7 +407,7 @@ class UserController extends Controller
                  }
                  
                  
-                  $lings=TeacherSubject::where('user_id',$token_user->id)->get();
+                  $lings=TeacherAvailability::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -288,38 +419,22 @@ class UserController extends Controller
         
         
     }
-     public function remove_availability(Request $request)
+     public function remove_availability(Request $request,$id)
     {
         
-         $rules = [
-             'id' => 'required',     
-        ];
         
-        $validator=Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
-            return response()->json([
-                
-                'status' => 'false',
-                'errors' => $errors,
-                ],400) ;
-           
-        }
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
       
-         $avail=TeacherAvailability::find($request->id);
+         $avail=TeacherAvailability::find($id);
          
                  if($avail != null){
                      
                      $avail->delete();
                      
-                    $teacher_availability=TeacherAvailability::where('user_id',$token_user->id)->where('day',$request->day)->get();
+                    $teacher_availability=TeacherAvailability::where('user_id',$token_user->id)->get();
                     return response()->json([
                 
                         'status' => 'true',
@@ -340,7 +455,7 @@ class UserController extends Controller
                  }
                  
                  
-                  $lings=TeacherSubject::where('user_id',$token_user->id)->get();
+                  $lings=TeacherAvailability::where('user_id',$token_user->id)->get();
                  
              return response()->json([
                 
@@ -611,553 +726,538 @@ class UserController extends Controller
     }
      public function teacher_complete_account(Request $request)
     {
-        $token_1 = JWTAuth::getToken();
-        $token_user = JWTAuth::toUser($token_1);
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
 
-        
-       $rules = [
             
-            'step' => 'required|min:1|max:4',
-            
-        ];
-        if ($request->step == 1) {
-            
-            $rules['gender'] = 'required|string';
-            $rules['nationality'] = 'required|string';
-            $rules['date_of_birth'] = 'required|string';
-            $rules['postal_code'] = 'required';
-            $rules['country'] = 'required|string';
-            $rules['city'] = 'required|string';
-            $rules['address'] = 'required|string';
-            $rules['bio'] = 'required|string';
-           
-        
-        }
-         if ($request->step == 2) {
-             
-            $rules['avatar'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100';
-           
-           
-         if($request->hasFile('cover_img')){
-             
-              $rules['cover_img'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
-         }
-           
-           
-        }
-         if ($request->step == 3) {
-             
-            
-            $rules['name_of_university'] = 'required|string';
-            $rules['degree_level'] = 'required|string';
-            $rules['degree_field'] = 'required|string';
-            $rules['spoken_languages'] = 'required';
-            $rules['computer_skills'] = 'required|string';
-            $rules['teaching_experience'] = 'required|string';
-            $rules['teaching_experience_online'] = 'required|string';
-            $rules['video'] = 'required|mimes:mp4,ogx,oga,ogv,ogg,webm|max:152400';
-            // $rules['current_title'] = 'required|string';
-          
-        }
-        
-        
-         if ($request->step == 4) {
-            
-           
-            $rules['type_of_tutoring'] = 'required|string';
-           
-            $rules['availability_start_date'] = 'required|string';
-            $rules['availability_end_date'] = 'required|string';
-            
-          
-            $rules['availability'] = 'required';
-          
-            
-           
-        }
-        
-        
-         if ($request->step == 5) {
-            
-            $rules['subjects'] = 'required';
-           
-        }
-        
-        
-        $validator=Validator::make($request->all(),$rules);
-
-       
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
-            return response()->json([
+            $rules = [
                 
-                'status' => 'false',
-                'errors' => $errors,
-                ],400) ;
-           
-        }
-        
-        
-         if ($request->step == 1) {
-             
-             
-            $user=User::find($token_user->id);
-
-
-            if($user->gender == null && $user->address == null && $user->country == null && $user->city == null){
-
-                $user->profile_completed_step=1;
-            }
-
-            $user->gender = $request->gender;
-            $user->nationality = $request->nationality;
-            $user->date_of_birth = $request->date_of_birth;
-            $user->address = $request->address;
-            $user->bio = $request->bio;
-            $user->postal_code = $request->postal_code;
-            $user->country = $request->country;
-            $user->city = $request->city;
-            
-            
-            if($request->middle_name){
+                'step' => 'required|min:1|max:4',
                 
-                 $user->middle_name = $request->middle_name;
+            ];
+            if ($request->step == 1) {
                 
-            }
-            if($request->hasFile('avatar')){
-                
-              $imageName = rand(10,100).time().'.'.$request->avatar->getClientOriginalExtension();
-              $request->avatar->move(public_path('uploads/images'), $imageName);
-              $user->avatar = $imageName;
-         }
-           if($request->hasFile('cover_img')){
-               $imageName = rand(10,100).time().'.'.$request->cover_img->getClientOriginalExtension();
-               $request->cover_img->move(public_path('uploads/images'), $imageName);
-              $user->cover_img = $imageName;
-         }
-         
-         
+                $rules['gender'] = 'required|string';
+                $rules['nationality'] = 'required';
+                $rules['date_of_birth'] = 'required|string';
+                $rules['postal_code'] = 'required';
+                $rules['country'] = 'required';
+                $rules['city'] = 'required';
+                $rules['address'] = 'required|string';
+                $rules['bio'] = 'required|string';
                
-          $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                    
-         $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-
-         
-        //  return $user;
-       $user->update();
-       
-         return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]);
-          
-          
-        
-        }
-         if ($request->step == 2) {
             
-             
-            $user=User::find($token_user->id);
-
-
-            if($user->avatar == null && $user->cover_img == null){
-
-                 $user->profile_completed_step=2;
             }
-             
-            if($request->hasFile('avatar')){
-                
-              $imageName = rand(10,100).time().'.'.$request->avatar->getClientOriginalExtension();
-              $request->avatar->move(public_path('uploads/images'), $imageName);
-              $user->avatar = $imageName;
-         }
-           if($request->hasFile('cover_img')){
-               $imageName = rand(10,100).time().'.'.$request->cover_img->getClientOriginalExtension();
-               $request->cover_img->move(public_path('uploads/images'), $imageName);
-              $user->cover_img = $imageName;
-         }
-         
-        //  return $user;
-       $user->update();
-
-
-
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+             if ($request->step == 2) {
                  
-           $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-       
-         return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]);
-          
-          
-            
-        
-        }
-         if ($request->step == 3) {
-
-
-
-             $languages=json_decode($request->spoken_languages);
+                $rules['avatar'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100';
                
-               foreach($languages as $language){
-                   
                
-                  
-                 $ling=SpokenLanguage::where('user_id',$token_user->id)->where('language',$language->language_id)->first();
-         
-                 if($ling == null){
-                  $lang=new SpokenLanguage();
-                  $lang->user_id=$token_user->id;
-                  $lang->language=$language->language_id;
-                  $lang->level=$language->level;
-                  $lang->save();
-                 }else{
-                  $ling->user_id=$token_user->id;
-                  $ling->language=$language->language_id;
-                  $ling->level=$language->level;
-                  $ling->update();
-                 }
+             if($request->hasFile('cover_img')){
                  
-                   
-               }
+                  $rules['cover_img'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
+             }
                
-             
-             
-               $ling=SpokenLanguage::where('user_id',$token_user->id)->first();
-               if($ling == null){
-                   
-             return response()->json([
-                
-                'status' => false,
-                'message' => 'please add language first',
-                ],400);
-          
-                   
-               }
-             
-           $teaching_quali=TeachingQualification::where('user_id',$token_user->id)->first();
-             
-             if($teaching_quali == null){
-              $teaching_quali=new TeachingQualification();
-               $teaching_quali->user_id = $token_user->id;
-               $teaching_quali->name_of_university = $request->name_of_university;
-            $teaching_quali->degree_level = $request->degree_level;
-            $teaching_quali->degree_field = $request->degree_field;
-           
-            $teaching_quali->computer_skills = $request->computer_skills;
-           $teaching_quali->teaching_experience =$request->teaching_experience;
-           $teaching_quali->teaching_experience_online =$request->teaching_experience_online;
-           $teaching_quali->current_employer = $request->current_employer;
-           $teaching_quali->current_title = $request->current_title;
-
-            if($request->hasFile('video')){
-                
-              $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
-              $request->video->move(public_path('uploads/teacher_videos'), $imageName);
-              $teaching_quali->video = $imageName;
+               
             }
-               $teaching_quali->save();  
-               
+             if ($request->step == 3) {
+                 
+                
+                $rules['name_of_university'] = 'required|string';
+                $rules['degree_level'] = 'required|string';
+                $rules['degree_field'] = 'required|string';
+                $rules['spoken_languages'] = 'required';
+                $rules['computer_skills'] = 'required|string';
+                $rules['teaching_experience'] = 'required|string';
+                $rules['teaching_experience_online'] = 'required|string';
+                $rules['video'] = 'required|mimes:mp4,ogx,oga,ogv,ogg,webm|max:152400';
+                // $rules['current_title'] = 'required|string';
               
-               
-               
-             $user=User::find($token_user->id);
-                $user->profile_completed_step=3;
-               $user->update();
-
-
-             
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                    
-                $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-             
-                return response()->json([
+            }
+            
+            
+             if ($request->step == 4) {
                 
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]) ;
-                 
-             }else{
-
-
-                  
                
-               $teaching_quali->user_id = $token_user->id;
-               $teaching_quali->name_of_university = $request->name_of_university;
-               $teaching_quali->degree_level = $request->degree_level;
-               $teaching_quali->degree_field = $request->degree_field;
+                $rules['type_of_tutoring'] = 'required|string';
+               
+                $rules['availability_start_date'] = 'required|string';
+                $rules['availability_end_date'] = 'required|string';
+                
+              
+                $rules['availability'] = 'required';
+              
+                
+               
+            }
+            
+            
+             if ($request->step == 5) {
+                
+                $rules['subjects'] = 'required';
+               
+            }
+            
+            
+            $validator=Validator::make($request->all(),$rules);
+
            
-               $teaching_quali->computer_skills = $request->computer_skills;
+            if($validator->fails())
+            {
+                $messages=$validator->messages();
+                $errors=$messages->all();
+                
+                return response()->json([
+                    
+                    'status' => 'false',
+                    'errors' => $errors,
+                    ],400) ;
+               
+            }
+            
+            
+             if ($request->step == 1) {
+     
+                $user=User::find($token_user->id);
+
+                if($user->gender == null && $user->address == null && $user->country == null && $user->city == null){
+
+                    $user->profile_completed_step=1;
+                }
+
+                $user->gender = $request->gender;
+                $user->nationality = $request->nationality;
+                $user->date_of_birth = $request->date_of_birth;
+                $user->address = $request->address;
+                $user->bio = $request->bio;
+                $user->postal_code = $request->postal_code;
+                $user->country = $request->country;
+                $user->city = $request->city;
+                
+                
+                if($request->middle_name){
+                    
+                     $user->middle_name = $request->middle_name;
+                    
+                }
+
+                   $user->update();
+              
+             
+                   
+              $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+             $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+
+             
+            //  return $user;
+        
+           
+             return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]);
+              
+              
+            
+            }
+             if ($request->step == 2) {
+                
+                 
+                $user=User::find($token_user->id);
+
+
+                if($user->avatar == null && $user->cover_img == null){
+
+                     $user->profile_completed_step=2;
+                }
+                 
+                if($request->hasFile('avatar')){
+                    
+                  $imageName = rand(10,100).time().'.'.$request->avatar->getClientOriginalExtension();
+                  $request->avatar->move(public_path('uploads/images'), $imageName);
+                  $user->avatar = $imageName;
+             }
+               if($request->hasFile('cover_img')){
+                   $imageName = rand(10,100).time().'.'.$request->cover_img->getClientOriginalExtension();
+                   $request->cover_img->move(public_path('uploads/images'), $imageName);
+                  $user->cover_img = $imageName;
+             }
+             
+            //  return $user;
+           $user->update();
+
+
+
+                   
+                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                     
+               $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+           
+             return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]);
+              
+              
+                
+            
+            }
+             if ($request->step == 3) {
+
+
+
+                 $languages=json_decode($request->spoken_languages);
+                   
+                   foreach($languages as $language){
+                       
+                   
+                      
+                     $ling=SpokenLanguage::where('user_id',$token_user->id)->where('language',$language->language_id)->first();
+             
+                     if($ling == null){
+                      $lang=new SpokenLanguage();
+                      $lang->user_id=$token_user->id;
+                      $lang->language=$language->language_id;
+                      $lang->level=$language->level;
+                      $lang->save();
+                     }else{
+                      $ling->user_id=$token_user->id;
+                      $ling->language=$language->language_id;
+                      $ling->level=$language->level;
+                      $ling->update();
+                     }
+                     
+                       
+                   }
+                   
+                 
+                 
+                   $ling=SpokenLanguage::where('user_id',$token_user->id)->first();
+                   if($ling == null){
+                       
+                 return response()->json([
+                    
+                    'status' => false,
+                    'message' => 'please add language first',
+                    ],400);
+              
+                       
+                   }
+                 
+               $teaching_quali=TeachingQualification::where('user_id',$token_user->id)->first();
+                 
+                 if($teaching_quali == null){
+                  $teaching_quali=new TeachingQualification();
+                   $teaching_quali->user_id = $token_user->id;
+                   $teaching_quali->name_of_university = $request->name_of_university;
+                $teaching_quali->degree_level = $request->degree_level;
+                $teaching_quali->degree_field = $request->degree_field;
+               
+                $teaching_quali->computer_skills = $request->computer_skills;
                $teaching_quali->teaching_experience =$request->teaching_experience;
+               $teaching_quali->teaching_experience_online =$request->teaching_experience_online;
                $teaching_quali->current_employer = $request->current_employer;
                $teaching_quali->current_title = $request->current_title;
-           if($request->hasFile('video')){
+
+                if($request->hasFile('video')){
+                    
+                  $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
+                  $request->video->move(public_path('uploads/teacher_videos'), $imageName);
+                  $teaching_quali->video = $imageName;
+                }
+                   $teaching_quali->save();  
+                   
+                  
+                   
+                   
+                 $user=User::find($token_user->id);
+                    $user->profile_completed_step=3;
+                   $user->update();
+
+
+                 
+                   
+                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+                    $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                 
+                    return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                 }else{
+
+
+                      
+                   
+                   $teaching_quali->user_id = $token_user->id;
+                   $teaching_quali->name_of_university = $request->name_of_university;
+                   $teaching_quali->degree_level = $request->degree_level;
+                   $teaching_quali->degree_field = $request->degree_field;
+               
+                   $teaching_quali->computer_skills = $request->computer_skills;
+                   $teaching_quali->teaching_experience =$request->teaching_experience;
+                   $teaching_quali->current_employer = $request->current_employer;
+                   $teaching_quali->current_title = $request->current_title;
+               if($request->hasFile('video')){
+                    
+                  $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
+                  $request->video->move(public_path('uploads/teacher_videos'), $imageName);
+                  $teaching_quali->video = $imageName;
+                }
+                   $teaching_quali->update();  
+                   
+                   
+                 
+                   
+                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                     
+                     
+               $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+                     return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                     
+                 }
+               
+            } 
+          
+            if ($request->step == 4) {
                 
-              $imageName = rand(10,100).time().'.'.$request->video->getClientOriginalExtension();
-              $request->video->move(public_path('uploads/teacher_videos'), $imageName);
-              $teaching_quali->video = $imageName;
+            
+                 $teaching_specs=TeachingSpecification::where('user_id',$token_user->id)->first();
+                 
+                 if($teaching_specs == null){
+                     $teaching_spec=new TeachingSpecification();
+                     $teaching_spec->user_id = $token_user->id;
+                    
+                     $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
+                     
+                     $teaching_spec->availability_start_date = $request->availability_start_date;
+                     $teaching_spec->availability_end_date =$request->availability_end_date;
+                     $teaching_spec->save();  
+                   
+                     
+                   $availabilities=json_decode(json_encode($request->availability));
+                
+                
+                   foreach($availabilities as $availability){
+
+                    // print_r($availability->time_slots);die;
+                       
+                        $availability_slots=$availability->time_slots;
+                         
+                       foreach($availability_slots as $slot){
+                           
+                        //   return $slot;
+                           
+                             $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->start_time)->where('time_to',$slot->end_time)->first();
+                                
+                            if($avail == null){
+                                
+                                $teacher_sub=new TeacherAvailability();
+                                $teacher_sub->user_id=$token_user->id;
+                                $teacher_sub->day=$availability->day;
+                                $teacher_sub->time_from=$slot->start_time;
+                                $teacher_sub->time_to=$slot->end_time;
+                                $teacher_sub->save();
+                            }else{
+                                $avail->user_id=$token_user->id;
+                                $avail->day=$availability->day;
+                                $avail->time_from=$slot->start_time;
+                                $avail->time_to=$slot->end_time;
+                                $avail->update();
+                            }
+                           
+                           
+                       }
+                      
+                     
+                   }
+                   
+                  
+                    $user=User::find($token_user->id);
+                    $user->profile_completed_step=4;
+                   $user->update();
+
+                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                       
+                    $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+
+                   
+                    return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                 }else{
+                      
+                   
+                 
+                   $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
+                  
+                   $teaching_specs->availability_start_date = $request->availability_start_date;
+                   $teaching_specs->availability_end_date =$request->availability_end_date;
+                  
+                  
+                   $teaching_specs->update();  
+                   
+                   
+                     
+                
+                 $availabilities=json_decode(json_encode($request->availability));
+                
+                
+                   foreach($availabilities as $availability){
+
+                    // print_r($availability->time_slots);die;
+                       
+                        $availability_slots=$availability->time_slots;
+                         
+                       foreach($availability_slots as $slot){
+                           
+                        //   return $slot;
+                           
+                             $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->start_time)->where('time_to',$slot->end_time)->first();
+                                
+                            if($avail == null){
+                                
+                                $teacher_sub=new TeacherAvailability();
+                                $teacher_sub->user_id=$token_user->id;
+                                $teacher_sub->day=$availability->day;
+                                $teacher_sub->time_from=$slot->start_time;
+                                $teacher_sub->time_to=$slot->end_time;
+                                $teacher_sub->save();
+                            }else{
+                                $avail->user_id=$token_user->id;
+                                $avail->day=$availability->day;
+                                $avail->time_from=$slot->start_time;
+                                $avail->time_to=$slot->end_time;
+                                $avail->update();
+                            }
+                           
+                           
+                       }
+                      
+                     
+                   }
+                   
+                   
+                  $user=User::find($token_user->id);
+                    $user->profile_completed_step=4;
+                   $user->update();
+               
+                                
+                   
+             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+                     return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                     
+                 }
+               
+               
+                
+            
             }
-               $teaching_quali->update();  
-               
-               
-             
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                 
-                 
-           $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-               
-                 return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]) ;
-                 
-                 
-             }
-           
-        } 
-      
-        if ($request->step == 4) {
-            
-        
-             $teaching_specs=TeachingSpecification::where('user_id',$token_user->id)->first();
-             
-             if($teaching_specs == null){
-                 $teaching_spec=new TeachingSpecification();
-                 $teaching_spec->user_id = $token_user->id;
-                
-                 $teaching_spec->type_of_tutoring = $request->type_of_tutoring;
-                 
-                 $teaching_spec->availability_start_date = $request->availability_start_date;
-                 $teaching_spec->availability_end_date =$request->availability_end_date;
-                 $teaching_spec->save();  
-               
-                 
-               $availabilities=json_decode($request->availability);
-            
-            
-               foreach($availabilities as $availability){
+            if ($request->step == 5) {
 
-                // print_r($availability->time_slots);die;
-                   
-                    $availability_slots=$availability->time_slots;
-                     
-                   foreach($availability_slots as $slot){
-                       
-                    //   return $slot;
-                       
-                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->time_from)->where('time_to',$slot->time_to)->first();
-                            
-                        if($avail == null){
-                            
-                            $teacher_sub=new TeacherAvailability();
-                            $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->day=$availability->day;
-                            $teacher_sub->time_from=$slot->time_from;
-                            $teacher_sub->time_to=$slot->time_to;
-                            $teacher_sub->save();
-                        }else{
-                            $avail->user_id=$token_user->id;
-                            $avail->day=$availability->day;
-                            $avail->time_from=$slot->time_from;
-                            $avail->time_to=$slot->time_to;
-                            $avail->update();
-                        }
-                       
-                       
-                   }
+
+                   $teacher_subjects=json_decode(json_encode($request->subjects));
+
                   
-                 
-               }
-               
-              
-                $user=User::find($token_user->id);
-                $user->profile_completed_step=4;
-               $user->update();
 
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                   
-                $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                           foreach($teacher_subjects as $subj){
 
-               
-                return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]) ;
-                 
-             }else{
-                  
-               
-             
-               $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
-              
-               $teaching_specs->availability_start_date = $request->availability_start_date;
-               $teaching_specs->availability_end_date =$request->availability_end_date;
-              
-              
-               $teaching_specs->update();  
-               
-               
-                 
-               $teacher_subjects=json_decode($request->subjects);
-               // print_r($teacher_subjects);die;
-               
-           
-                $availabilities=json_decode($request->availability);
-            
-            
-               
-               foreach($availabilities as $availability){
 
-                // print_r($availability->time_slots);die;
-                   
-                    $availability_slots=$availability->time_slots;
-                     
-                   foreach($availability_slots as $slot){
-                       
-                    //   return $slot;
-                       
-                         $avail=TeacherAvailability::where('user_id',$token_user->id)->where('day',$availability->day)->where('time_from',$slot->time_from)->where('time_to',$slot->time_to)->first();
+
+                             $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
                             
-                        if($avail == null){
-                            
-                            $teacher_sub=new TeacherAvailability();
-                            $teacher_sub->user_id=$token_user->id;
-                            $teacher_sub->day=$availability->day;
-                            $teacher_sub->time_from=$slot->time_from;
-                            $teacher_sub->time_to=$slot->time_to;
-                            $teacher_sub->save();
-                        }else{
-                            $avail->user_id=$token_user->id;
-                            $avail->day=$availability->day;
-                            $avail->time_from=$slot->time_from;
-                            $avail->time_to=$slot->time_to;
-                            $avail->update();
-                        }
-                       
-                       
-                   }
-                  
-                 
-               }
-               
-               
-               
-              $user=User::find($token_user->id);
-                $user->profile_completed_step=4;
-               $user->update();
-           
-                            
-               
-         $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                    
-        $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-               
-                 return response()->json([
-                
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]) ;
-                 
-                 
-             }
-           
-           
-            
-        
-        }
-        if ($request->step == 5) {
+
+                             if(isset($subj->program_id) && $subj->program_id == 3){
+
+                                   $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('country_id',$subj->country_id)->where('grade',$subj->grade)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
+                              }
 
 
-               $teacher_programs=json_decode(json_encode($request->programs));
+                                    if($sub == null){
+                                        
+                                        $teacher_sub=new TeacherSubject();
+                                        $teacher_sub->user_id=$token_user->id;
+                                        $teacher_sub->program_id=$subj->program_id;
+                                        $teacher_sub->field_id=$subj->field_id;
+                                         if($subj->program_id == 3){
+                                            $teacher_sub->country_id=$subj->country_id;
+                                            $teacher_sub->grade=$subj->grade;
+                                        }
+                                        $teacher_sub->subject_id=$subj->subject_id;
+                                        $teacher_sub->hourly_price=$subj->hourly_price;
+                                        $teacher_sub->save();
 
-               foreach($teacher_programs as $program){
+                                    }else{
 
-                // print_r($program);die;
-
-                       foreach($program->subjects as $subj){
-
-
-                             $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$program->program_id)->where('field_id',$program->field_id)->where('subject_id',$subj->subject_id)->first();
-                            
-                                if($sub == null){
-                                    
-                                    $teacher_sub=new TeacherSubject();
-                                    $teacher_sub->user_id=$token_user->id;
-                                    $teacher_sub->program_id=$program->program_id;
-                                    $teacher_sub->field_id=$program->field_id;
-                                     if($program->program_id == 3){
-                                        $teacher_sub->country_id=$subj->country_id;
-                                        $teacher_sub->grade=$subj->grade;
+                                        $sub->user_id=$token_user->id;
+                                        $sub->program_id=$subj->program_id;
+                                        $sub->field_id=$subj->field_id;
+                                         if($subj->program_id == 3){
+                                            $sub->country_id=$subj->country_id;
+                                            $sub->grade=$subj->grade;
+                                        }
+                                        $sub->subject_id=$subj->subject_id;
+                                        $sub->hourly_price=$subj->hourly_price;
+                                        $sub->update();
                                     }
-                                    $teacher_sub->subject_id=$subj->subject_id;
-                                    $teacher_sub->hourly_price=$subj->hourly_price;
-                                    $teacher_sub->save();
+                           
+                                   
+                     }      
 
-                                }else{
-
-                                    $sub->user_id=$token_user->id;
-                                    $sub->program_id=$program->program_id;
-                                    $sub->field_id=$program->field_id;
-                                     if($program->program_id == 3){
-                                        $sub->country_id=$subj->country_id;
-                                        $sub->grade=$subj->grade;
-                                    }
-                                    $sub->subject_id=$subj->subject_id;
-                                    $sub->hourly_price=$subj->hourly_price;
-                                    $sub->update();
-                                }
-                       
-                               
-                 }      
-
+             
+                   
+                  $user=User::find($token_user->id);
+                    $user->profile_completed_step=5;
+                   $user->update();
                
-                  
-                  
-                 
-           }
-               
-               
-              $user=User::find($token_user->id);
-                $user->profile_completed_step=5;
-               $user->update();
-           
-                            
-               
-         $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                                
+                   
+             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+                     return response()->json([
                     
-        $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-               
-                 return response()->json([
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
                 
-                'status' => true,
-                'message' => 'data updated succesfully',
-                'token' => $token,
-                ]) ;
-                 
             
-        
-        }
-        
-        
-        
+            }
+            
+            
+            
         
       
     }
@@ -1270,12 +1370,12 @@ class UserController extends Controller
            
         }
          if(!$request->hasFile('documents')) {
-        return response()->json(['upload_file_not_found']);
+        return response()->json(['upload_file_not_found'],400);
     }
         
         // $request->documents
         
-         $user=User::where('email','mabdulrehman14713@gmail.com')->first();
+         $user=User::where('email',$request->email)->first();
          
          if($user != null){
              
@@ -2000,4 +2100,362 @@ class UserController extends Controller
             'code' => 200
         ], 200);
     }
+
+
+
+
+
+
+
+
+      public function teacher_update_profile(Request $request)
+    {
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+
+            
+            $rules = [
+                
+                'step' => 'required|min:1|max:4',
+                
+            ];
+            if ($request->step == 1) {
+                
+                $rules['gender'] = 'required|string';
+                $rules['nationality'] = 'required';
+                $rules['date_of_birth'] = 'required|string';
+                $rules['postal_code'] = 'required';
+                $rules['country'] = 'required';
+                $rules['city'] = 'required';
+                $rules['address'] = 'required|string';
+                $rules['bio'] = 'required|string';
+               
+            
+            }
+             if ($request->step == 2) {
+                 
+                $rules['avatar'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100';
+               
+               
+             if($request->hasFile('cover_img')){
+                 
+                  $rules['cover_img'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
+             }
+               
+               
+            }
+             if ($request->step == 3) {
+                 
+                
+                $rules['name_of_university'] = 'required|string';
+                $rules['degree_level'] = 'required|string';
+                $rules['degree_field'] = 'required|string';
+                
+                $rules['computer_skills'] = 'required|string';
+                $rules['teaching_experience'] = 'required|string';
+                $rules['teaching_experience_online'] = 'required|string';
+               
+            }
+            
+            
+             if ($request->step == 4) {
+                
+               
+                $rules['type_of_tutoring'] = 'required|string';
+               
+                $rules['availability_start_date'] = 'required|string';
+                $rules['availability_end_date'] = 'required|string';
+               
+            }
+            
+            
+             if ($request->step == 5) {
+                
+                $rules['subjects'] = 'required';
+               
+            }
+            
+            
+            $validator=Validator::make($request->all(),$rules);
+
+           
+            if($validator->fails())
+            {
+                $messages=$validator->messages();
+                $errors=$messages->all();
+                
+                return response()->json([
+                    
+                    'status' => 'false',
+                    'errors' => $errors,
+                    ],400) ;
+               
+            }
+            
+            
+             if ($request->step == 1) {
+     
+                $user=User::find($token_user->id);
+
+
+                $user->gender = $request->gender;
+                $user->nationality = $request->nationality;
+                $user->date_of_birth = $request->date_of_birth;
+                $user->address = $request->address;
+                $user->bio = $request->bio;
+                $user->postal_code = $request->postal_code;
+                $user->country = $request->country;
+                $user->city = $request->city;
+                
+                
+                if($request->middle_name){
+                    
+                     $user->middle_name = $request->middle_name;
+                    
+                }
+               if($request->address2){
+                                
+                     $user->address2 = $request->address2;
+                    
+                }
+
+                   $user->update();
+              
+             
+                   
+              $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+             $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+
+             
+            //  return $user;
+        
+           
+             return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]);
+              
+              
+            
+            }
+             if ($request->step == 2) {
+                
+                 
+                $user=User::find($token_user->id);
+
+
+                if($user->avatar == null && $user->cover_img == null){
+
+                     $user->profile_completed_step=2;
+                }
+                 
+                if($request->hasFile('avatar')){
+                    
+                  $imageName = rand(10,100).time().'.'.$request->avatar->getClientOriginalExtension();
+                  $request->avatar->move(public_path('uploads/images'), $imageName);
+                  $user->avatar = $imageName;
+             }
+               if($request->hasFile('cover_img')){
+                   $imageName = rand(10,100).time().'.'.$request->cover_img->getClientOriginalExtension();
+                   $request->cover_img->move(public_path('uploads/images'), $imageName);
+                  $user->cover_img = $imageName;
+             }
+             
+            //  return $user;
+           $user->update();
+
+
+
+                   
+                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                     
+               $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+           
+             return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]);
+              
+              
+                
+            
+            }
+             if ($request->step == 3) {
+
+
+                 
+               $teaching_quali=TeachingQualification::where('user_id',$token_user->id)->first();
+                 
+                 if($teaching_quali == null){
+                 
+                 
+                    return response()->json([
+                    
+                    'status' => false,
+                    'message' => 'something went wrong',
+                    
+                    ],400) ;
+                     
+                 }else{
+
+                   $teaching_quali->name_of_university = $request->name_of_university;
+                   $teaching_quali->degree_level = $request->degree_level;
+                   $teaching_quali->degree_field = $request->degree_field;
+               
+                   $teaching_quali->computer_skills = $request->computer_skills;
+                   $teaching_quali->teaching_experience =$request->teaching_experience;
+                   $teaching_quali->current_employer = $request->current_employer;
+                   $teaching_quali->current_title = $request->current_title;
+              
+                   $teaching_quali->update();  
+                   
+                   
+                 
+                   
+                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                     
+                     
+               $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+                     return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                     
+                 }
+               
+            } 
+          
+            if ($request->step == 4) {
+                
+            
+                 $teaching_specs=TeachingSpecification::where('user_id',$token_user->id)->first();
+                 
+                 if($teaching_specs == null){
+                    
+                   
+                    return response()->json([
+                    
+                    'status' => false,
+                    'message' => 'something went wrong',
+                   
+                    ]) ;
+                     
+                 }else{
+                      
+                   $teaching_specs->type_of_tutoring = $request->type_of_tutoring;
+                   $teaching_specs->availability_start_date = $request->availability_start_date;
+                   $teaching_specs->availability_end_date =$request->availability_end_date;
+                   $teaching_specs->update();  
+                   
+                                
+                   
+             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+                     return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                     
+                 }
+                           
+            }
+            if ($request->step == 5) {
+
+
+                   $teacher_subjects=json_decode(json_encode($request->subjects));
+
+                  
+
+                           foreach($teacher_subjects as $subj){
+
+
+
+                             $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
+                            
+
+                             if(isset($subj->program_id) && $subj->program_id == 3){
+
+                                   $sub=TeacherSubject::where('user_id',$token_user->id)->where('program_id',$subj->program_id)->where('country_id',$subj->country_id)->where('grade',$subj->grade)->where('field_id',$subj->field_id)->where('subject_id',$subj->subject_id)->first();
+                              }
+
+
+                                    if($sub == null){
+                                        
+                                        $teacher_sub=new TeacherSubject();
+                                        $teacher_sub->user_id=$token_user->id;
+                                        $teacher_sub->program_id=$subj->program_id;
+                                        $teacher_sub->field_id=$subj->field_id;
+                                         if($subj->program_id == 3){
+                                            $teacher_sub->country_id=$subj->country_id;
+                                            $teacher_sub->grade=$subj->grade;
+                                        }
+                                        $teacher_sub->subject_id=$subj->subject_id;
+                                        $teacher_sub->hourly_price=$subj->hourly_price;
+                                        $teacher_sub->save();
+
+                                    }else{
+
+                                        $sub->user_id=$token_user->id;
+                                        $sub->program_id=$subj->program_id;
+                                        $sub->field_id=$subj->field_id;
+                                         if($subj->program_id == 3){
+                                            $sub->country_id=$subj->country_id;
+                                            $sub->grade=$subj->grade;
+                                        }
+                                        $sub->subject_id=$subj->subject_id;
+                                        $sub->hourly_price=$subj->hourly_price;
+                                        $sub->update();
+                                    }
+                           
+                                   
+                     }      
+
+             
+                   
+                  $user=User::find($token_user->id);
+                    $user->profile_completed_step=5;
+                   $user->update();
+               
+                                
+                   
+             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
+                        
+            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+                   
+                     return response()->json([
+                    
+                    'status' => true,
+                    'message' => 'data updated succesfully',
+                    'token' => $token,
+                    ]) ;
+                     
+                
+            
+            }
+            
+            
+            
+        
+      
+    }
+    
+
+
+
+
+
 }

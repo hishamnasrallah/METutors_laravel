@@ -273,14 +273,14 @@ class ClassController extends Controller
         $teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'kudos_points')
             ->with('teacher_qualification', 'teacher_specification', 'spoken_languages', 'teacher_subjects')
             ->with(['feedbacks' => function ($query) use ($teacher_id) {
-                $query->where('reciever_id', $teacher_id);
+                $query->where('receiver_id', $teacher_id);
             }])
             // ->with('feedbacks.user')
             ->find($teacher_id);
 
-        $total_feedbacks = UserFeedback::where('reciever_id', $teacher_id)->count();
+        $total_feedbacks = UserFeedback::where('receiver_id', $teacher_id)->count();
         if ($total_feedbacks > 0) {
-            $total_rating = UserFeedback::where('reciever_id', $teacher_id)->sum('rating');
+            $total_rating = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
             $average_feedback = $total_rating / $total_feedbacks;
         }
 
@@ -288,30 +288,30 @@ class ClassController extends Controller
         $courses_created = Course::where('teacher_id', $teacher_id)->count();
 
         $expert_rating = 0;
-        $expert_rating_total = UserFeedback::where('feedback_id', 1)->where('reciever_id', $teacher_id)->count();
+        $expert_rating_total = UserFeedback::where('feedback_id', 1)->where('receiver_id', $teacher_id)->count();
         if ($expert_rating_total > 0) {
-            $expert_rating_sum = UserFeedback::where('feedback_id', 1)->where('reciever_id', $teacher_id)->sum('rating');
+            $expert_rating_sum = UserFeedback::where('feedback_id', 1)->where('receiver_id', $teacher_id)->sum('rating');
             $expert_rating = $expert_rating_sum / $expert_rating_total;
         }
 
         $complexity_rating = 0;
-        $complexity_rating_total = UserFeedback::where('feedback_id', 2)->where('reciever_id', $teacher_id)->count();
+        $complexity_rating_total = UserFeedback::where('feedback_id', 2)->where('receiver_id', $teacher_id)->count();
         if ($complexity_rating_total > 0) {
-            $complexity_rating_sum = UserFeedback::where('feedback_id', 2)->where('reciever_id', $teacher_id)->sum('rating');
+            $complexity_rating_sum = UserFeedback::where('feedback_id', 2)->where('receiver_id', $teacher_id)->sum('rating');
             $complexity_rating = $complexity_rating_sum / $complexity_rating_total;
         }
 
         $skillfull_rating = 0;
-        $skillfull_rating_total = UserFeedback::where('feedback_id', 3)->where('reciever_id', $teacher_id)->count();
+        $skillfull_rating_total = UserFeedback::where('feedback_id', 3)->where('receiver_id', $teacher_id)->count();
         if ($skillfull_rating_total > 0) {
-            $skillfull_rating_sum = UserFeedback::where('feedback_id', 3)->where('reciever_id', $teacher_id)->sum('rating');
+            $skillfull_rating_sum = UserFeedback::where('feedback_id', 3)->where('receiver_id', $teacher_id)->sum('rating');
             $skillfull_rating = $skillfull_rating_sum / $skillfull_rating_total;
         }
 
         $onTime_rating = 0;
-        $onTime_rating_total = UserFeedback::where('feedback_id', 4)->where('reciever_id', $teacher_id)->count();
+        $onTime_rating_total = UserFeedback::where('feedback_id', 4)->where('receiver_id', $teacher_id)->count();
         if ($onTime_rating_total > 0) {
-            $onTime_rating_sum = UserFeedback::where('feedback_id', 4)->where('reciever_id', $teacher_id)->sum('rating');
+            $onTime_rating_sum = UserFeedback::where('feedback_id', 4)->where('receiver_id', $teacher_id)->sum('rating');
             $onTime_rating = $onTime_rating_sum / $onTime_rating_total;
         }
 
@@ -348,9 +348,9 @@ class ClassController extends Controller
 
         $average_rating = 0;
         $teacher_id = $request->teacher_id;
-        $total_feedbacks = UserFeedback::where('reciever_id', $teacher_id)->count();
+        $total_feedbacks = UserFeedback::where('receiver_id', $teacher_id)->count();
         if ($total_feedbacks != 0) {
-            $total_rating = UserFeedback::where('reciever_id', $teacher_id)->sum('rating');
+            $total_rating = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
             $average_rating = $total_rating / $total_feedbacks;
         }
 
@@ -387,7 +387,7 @@ class ClassController extends Controller
 
         $apiURL = 'https://api.braincert.com/v2/schedule';
         $postInput = [
-            'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+            'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
             'title' =>  $request->title,
             'timezone' => 90,
             'start_time' => $class->start_time,
@@ -441,10 +441,24 @@ class ClassController extends Controller
     //*********/ Start Class *********
     public function class_url(Request $request, $id)
     {
-
         $class = AcademicClass::find($id);
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
+
+        if ($class->status == 'canceled') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Class has been Canceled!'
+            ], 400);
+        }
+
+        if ($class->teacher_id == null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Teacher not assigned yet!'
+            ], 400);
+        }
+
 
         if ($class == null) {
             return response()->json([
@@ -460,7 +474,7 @@ class ClassController extends Controller
         }
         $apiURL = 'https://api.braincert.com/v2/getclasslaunch';
         $postInput = [
-            'apikey' => "PU0MLbUZrGbmonA3PHny",
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
             'class_title' =>  $class->title,
             'class_id' => $class->class_id,
             'userId' => $token_user->id,
@@ -479,7 +493,6 @@ class ClassController extends Controller
         if ($responseBody['status'] == 'error') {
             return response()->json([
                 'status' => false,
-                'message' => $responseBody['error'],
                 'error' => $responseBody['error'],
             ], 400);
         } else {
@@ -612,8 +625,8 @@ class ClassController extends Controller
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending','active', 'inprogress'])->where('program_id', $program->id)->orderBy('id','desc')->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id','desc')->get();
                 $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
 
                 return response()->json([
@@ -636,8 +649,8 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending','active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
                     $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
 
 
@@ -661,8 +674,8 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending','active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
                     $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
                     return response()->json([
@@ -688,8 +701,8 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending','active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
                 $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
                 return response()->json([
@@ -707,8 +720,8 @@ class ClassController extends Controller
 
             $program = Program::where('code', $request->program)->first();
 
-            $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->get();
-            $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->get();
+            $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending','active', 'inprogress'])->orderBy('id','desc')->get();
+            $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id','desc')->get();
             $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
             return response()->json([
@@ -894,7 +907,7 @@ class ClassController extends Controller
 
         $apiURL = 'https://api.braincert.com/v2/listclass';
         $postInput = [
-            'apikey' => "PU0MLbUZrGbmonA3PHny",
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
             'search' => $request->search,
         ];
 
@@ -1043,7 +1056,7 @@ class ClassController extends Controller
 
                     $apiURL = 'https://api.braincert.com/v2/updateclass';
                     $postInput = [
-                        'apikey' => "PU0MLbUZrGbmonA3PHny",
+                        'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                         'id' => $class->class_id,
                         'start_time' => $request->start_time,
                         'end_time' => $request->end_time,
@@ -1070,7 +1083,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Date has been Passed",
+                'errors' => "Class Date has been Passed",
             ], 400);
         }
     }
@@ -1100,7 +1113,7 @@ class ClassController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $teacher = User::find($token_user->id);
-        $feedbacks = UserFeedback::with('sender', 'feedback')->where('reciever_id', $token_user->id)->get();
+        $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
             'message' => 'Teacher Kudos points',
@@ -1116,17 +1129,18 @@ class ClassController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $course = Course::with('classes')->find($course_id);
+        if ($course->status == 'completed') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coutrse has been completed!',
+            ], 400);
+        }
 
-        $start_time = $request->start_time;
-        $end_time = $request->end_time;
-        // checking teacher availabilty
+
         $availability = TeacherAvailability::where('user_id', $course->teacher_id)->get();
-        // $weekdays = json_decode($request->weekdays);
-        $requestedClasses = json_decode($request->classes);
+        $requestedClasses = json_decode(json_encode($request->classes));
         foreach ($requestedClasses as $class) {
-            //  $class->day;
             $weekAvailabilities = $availability->where('day', $class->day);
-            // echo count($weekAvailabilities);
             if (count($weekAvailabilities) == 0) {
                 return response()->json([
                     'status' => false,
@@ -1174,11 +1188,12 @@ class ClassController extends Controller
         $course->total_classes = $course->total_classes + $request->total_classes;
         $course->total_price = $course->total_price + $request->total_price;
         $course->total_hours = $course->total_hours + $request->total_hours;
+        $counter = count($course['classes']) + 1;
 
         foreach ($requestedClasses as $reqClass) {
             $academicClass = new AcademicClass();
-            $academicClass->start_date = $request->start_date;
-            $academicClass->end_date = $request->end_date;
+            $academicClass->start_date = $reqClass->date;
+            $academicClass->end_date = $reqClass->date;
             $academicClass->day = $reqClass->day;
             $academicClass->start_time = $reqClass->start_time;
             $academicClass->end_time = $reqClass->end_time;
@@ -1187,7 +1202,59 @@ class ClassController extends Controller
             $academicClass->student_id = $token_user->id;
             $academicClass->teacher_id = $course->teacher_id;
             $academicClass->course_id = $course_id;
-            $academicClass->save();
+            // $academicClass->save();
+
+            /// Curl Implementation
+
+            $apiURL = 'https://api.braincert.com/v2/schedule';
+            $postInput = [
+                'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+                'title' =>  'class' . $counter,
+                'timezone' => 90,
+                'start_time' => $academicClass->start_time,
+                'end_time' => $academicClass->end_time,
+                'date' => $academicClass->start_date,
+                'currency' => "USD",
+                'ispaid' => null,
+                'is_recurring' => 1,
+                'repeat' => 1,
+                'weekdays' => $reqClass->day,
+                'end_date' => $academicClass->end_date,
+                'seat_attendees' => null,
+                'record' => 0,
+                'isRecordingLayout ' => 1,
+                'isVideo  ' => 1,
+                'isBoard ' => 0,
+                'isLang ' => null,
+                'isRegion ' => null,
+                'isCorporate ' => null,
+                'isScreenshare ' => 1,
+                'isPrivateChat  ' => 0,
+                'description ' => null,
+                'keyword ' => null,
+                'format ' => "json",
+            ];
+
+            $client = new Client();
+            $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+
+            $statusCode = $response->getStatusCode();
+            $responseBody = json_decode($response->getBody(), true);
+            if ($responseBody['status'] == "ok") {
+                $academicClass->title = 'class' . $counter;
+                $academicClass->lesson_name = 'lesson' . $counter;
+                $academicClass->class_id = $responseBody['class_id'];
+                $academicClass->status = "scheduled";
+                $course->status = "active";
+                $course->update();
+                $academicClass->save();
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $responseBody['error'],
+                ], 400);
+            }
+            $counter++;
         }
         $course->update();
 
@@ -1197,6 +1264,189 @@ class ClassController extends Controller
             'status' => true,
             'message' => 'Class Added Successfully',
             'course' => $course,
+        ]);
+    }
+
+    public function makeupClassAvailability($class_id, Request $request)
+    {
+        $rules = [
+            'start_date' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $day = Carbon::parse($request->start_date)->format('D');
+        if ($day == 'Sun') {
+            $day = 1;
+        } elseif ($day == 'Mon') {
+            $day = 2;
+        } elseif ($day == 'Tue') {
+            $day = 3;
+        } elseif ($day == 'Wed') {
+            $day = 4;
+        } elseif ($day == 'Thu') {
+            $day = 5;
+        } elseif ($day == 'Fri') {
+            $day = 6;
+        } else {
+            $day = 7;
+        }
+
+        $academic_class = AcademicClass::find($class_id);
+        $availabilities = TeacherAvailability::where('user_id', $academic_class->teacher_id)->where('day', $day)->get();
+        if ($availabilities == []) {
+            return response()->json([
+                'status' => false,
+                'errors' => 'Teacher Not Available',
+            ], 400);
+        }
+        $final_availabilities =  [];
+        $classes = AcademicClass::where('start_date', $request->start_date)->where('teacher_id', $academic_class->teacher_id)->get();
+        //if no academic classes found
+        if (count($classes) == 0) {
+            return response()->json([
+                'status' => true,
+                'message' => "Makeup Class Scheduled",
+                'day' => $day,
+                // 'availabilities' => $availabilities,
+                'availabilities' => $availabilities,
+                // 'classes' => $classes,
+            ]);
+        }
+
+        $counter = 0;
+        //if classes has some data
+        foreach ($availabilities as $availability) {
+            $availability_time_from =  Carbon::parse($availability->time_from)->format("G:i");
+            $availability_time_to = Carbon::parse($availability->time_to)->format("G:i");
+            foreach ($classes as $class) {
+                $class_start_time = Carbon::parse($class->start_time)->format("G:i");
+                $class_end_time =  Carbon::parse($class->end_time)->format("G:i");
+                // comparing times
+                if (($class_start_time >= $availability_time_from) && ($class_end_time <= $availability_time_to)) {
+                } else {
+                    $counter++;
+                    if (count($classes) == $counter) {
+                        array_push($final_availabilities, $availability);
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "Makeup Class Scheduled",
+            'day' => $day,
+            // 'availabilities' => $availabilities,
+            'availabilities' => $final_availabilities,
+            // 'classes' => $classes,
+        ]);
+    }
+
+    public function makeupClass($class_id, Request $request)
+    {
+        $rules = [
+            'start_date' =>  'required',
+            'start_time' =>  'required',
+            'end_time' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $day = Carbon::parse($request->start_date)->format('D');
+        if ($day == 'Sun') {
+            $day = 1;
+        } elseif ($day == 'Mon') {
+            $day = 2;
+        } elseif ($day == 'Tue') {
+            $day = 3;
+        } elseif ($day == 'Wed') {
+            $day = 4;
+        } elseif ($day == 'Thu') {
+            $day = 5;
+        } elseif ($day == 'Fri') {
+            $day = 6;
+        } else {
+            $day = 7;
+        }
+
+        $academic_class = AcademicClass::find($class_id);
+        $academic_class->start_date = $request->start_date;
+        $academic_class->end_date = $request->start_date;
+        $academic_class->start_time = $request->start_time;
+        $academic_class->end_time = $request->end_time;
+        $academic_class->day = $day;
+
+        $apiURL = 'https://api.braincert.com/v2/schedule';
+        $postInput = [
+            'apikey' =>  'PU0MLbUZrGbmonA3PHny',
+            'title' =>   $academic_class->title,
+            'timezone' => 90,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'date' => $request->start_date,
+            'currency' => "USD",
+            'ispaid' => null,
+            'is_recurring' => 1,
+            'repeat' => 1,
+            'weekdays' => $day,
+            'end_date' => $request->start_date,
+            'seat_attendees' => null,
+            'record' => 0,
+            'isRecordingLayout ' => 1,
+            'isVideo  ' => 1,
+            'isBoard ' => 0,
+            'isLang ' => null,
+            'isRegion ' => null,
+            'isCorporate ' => null,
+            'isScreenshare ' => 1,
+            'isPrivateChat  ' => 0,
+            'description ' => null,
+            'keyword ' => null,
+            'format ' => "json",
+        ];
+
+        $client = new Client();
+        $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+
+        $statusCode = $response->getStatusCode();
+        $responseBody = json_decode($response->getBody(), true);
+        if ($responseBody['status'] == "ok") {
+            $academic_class->class_id = $responseBody['class_id'];
+            $academic_class->status = "scheduled";
+            $academic_class->save();
+        } else {
+            return response()->json([
+                'status' => false,
+                'error' => $responseBody['error'],
+            ], 400);
+        }
+
+
+        return response()->json([
+            'status' => true,
+            'message' => "Makeup Class Scheduled",
+            'academic_class' => $academic_class,
         ]);
     }
 }

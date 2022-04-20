@@ -72,7 +72,7 @@ class Course extends Model
 
     public function assignees()
     {
-        return $this->hasMany(UserAssignment::class);
+        return $this->hasMany(UserAssignment::class)->unique('user_id');
     }
 
     public function resnponse_recieved()
@@ -88,5 +88,10 @@ class Course extends Model
     public function participants()
     {
         return $this->hasMany(ClassRoom::class, 'course_id', 'id');
+    }
+
+    public function attendence()
+    {
+        return $this->hasMany(Attendance::class, 'course_id', 'id');
     }
 }

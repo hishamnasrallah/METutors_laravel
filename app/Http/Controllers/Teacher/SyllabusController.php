@@ -547,7 +547,7 @@ class SyllabusController extends Controller
             /// Curl Implementation
             $apiURL = 'https://api.braincert.com/v2/updateclass';
             $postInput = [
-                'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+                'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
                 'id' => $academic_class->class_id
             ];
 

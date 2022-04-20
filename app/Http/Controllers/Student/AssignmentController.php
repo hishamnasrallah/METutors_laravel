@@ -10,6 +10,7 @@ use App\Models\Attendance;
 use App\Models\CanceledCourse;
 use App\Models\ClassTopic;
 use App\Models\Course;
+use App\Models\Feedback;
 use App\Models\RejectedCourse;
 use App\Models\Resource;
 use App\Models\Topic;
@@ -35,21 +36,19 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $course = Course::with('assignments')->find($course_id);
-        $user_assignments = [];
-        foreach ($course['assignments'] as $assignmnet) {
-            $userAssignment = UserAssignment::where('assignment_id', $assignmnet->id)->where('user_id', $token_user->id)->pluck('assignment_id');
-            if (count($userAssignment) > 0)
-                array_push($user_assignments, $userAssignment);
-        }
+         $corse = Course::find($course_id);
 
-        $assignments = Assignment::with('assignees', 'assignees.user')->whereIn('id', $user_assignments)->get();
-        $course = Course::with('participants', 'participants.user')->find($course_id);
+        $course = Course::with('participants', 'participants.user',  'assignments')
+            ->with(['assignments.assignees.user' => function ($q) {
+                $q->latest();
+            }])
+            ->find($course_id);
 
         $total_assinments = 0;
         $completed_assignments = 0;
         $active_assignments = 0;
-        foreach ($assignments as $assignment) {
+        foreach ($course['assignments'] as $assignment) {
+
             if ($assignment->status == 'active') {
                 $active_assignments = $active_assignments + 1;
             }
@@ -57,7 +56,17 @@ class AssignmentController extends Controller
                 $completed_assignments = $completed_assignments + 1;
             }
             $total_assinments++;
+
+            $users = [];
+            $assignees = $assignment->assignees;
+            foreach ($assignees as $assignee) {
+                $user = $assignees->whereIn('user_id', $users)->first();
+                if ($user == null) {
+                    $assignment->assignees = $user;
+                }
+            }
         }
+
 
         if (count($request->all()) >= 1) {
 
@@ -82,7 +91,7 @@ class AssignmentController extends Controller
             ]);
         }
 
-        $course->assignments = $assignments;
+        // $course->assignments = $assignments;
         return response()->json([
             'status' => true,
             'message' => 'Course Assignment Dashboard!',
@@ -171,14 +180,18 @@ class AssignmentController extends Controller
         ]);
     }
 
-    public function userAssignment($assignment_id)
+    public function userAssignment($user_assignment_id)
     {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $assignmnet = UserAssignment::with(['user', 'feedback' => function ($q) use ($assignment_id, $token_user) {
-            $q->where(['student_id' =>  $token_user->id, 'assignment_id' => $assignment_id]);
-        }])->where(['user_id' =>  $token_user->id, 'assignment_id' => $assignment_id])->latest()->first();
+        // $assignmnet = UserAssignment::with(['user', 'feedback' => function ($q) use ($assignment_id, $token_user) {
+        //     $q->where(['student_id' =>  $token_user->id, 'assignment_id' => $assignment_id]);
+        // }])->where(['user_id' =>  $token_user->id, 'assignment_id' => $assignment_id])->latest()->first();
+
+        $assignmnet = UserAssignment::with(['user', 'feedback' => function ($q) use ($user_assignment_id) {
+            $q->where('user_assignment_id', $user_assignment_id);
+        }])->where('id', $user_assignment_id)->first();
 
         return response()->json([
             'status' => true,

@@ -244,14 +244,14 @@ class ClassController extends Controller
         $teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'kudos_points')
             ->with('teacher_qualification', 'teacher_specification', 'spoken_languages', 'teacher_subjects')
             ->with(['feedbacks' => function ($query) use ($teacher_id) {
-                $query->where('reciever_id', $teacher_id);
+                $query->where('receiver_id', $teacher_id);
             }])
             // ->with('feedbacks.user')
             ->find($teacher_id);
 
-        $total_feedbacks = UserFeedback::where('reciever_id', $teacher_id)->count();
+        $total_feedbacks = UserFeedback::where('receiver_id', $teacher_id)->count();
         if ($total_feedbacks > 0) {
-            $total_rating = UserFeedback::where('reciever_id', $teacher_id)->sum('rating');
+            $total_rating = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
             $average_feedback = $total_rating / $total_feedbacks;
         }
 
@@ -259,30 +259,30 @@ class ClassController extends Controller
         $courses_created = Course::where('teacher_id', $teacher_id)->count();
 
         $expert_rating = 0;
-        $expert_rating_total = UserFeedback::where('feedback_id', 1)->where('reciever_id', $teacher_id)->count();
+        $expert_rating_total = UserFeedback::where('feedback_id', 1)->where('receiver_id', $teacher_id)->count();
         if ($expert_rating_total > 0) {
-            $expert_rating_sum = UserFeedback::where('feedback_id', 1)->where('reciever_id', $teacher_id)->sum('rating');
+            $expert_rating_sum = UserFeedback::where('feedback_id', 1)->where('receiver_id', $teacher_id)->sum('rating');
             $expert_rating = $expert_rating_sum / $expert_rating_total;
         }
 
         $complexity_rating = 0;
-        $complexity_rating_total = UserFeedback::where('feedback_id', 2)->where('reciever_id', $teacher_id)->count();
+        $complexity_rating_total = UserFeedback::where('feedback_id', 2)->where('receiver_id', $teacher_id)->count();
         if ($complexity_rating_total > 0) {
-            $complexity_rating_sum = UserFeedback::where('feedback_id', 2)->where('reciever_id', $teacher_id)->sum('rating');
+            $complexity_rating_sum = UserFeedback::where('feedback_id', 2)->where('receiver_id', $teacher_id)->sum('rating');
             $complexity_rating = $complexity_rating_sum / $complexity_rating_total;
         }
 
         $skillfull_rating = 0;
-        $skillfull_rating_total = UserFeedback::where('feedback_id', 3)->where('reciever_id', $teacher_id)->count();
+        $skillfull_rating_total = UserFeedback::where('feedback_id', 3)->where('receiver_id', $teacher_id)->count();
         if ($skillfull_rating_total > 0) {
-            $skillfull_rating_sum = UserFeedback::where('feedback_id', 3)->where('reciever_id', $teacher_id)->sum('rating');
+            $skillfull_rating_sum = UserFeedback::where('feedback_id', 3)->where('receiver_id', $teacher_id)->sum('rating');
             $skillfull_rating = $skillfull_rating_sum / $skillfull_rating_total;
         }
 
         $onTime_rating = 0;
-        $onTime_rating_total = UserFeedback::where('feedback_id', 4)->where('reciever_id', $teacher_id)->count();
+        $onTime_rating_total = UserFeedback::where('feedback_id', 4)->where('receiver_id', $teacher_id)->count();
         if ($onTime_rating_total > 0) {
-            $onTime_rating_sum = UserFeedback::where('feedback_id', 4)->where('reciever_id', $teacher_id)->sum('rating');
+            $onTime_rating_sum = UserFeedback::where('feedback_id', 4)->where('receiver_id', $teacher_id)->sum('rating');
             $onTime_rating = $onTime_rating_sum / $onTime_rating_total;
         }
 
@@ -319,9 +319,9 @@ class ClassController extends Controller
 
         $average_rating = 0;
         $teacher_id = $request->teacher_id;
-        $total_feedbacks = UserFeedback::where('reciever_id', $teacher_id)->count();
+        $total_feedbacks = UserFeedback::where('receiver_id', $teacher_id)->count();
         if ($total_feedbacks != 0) {
-            $total_rating = UserFeedback::where('reciever_id', $teacher_id)->sum('rating');
+            $total_rating = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
             $average_rating = $total_rating / $total_feedbacks;
         }
 
@@ -358,7 +358,7 @@ class ClassController extends Controller
 
         $apiURL = 'https://api.braincert.com/v2/schedule';
         $postInput = [
-            'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+            'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
             'title' =>  $request->title,
             'timezone' => 90,
             'start_time' => $class->start_time,
@@ -431,7 +431,7 @@ class ClassController extends Controller
         }
         $apiURL = 'https://api.braincert.com/v2/getclasslaunch';
         $postInput = [
-            'apikey' => "PU0MLbUZrGbmonA3PHny",
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
             'class_title' =>  $class->title,
             'class_id' => $class->class_id,
             'userId' => $token_user->id,
@@ -580,8 +580,8 @@ class ClassController extends Controller
                 $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id','desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id','desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
 
                 return response()->json([
@@ -604,8 +604,8 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
 
                     return response()->json([
@@ -627,8 +627,8 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     return response()->json([
@@ -654,8 +654,8 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
 
                 return response()->json([
@@ -672,8 +672,8 @@ class ClassController extends Controller
         } else {
 
             $program = Program::where('code', $request->program)->first();
-            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->get();
-            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->get();
+            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id','desc')->get();
+            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id','desc')->get();
             $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
 
             return response()->json([
@@ -828,7 +828,7 @@ class ClassController extends Controller
 
         $apiURL = 'https://api.braincert.com/v2/listclass';
         $postInput = [
-            'apikey' => "PU0MLbUZrGbmonA3PHny",
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
             'search' => $request->search,
         ];
 
@@ -937,7 +937,6 @@ class ClassController extends Controller
                 }
             }
 
-
             if ($totalDuration > 48) {
                 // if class is not scheduled by braincert
                 if ($class->class_id == null) {
@@ -961,7 +960,7 @@ class ClassController extends Controller
 
                     $apiURL = 'https://api.braincert.com/v2/updateclass';
                     $postInput = [
-                        'apikey' => "PU0MLbUZrGbmonA3PHny",
+                        'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                         'id' => $class->class_id,
                         'start_time' => $request->start_time,
                         'end_time' => $request->end_time,
@@ -988,7 +987,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Date has been Passed",
+                'errors' => "Class Date has been Passed",
             ], 400);
         }
     }
@@ -1018,7 +1017,7 @@ class ClassController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $teacher = User::find($token_user->id);
-        $feedbacks = UserFeedback::with('sender', 'feedback')->where('reciever_id', $token_user->id)->get();
+        $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
             'message' => 'Teacher Kudos points',

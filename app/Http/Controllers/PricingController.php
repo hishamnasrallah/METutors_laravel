@@ -59,7 +59,7 @@ class PricingController extends Controller
         // $total_hours = $total_hours->format('H:i');
         $classes = 0;
 
-        foreach (json_decode($request->classes) as $class) {
+        foreach (json_decode(json_encode($request->classes)) as $class) {
             $classes++;
             $total_hours = $total_hours + $class->duration;
             // $start_time = $class->start_time;

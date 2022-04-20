@@ -156,7 +156,7 @@ class TeacherController extends Controller
 
         $teacher = User::find($token_user->id);
 
-        $reviews = UserFeedback::with('sender', 'course', 'feedback')->where('reciever_id', $teacher->id)->where('course_id', $course_id)->get();
+        $reviews = UserFeedback::with('sender', 'course', 'feedback')->where('receiver_id', $teacher->id)->where('course_id', $course_id)->get();
         return response()->json([
             'success' => true,
             'message' => 'Course Reviews!',
@@ -253,7 +253,7 @@ class TeacherController extends Controller
             /// Curl Implementation
             $apiURL = 'https://api.braincert.com/v2/schedule';
             $postInput = [
-                'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+                'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
                 'title' =>  'Introduction|class1',
                 'timezone' => 90,
                 'start_time' => $class->start_time,
@@ -286,7 +286,7 @@ class TeacherController extends Controller
             $statusCode = $response->getStatusCode();
             $responseBody = json_decode($response->getBody(), true);
             if ($responseBody['status'] == "ok") {
-                // $course->status = "active";
+                $course->status = "active";
                 $class->class_id = $responseBody['class_id'];
                 $class->status = "scheduled";
                 $course->status = "active";
@@ -310,8 +310,8 @@ class TeacherController extends Controller
         $teacher_message = 'Course Accepted Successfully!';
         $student_message = 'Teacher Accepted Your Course!';
 
-        event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
-        event(new AcceptCourse($course, $course->student_id, $student_message, $user));
+        // event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        // event(new AcceptCourse($course, $course->student_id, $student_message, $user));
 
         return response()->json([
             'success' => true,
@@ -378,8 +378,8 @@ class TeacherController extends Controller
         $teacher_message = "Course Rejected Successfully";
         $student_message = "Teacher Rejected your Course";
 
-        event(new RejectCourse($course, $course->teacher_id, $teacher_message, $teacher));
-        event(new RejectCourse($course, $course->student_id, $student_message, $user));
+        // event(new RejectCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        // event(new RejectCourse($course, $course->student_id, $student_message, $user));
 
         $course->status = "rejected";
         $course->teacher_id = null;
@@ -914,11 +914,11 @@ class TeacherController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
         $teacher = User::find($token_user->id);
-        $course = Course::where('teacher_id', $teacher->id)->where('id', $course_id)->first();
+        $course = Course::find($course_id);
         $user = User::find($course->student_id);
         $teacher = User::find($course->teacher_id);
 
-        if ($course == null) {
+        if ($course->status == 'canceled') {
             return response()->json([
                 'status' => true,
                 'message' => 'Course Already cancelled!',
@@ -932,21 +932,25 @@ class TeacherController extends Controller
                 $cls = AcademicClass::find($class->id);
                 $cls->teacher_id = null;
                 $cls->status = 'canceled';
+
+                $canceledCourse = new CanceledCourse();
+                $canceledCourse->user_id = $token_user->id;
+                $canceledCourse->user_id = $token_user->id;
+                $canceledCourse->course_id = $course->id;
+                $canceledCourse->academic_class_id = $cls->id;
+                $canceledCourse->reason = $request->reason;
+                $canceledCourse->save();
+                $cls->update();
             }
         }
 
-        $canceledCourse = new CanceledCourse();
-        $canceledCourse->user_id = $token_user->id;
-        $canceledCourse->user_id = $token_user->id;
-        $canceledCourse->course_id = $course->id;
-        $canceledCourse->reason = $request->reason;
-        $canceledCourse->save();
+
 
         $teacher_message = "Course Canceled Successfully";
         $student_message = "Teacher Canceled Course";
 
-        event(new CancelCourse($course, $course->teacher_id, $teacher_message, $teacher));
-        event(new CancelCourse($course, $course->student_id, $student_message, $user));
+        // event(new CancelCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        // event(new CancelCourse($course, $course->student_id, $student_message, $user));
 
         $course->teacher_id = null;
         $course->status = 'canceled';
@@ -1265,7 +1269,7 @@ class TeacherController extends Controller
             /// Curl Implementation
             $apiURL = 'https://api.braincert.com/v2/updateclass';
             $postInput = [
-                'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+                'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
                 'id' => $academic_class->class_id
             ];
 
@@ -1495,4 +1499,6 @@ class TeacherController extends Controller
 
         ]);
     }
+
+    
 }

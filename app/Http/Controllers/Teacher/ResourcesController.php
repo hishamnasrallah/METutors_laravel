@@ -1,6 +1,9 @@
 <?php
 
 namespace App\Http\Controllers\Teacher;
+
+use App\Events\AddResource;
+use App\Events\Resource as EventsResource;
 use App\Http\Controllers\Controller;
 
 use App\Models\AcademicClass;
@@ -31,41 +34,39 @@ class ResourcesController extends Controller
 
 
 
-    
-    public function deleteFile(Request $request,$id)
+
+    public function deleteFile(Request $request, $id)
     {
 
-        $image=Images::find($id);
-        if($image == null){
-              return response()->json([
-            'status' => false,
-            'message' => 'file not found!',
-            
-        ],400);
+        $image = Images::find($id);
+        if ($image == null) {
+            return response()->json([
+                'status' => false,
+                'message' => 'file not found!',
 
+            ], 400);
         }
         $image->delete();
 
-        $file_path=public_path('assets/').$image->filename;
+        $file_path = public_path('assets/') . $image->filename;
 
         // print_r($file_path);die;
-        if(File::exists($file_path)) {
+        if (File::exists($file_path)) {
             File::delete($file_path);
         }
-        
-         return response()->json([
+
+        return response()->json([
             'status' => true,
             'message' => 'file deleted successfully!',
-            
-        ]);
 
+        ]);
     }
 
-    
+
     public function uploadFiles(Request $request)
     {
-         $rules = [
-           
+        $rules = [
+
             'file' => 'required',
         ];
 
@@ -84,39 +85,37 @@ class ResourcesController extends Controller
         if ($request->hasFile('file')) {
             //************* Resource files **********\\
             $resource_files = array();
-            
 
-                $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->file->getClientOriginalExtension();
-                $request->file->move(public_path('assets'), $imageName);
 
-                $image=new Images();
-                $image->filename=$imageName;
-                $image->original_name=$request->file->getClientOriginalName();
-                
-                $image->url=$request->root().'/assets/'.$imageName;
-                $image_url=$request->root().'/assets/'.$imageName;
+            $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->file->getClientOriginalExtension();
+            $request->file->move(public_path('assets'), $imageName);
 
-                $image->save();
+            $image = new Images();
+            $image->filename = $imageName;
+            $image->original_name = $request->file->getClientOriginalName();
 
-           
+            $image->url = $request->root() . '/assets/' . $imageName;
+            $image_url = $request->root() . '/assets/' . $imageName;
+
+            $image->save();
+
+
             //************* Resource files ends **********\\
         }
 
-        $array=array(
+        $array = array(
             'id' => $image->id ?? '',
             'url' => $image_url ?? '',
 
         );
 
-         return response()->json([
+        return response()->json([
             'status' => true,
             'message' => 'files uploaded!',
             'file' => [$array],
-            
+
         ]);
-
-
-    }  
+    }
     public function addResource(Request $request, $class_id)
     {
         $rules = [
@@ -137,7 +136,6 @@ class ResourcesController extends Controller
                 'errors' => $errors,
             ], 400);
         }
-        // print_r($request['files']);die;
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -157,8 +155,16 @@ class ResourcesController extends Controller
 
         $resource1 = Resource::with('class')->find($resource->id);
 
-        $resource1->urls=json_decode($resource1->urls);
-        $resource1->files=json_decode($resource1->files);
+        $resource1->urls = json_decode($resource1->urls);
+        $resource1->files = json_decode($resource1->files);
+
+        // Event notification
+        $message = 'Resource Added to ' . $academic_class->title . ' class!';
+        $teacher = User::find($token_user->id);
+        $student = User::find($academic_class->student_id);
+
+        event(new AddResource($message, $resource1, $teacher));
+
         return response()->json([
             'status' => true,
             'message' => 'Resource Added Successfully!',
@@ -193,17 +199,16 @@ class ResourcesController extends Controller
             $resource->description = $request->description;
         }
         if ($request->has('urls')) {
-           
-            $resource->urls=$request->urls;
+
+            $resource->urls = $request->urls;
         }
         if ($request->has('files')) {
-            
+
             $resource->files = $request['files'];
-            
         }
         $resource->update();
 
-       
+
 
         return response()->json([
             'status' => true,
@@ -244,8 +249,8 @@ class ResourcesController extends Controller
 
         // print_r($resource);die; 
 
-        $resource->urls=json_decode($resource->urls);
-        $resource->files=json_decode($resource->files);
+        $resource->urls = json_decode($resource->urls);
+        $resource->files = json_decode($resource->files);
 
         return response()->json([
             'status' => true,
@@ -253,6 +258,4 @@ class ResourcesController extends Controller
             'resource' => $resource,
         ]);
     }
-
-
 }

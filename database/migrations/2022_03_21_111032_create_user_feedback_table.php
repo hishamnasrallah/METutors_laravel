@@ -16,7 +16,7 @@ class CreateUserFeedbackTable extends Migration
         Schema::create('user_feedback', function (Blueprint $table) {
             $table->id();
             $table->integer('sender_id');
-            $table->integer('reciever_id');
+            $table->integer('receiver_id');
             $table->integer('course_id')->nullable();
             $table->integer('feedback_id')->nullable();
             $table->string('review');

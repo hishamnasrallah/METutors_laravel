@@ -90,6 +90,8 @@ class ProgramController extends Controller
         $program->name=$request->name;
         $program->save();
 
+        $program=Program::find($program->id);
+
         return response()->json([
             'success' => true,
             'message' => "Program stored successfully",
@@ -142,6 +144,8 @@ class ProgramController extends Controller
             return response()->json(['message'=>'Data not found'], 404); 
         }
         $program->update($request->all());
+
+          $program=Program::find($program->id);
          return response()->json([
             'success' => true,
             'message' => "Program data updated successfully",
@@ -163,6 +167,7 @@ class ProgramController extends Controller
             return response()->json('Data not found', 404); 
         }
         $program->delete();
+        
          return response()->json([
             'success' => true,
             'message' => "Program deleted successfully",

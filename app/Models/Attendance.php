@@ -12,4 +12,7 @@ class Attendance extends Model
     public function user(){
         return $this->belongsTo(User::class,'user_id','id')->select('id','first_name','last_name','role_name','email','mobile','avatar');
     }
+    public function class(){
+        return $this->belongsTo(AcademicClass::class,'academic_class_id','id');
+    }
 }

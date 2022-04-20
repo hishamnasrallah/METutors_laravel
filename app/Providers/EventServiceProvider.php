@@ -2,19 +2,25 @@
 
 namespace App\Providers;
 
+use App\Events\AcceptAssignment;
 use App\Events\AcceptCourse;
+use App\Events\AddResource;
 use App\Events\CancelCourse;
 use App\Events\CourseBooked;
 use App\Events\NewCourse;
+use App\Events\RejectAssignment;
 use App\Events\RejectCourse;
 use App\Events\StudentAcceptCourse;
 use App\Events\StudentRegister;
 use App\Events\UpdateProfile;
+use App\Listeners\AcceptAssignmentListener;
 use App\Listeners\AcceptCourseListener;
 use App\Listeners\CancelCourseListener;
 use App\Listeners\CourseBookedListener;
 use App\Listeners\NewCourseListener;
+use App\Listeners\RejectAssignmentListener;
 use App\Listeners\RejectCourseListener;
+use App\Listeners\ResourceListener;
 use App\Listeners\StudentAcceptCourseListener;
 use App\Listeners\StudentEventListner;
 use App\Listeners\UpdateProfileListener;
@@ -57,6 +63,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         UpdateProfile::class => [
             UpdateProfileListener::class,
+        ],
+        AcceptAssignment::class => [
+            AcceptAssignmentListener::class,
+        ],
+        RejectAssignment::class => [
+            RejectAssignmentListener::class,
+        ],
+        AddResource::class => [
+            ResourceListener::class,
         ],
 
     ];

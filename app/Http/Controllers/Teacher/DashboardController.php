@@ -68,7 +68,7 @@ class DashboardController extends Controller
                     $class->update();
                 }
             }
-            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->whereBetween('created_at', [$endDate, $current_date])->where('reciever_id', $user_id)->get();
+            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->whereBetween('created_at', [$endDate, $current_date])->where('receiver_id', $user_id)->get();
 
             $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status','pending')->count();
             $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date','<',$current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status','!=','completed')->count();
@@ -93,7 +93,7 @@ class DashboardController extends Controller
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
             $todays_classes = AcademicClass::select('id','class_id','title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course','course.subject','course.student','course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
-            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->where('reciever_id', $user_id)->get();
+            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->where('receiver_id', $user_id)->get();
 
             $newly_assigned_courses = Course::with('subject', 'student','program','classes')
             ->where('teacher_id', $user_id)->where('status','pending')->get();
@@ -246,6 +246,22 @@ class DashboardController extends Controller
             'status' => true,
             'message' => 'Profile Updated Successfully!'
         ]);
+    }
+
+
+    public function profile(){
+
+      
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user=\App\User::with('country','userMetas','teacherSpecifications','teacherQualifications','teacherAvailability','spokenLanguages','spokenLanguages.language','teacher_subjects','teacher_subjects.program','teacher_subjects.field','teacher_subjects.subject.country','teacher_interview_request')->find($token_user->id);
+
+        return response()->json([
+            'status' => true,
+            'user' => $user
+        ]);
+
     }
 
     

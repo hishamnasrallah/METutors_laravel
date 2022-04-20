@@ -11,7 +11,7 @@ class TeacherAvailabilityController extends Controller
 {
     public function getAvailability($teacher_id)
     {
-        $avilabilites = TeacherAvailability::where('user_id', $teacher_id)->get();
+        $availabilites = TeacherAvailability::where('user_id', $teacher_id)->get();
         $startDate = Carbon::now()->format('Y-m-d');
         $start_date = Carbon::now()->format('d/m/Y');
         $endDate = Carbon::now()->addDays(30)->format('Y-m-d');
@@ -20,17 +20,18 @@ class TeacherAvailabilityController extends Controller
         $academicClasses = AcademicClass::whereBetween('start_date', [$startDate, $endDate])->where('teacher_id', $teacher_id)->get();
 
         $weekdays = [];
-        foreach ($avilabilites as  $avilability) {
+        foreach ($availabilites as  $avilability) {
             if (!in_array($avilability->day, $weekdays)) {
                 array_push($weekdays, $avilability->day);
             }
         }
 
         $finalAvailabilities = [];
+        $finalWeekDays = [];
         foreach ($weekdays as  $weekday) {
             $weekdayClasses = $academicClasses->where('day', $weekday);
-            $weekAvailabilites = $avilabilites->where('day', $weekday);
-  
+            $weekAvailabilites = $availabilites->where('day', $weekday);
+
             foreach ($weekAvailabilites as $weekAvailability) {
                 $time_from = Carbon::parse($weekAvailability->time_from)->format('G:i');
                 $time_to = Carbon::parse($weekAvailability->time_to)->format('G:i');
@@ -42,9 +43,10 @@ class TeacherAvailabilityController extends Controller
                     if (($time_from >= $start_time) && ($time_from <= $end_time) || ($time_to >= $start_time) && ($time_to <= $end_time)) {
                     } else {
                         $counter++;
-                        
+
                         if ($counter == count($weekdayClasses)) {
                             array_push($finalAvailabilities, $weekAvailability);
+                            array_push($finalWeekDays, $weekAvailability->day);
                         }
                     }
                 }
@@ -56,9 +58,9 @@ class TeacherAvailabilityController extends Controller
             'status' => true,
             'startDate' => $start_date,
             'endDate' => $end_date,
-            'academicClasses' => $academicClasses,
-            'availabilites' => $avilabilites,
-            'finalAvailabilities' => $finalAvailabilities,
+            'weekdays' => array_unique($finalWeekDays),
+            // 'availabilites' => $availabilites,
+            'availabilites' => $finalAvailabilities,
         ]);
     }
 }

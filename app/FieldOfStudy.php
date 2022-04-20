@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class FieldOfStudy extends Model
 {
 
-    protected $fillable = ['program_id','country_id','grade','name'];
+    protected $fillable = ['program_id','country_id','grade','name','status'];
 
 
     public function teacherField() {

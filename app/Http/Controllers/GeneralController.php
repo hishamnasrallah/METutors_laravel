@@ -96,7 +96,7 @@ class GeneralController extends Controller
    }
    public function programs(){
 
-       $programs=Program::all();
+       $programs=Program::where('status',1)->get();
 
        return response()->json([
 
@@ -170,6 +170,7 @@ class GeneralController extends Controller
           if($request->program_id == 3){
 
                   $rules['country_id'] = 'required';
+                  $rules['grade'] = 'required';
             }
 
         $validator=Validator::make($request->all(),$rules);
@@ -193,7 +194,7 @@ class GeneralController extends Controller
 
          if($request->program_id == 3){
 
-                  $field_of_study=FieldOfStudy::where('program_id',$request->program_id)->where('country_id',$request->country_id)->get();
+                  $field_of_study=FieldOfStudy::where('program_id',$request->program_id)->where('country_id',$request->country_id)->where('grade',$request->grade)->get();
 
             }
 

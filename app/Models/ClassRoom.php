@@ -9,12 +9,18 @@ class ClassRoom extends Model
 {
     use HasFactory;
 
-    public function course(){
+    public function course()
+    {
         return $this->belongsTo(Course::class);
     }
 
-    public function user(){
-        return $this->belongsTo(User::class,'student_id','id')->select('id','first_name','last_name','role_name','email','mobile','avatar');
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
+    public function classes()
+    {
+        return $this->hasMany(AcademicClass::class, 'course_id', 'course_id');
+    }
 }

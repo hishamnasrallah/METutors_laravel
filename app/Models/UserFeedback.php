@@ -17,6 +17,10 @@ class UserFeedback extends Model
         return $this->belongsTo(User::class,'sender_id','id')->select('id','first_name','last_name','role_name','email','mobile','avatar');
     }
 
+    public function reciever(){
+        return $this->belongsTo(User::class,'reciever_id','id')->select('id','first_name','last_name','role_name','email','mobile','avatar');
+    }
+
     public function teacher(){
         return $this->belongsTo(User::class,'teacher_id','id')->select('id','first_name','last_name','role_name','email','mobile');
     }

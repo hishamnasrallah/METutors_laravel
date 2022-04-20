@@ -26,6 +26,10 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
 
 
+    Route::post('admin/schedule-meeting', 'AdminController@schedule_meeting');
+    Route::get('join-meeting/{interview_request_id}', 'AdminController@join_meeting');
+
+
     //**************** Student routes starts****************
 
     Route::get('student/dashboard', 'Student\DashboardController@dashboard');
@@ -43,7 +47,8 @@ Route::group(['middleware' => ['cors', 'share']], function () {
     Route::get('student/assignments/{id}', 'Student\AssignmentController@assignmentDashboard');
     Route::get('student/assignment/{id}', 'Student\AssignmentController@assignmentDetail');
     Route::Post('student/assignment/{id}', 'Student\AssignmentController@submitAssignment');
-    Route::get('student/assignment/{assignment_id}/user', 'Student\AssignmentController@userAssignment');
+    // Route::get('student/assignment/{assignment_id}/user', 'Student\AssignmentController@userAssignment');
+    Route::get('student/assignment/user/{user_assignment_id}', 'Student\AssignmentController@userAssignment');
 
     //**************** Resources routes ****************
     Route::get('student/resources/{course_id}', 'Student\ResourcesController@classResources');
@@ -54,12 +59,14 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
 
 
+ Route::post('change-avatar', 'Panel\UserController@change_avatar');
+ Route::post('change-cover', 'Panel\UserController@change_cover');
 
-
-
+Route::post('teacher/profile', 'Panel\UserController@teacher_update_profile');
 
     //**************** Teacher routes starts****************
 
+    Route::get('teacher/profile', 'Teacher\DashboardController@profile');
     Route::get('teacher/dashboard', 'Teacher\DashboardController@dashboard');
     Route::get('teacher/classes', 'Teacher\DashboardController@classes_dashboard');
 
@@ -243,8 +250,8 @@ Route::group(['prefix' => 'admin'], function () {
 });
 
 Route::get('/roles', 'Admin\RoleController@roles');
-Route::get('/approve-document', 'Admin\UserController@approve_document');
-Route::get('/reject-document', 'Admin\UserController@reject_document');
+Route::post('admin/approve-document/{id}', 'Admin\UserController@approve_document');
+Route::post('admin/reject-document/{id}', 'Admin\UserController@reject_document');
 
 Route::get('filtered-teacher', 'Web\UserController@filteredTeacher');
 
@@ -274,7 +281,7 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'student', 'middleware' => ['a
     });
 });
 
-Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['auth:sanctum', 'share']], function () {
+Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['share']], function () {
 
     Route::get('/documents', 'UserController@teacher_documents');
 
@@ -286,9 +293,9 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['a
 
 Route::post('invite/friends', 'Panel\UserController@invite_friends');
 
-Route::post('teacher/approve', 'Panel\UserController@teacher_approve');
+Route::post('teacher/approve/{id}', 'Panel\UserController@teacher_approve');
 
-Route::post('teacher/reject', 'Panel\UserController@teacher_reject');
+Route::post('teacher/reject/{id}', 'Panel\UserController@teacher_reject');
 
 Route::post('teacher/upload-documents', 'Panel\UserController@upload_documents');
 
@@ -303,7 +310,7 @@ Route::post('add-subjects', 'Panel\UserController@add_subjects');
 Route::post('remove-subjects', 'Panel\UserController@remove_subjects');
 
 Route::post('add-availability', 'Panel\UserController@add_availability');
-Route::post('remove-availability', 'Panel\UserController@remove_availability');
+Route::delete('remove-availability/{id}', 'Panel\UserController@remove_availability');
 
 Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['impersonate', 'panel', 'share']], function () {
 
@@ -368,20 +375,18 @@ Route::get('search/{searchQuery}', 'TeacherController@overallSearch');
 
 
 //**************** Account setting routes ****************
+Route::get('student/profile', 'Web\UserController@student_get_profile');
 Route::patch('student/account/setting', 'Web\UserController@account_setting');
 Route::post('student/security/setting', 'Web\UserController@security_setting');
 Route::post('student/prefrences', 'Web\UserController@user_prefrences');
 
 //**************** Feedback routes ****************
-Route::post('teacher/feedback', 'FeedbackController@feedback');
-Route::post('student/feedback', 'FeedbackController@feedback');
-Route::get('feedback/params', 'FeedbackController@feedback_params');
+
 Route::post('teacher-performance', 'AdminController@teacher_performance');
 Route::get('teachers/teacher-detail/{$teacher_id}', 'FeedbackController@teacher_details');
 Route::get('teacher-profile', 'Web\UserController@teacher_public_profile');
-Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
-Route::post('teacher/feedback/platform', 'FeedbackController@userPlatform');
-Route::get('feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
+
+
 
 //**************** classes routes ****************
 Route::get('class-attendees/{class_id}', 'TeacherController@classAttendees');
@@ -389,11 +394,12 @@ Route::get('todays-classes', 'TeacherController@todaysClasses');
 Route::post('teacher/class/reschedule', 'Teacher\ClassController@reschedule_class');
 Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
 
-Route::post('student/course/{course_id}/class', 'Student\ClassController@');
+Route::post('student/course/{course_id}/class', 'Student\ClassController@addClass');
 
 
 //**************** Courses routes ****************
 Route::post('course/{id}/cancel', 'TeacherController@cancelCourse');
+Route::post('teacher/course/{id}/cancel', 'TeacherController@cancelCourse');
 Route::get('courses/progress', 'TeacherController@coursesProgress');
 Route::get('course/{id}/progress', 'TeacherController@courseProgress');
 Route::post('course/accept/{id}', 'TeacherController@acceptCourse');
@@ -430,10 +436,70 @@ Route::patch('role/{id}', 'AdminController@update_role');
 Route::delete('role/{id}', 'AdminController@delete_role');
 
 Route::post('teachers/filter', 'Web\UserController@filterTeacher');
-Route::post('teachers/available', 'Web\UserController@availableTeachers');
+
 
 //**************** Student routes ****************
+
 Route::get('teacher/{teacher_id}/availability', 'TeacherAvailabilityController@getAvailability'); //get teacher availability
-Route::get('student/refund/course/{course_id}', 'Student\CourseController@refundCourse');
+
+
+
+
+// Route::group(['middleware' => ['auth.jwt', 'isAdmin']], function () {
+Route::resource('course-param', 'CourseParamController');
+Route::resource('platform-param', 'PlatformParamController');
+Route::get('admin/newsletter', 'AdminController@newsletter');
+Route::delete('admin/newsletter/{id}', 'AdminController@del_newsletter');
+Route::get('admin/courses', 'AdminController@booked_courses');
+Route::get('admin/course/{id}', 'AdminController@course_detail');
+Route::get('admin/teachers/courses', 'AdminController@course_teachers');
+Route::get('admin/courses/classes', 'AdminController@courses_classes');
+Route::get('admin/course/teacher/cancel', 'AdminController@teacher_canceledcourses');
+Route::get('admin/course/student/cancel', 'AdminController@student_canceledcourses');
+Route::get('admin/teachers/schedule', 'AdminController@teachers_schedule');
+Route::get('admin/students/schedule', 'AdminController@students_schedule');
+Route::get('admin/feedbacks/course', 'AdminController@course_feedbacks');
+Route::delete('admin/course/feedback', 'AdminController@del_coursefeedback');
+Route::get('admin/testimonials', 'AdminController@platform_feedbacks');
+Route::delete('admin/testimonial/{sender_id}', 'AdminController@del_usertestimonial');
+Route::get('admin/teachers/ratings', 'AdminController@teacher_ratings');
+Route::post('admin/course/reassign/teacher', 'AdminController@reassign_teacher');
+Route::post('admin/course/teacher/reassign', 'AdminController@reassignTeacher');
+Route::get('admin/teachers', 'AdminController@teachers');
+Route::get('admin/teachers/rejected', 'AdminController@rejected_teachers');
+Route::get('admin/teachers/pending', 'AdminController@pending_teachers');
+Route::get('admin/teachers/current', 'AdminController@current_teachers');
+// });
+
+
+// Route::group(['middleware' => ['auth.jwt', 'isTeacher']], function () {
+
+// Feedback Routes
+Route::post('teacher/feedback', 'FeedbackController@feedback');
+Route::get('teacher/feedback/params', 'FeedbackController@feedback_params');
+Route::post('teacher/feedback/platform', 'FeedbackController@userPlatform');
+Route::get('teacher/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
+Route::get('teacher/feedback/classroom/params', 'FeedbackController@classroom_params');
+Route::post('teacher/feedback/classroom', 'FeedbackController@classroom_feedback');
+
+Route::get('teacher/course/{course_id}/attendance', 'Student\CourseController@teacherAttendence');
+// });
+
+// Route::group(['middleware' => ['auth.jwt', 'isStudent']], function () {
+Route::get('student/course/{course_id}/refund', 'Student\CourseController@refundCourse');
 Route::Post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourse');
-Route::get('student/course/{course_id}/attendence', 'Student\CourseController@getCourseAttendence');
+Route::post('student/course/cancel/selective_classes', 'Student\CourseController@refundClasses');
+Route::post('student/course/cancel/reason', 'Student\CourseController@cancelCourseReason');
+
+Route::get('student/course/{course_id}/attendance', 'Student\CourseController@getCourseAttendence');
+// Feedback Routes
+Route::post('student/feedback', 'FeedbackController@feedback');
+Route::get('student/feedback/params', 'FeedbackController@feedback_params');
+Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
+Route::get('student/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
+
+Route::post('student/teachers/available', 'Web\UserController@availableTeachers');
+Route::post('student/class/{academic_class_id}/makeup-slots', 'Student\ClassController@makeupClassAvailability');
+Route::post('student/class/{academic_class_id}/makeup', 'Student\ClassController@makeupClass');
+
+// });
