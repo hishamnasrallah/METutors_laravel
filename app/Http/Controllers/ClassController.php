@@ -508,6 +508,7 @@ class ClassController extends Controller
                 $attendance->user_id = $token_user->id;
                 $attendance->academic_class_id = $class->id;
                 $attendance->course_id = $course->id;
+                $attendance->status = 'present';
                 $attendance->save();
             }
             // User Attendence ends
