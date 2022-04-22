@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "###########################"
 echo "###########################"
-php artisan migrate
+su -c "php artisan migrate" www-data
 echo "###########################"
 echo "###########################"
 /usr/sbin/apache2ctl -DFOREGROUND
