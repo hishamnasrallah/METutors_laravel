@@ -12,6 +12,7 @@ use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\ClassSession;
 use App\Models\Feedback;
+use App\Models\RescheduleClass;
 use App\Models\UserFeedback;
 use App\User;
 use App\Program;
@@ -35,7 +36,7 @@ class ClassController extends Controller
     {
         $rules = [
             'field_of_study' =>  'required',
-           
+
             'language_id' =>  'required',
             // 'book_type' =>  'required',
             'book_info' =>  'required',
@@ -117,7 +118,7 @@ class ClassController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $course->field_of_study = $request->field_of_study;
-       
+
         $course->language_id = $request->language_id;
         // $course->book_type = $request->book_type;
         $course->total_price = $request->total_price;
@@ -618,6 +619,7 @@ class ClassController extends Controller
             $userrole = 'student_id';
         }
 
+        $classroom = ClassRoom::where($userrole, $token_user->id)->pluck('course_id');
         $programs = Program::all();
         if (count($request->all()) >= 1) {
 
@@ -626,9 +628,9 @@ class ClassController extends Controller
                 $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->where('program_id', $program->id)->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'active')->orWhere('status', 'inprogress')->where('program_id', $program->id)->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id','desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id','desc')->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
 
                 return response()->json([
                     'success' => true,
@@ -650,9 +652,9 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
 
                     return response()->json([
                         'success' => true,
@@ -673,9 +675,9 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'active')->orWhere('status', 'inprogress')->where('program_id', $program->id)->where('country_id', $country->id)->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     return response()->json([
                         'success' => true,
@@ -700,9 +702,9 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'active')->orWhere('status', 'inprogress')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
 
                 return response()->json([
                     'success' => true,
@@ -718,8 +720,8 @@ class ClassController extends Controller
         } else {
 
             $program = Program::where('code', $request->program)->first();
-            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->get();
-            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'active')->orWhere('status', 'inprogress')->get();
+            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id','desc')->get();
+            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id','desc')->get();
             $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
 
             return response()->json([
@@ -985,20 +987,26 @@ class ClassController extends Controller
 
 
             if ($totalDuration > 48) {
-                // if class is not scheduled by braincert
-                if ($class->class_id == null) {
+                // if class is scheduled by braincert
+                if ($class->class_id != null) {
                     $class->start_time = $request->start_time;
                     $class->end_time = $request->end_time;
                     $class->start_date = $request->start_date;
                     $class->duration = $request->duration;
                     $class->update();
 
+                    $reschedule_class = new RescheduleClass();
+                    $reschedule_class->rescheduled_by = $token_user->id;
+                    $reschedule_class->academic_class_id = $request->academic_class_id;
+                    $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->save();
+
                     return response()->json([
                         'status' => true,
                         'errors' => "Class Rescheduled Successfully!",
                     ]);
                 } else {
-                    // if class is scheduled by braincert
+                    // if class is not scheduled by braincert
                     $class->start_time = $request->start_time;
                     $class->end_time = $request->end_time;
                     $class->start_date = $request->start_date;
@@ -1019,6 +1027,13 @@ class ClassController extends Controller
                     $responseBody = json_decode($response->getBody(), true);
                     $class->class_id = $responseBody['class_id'];
                     $class->update();
+
+                    $reschedule_class = new RescheduleClass();
+                    $reschedule_class->rescheduled_by = $token_user->id;
+                    $reschedule_class->academic_class_id = $request->academic_class_id;
+                    $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->save();
+
                     return response()->json([
                         'status' => true,
                         'errors' => "Class Rescheduled Successfully!",
@@ -1033,7 +1048,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Date has been Passed",
+                'errors' => "Class Date has been Passed",
             ], 400);
         }
     }

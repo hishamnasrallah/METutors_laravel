@@ -211,7 +211,7 @@ class TeacherController extends Controller
         $teacher = User::find($token_user->id);
 
         $course = Course::find($course_id);
-        if ($course->status == 'pending') {
+        if ($course->status != 'completed') {
             return $course;
         } else {
             return response()->json([
@@ -1499,6 +1499,4 @@ class TeacherController extends Controller
 
         ]);
     }
-
-    
 }

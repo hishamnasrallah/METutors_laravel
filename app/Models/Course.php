@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Country;
+use App\Events\CancelCourse;
 use App\FieldOfStudy;
 use App\Language;
 use App\Program;
@@ -93,5 +94,10 @@ class Course extends Model
     public function attendence()
     {
         return $this->hasMany(Attendance::class, 'course_id', 'id');
+    }
+
+    public function canceled_classes()
+    {
+        return $this->hasMany(CanceledCourse::class,  'course_id', 'id');
     }
 }

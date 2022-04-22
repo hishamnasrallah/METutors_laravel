@@ -59,10 +59,10 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
 
 
- Route::post('change-avatar', 'Panel\UserController@change_avatar');
- Route::post('change-cover', 'Panel\UserController@change_cover');
+    Route::post('change-avatar', 'Panel\UserController@change_avatar');
+    Route::post('change-cover', 'Panel\UserController@change_cover');
 
-Route::post('teacher/profile', 'Panel\UserController@teacher_update_profile');
+    Route::post('teacher/profile', 'Panel\UserController@teacher_update_profile');
 
     //**************** Teacher routes starts****************
 
@@ -378,7 +378,8 @@ Route::get('search/{searchQuery}', 'TeacherController@overallSearch');
 Route::get('student/profile', 'Web\UserController@student_get_profile');
 Route::patch('student/account/setting', 'Web\UserController@account_setting');
 Route::post('student/security/setting', 'Web\UserController@security_setting');
-Route::post('student/prefrences', 'Web\UserController@user_prefrences');
+Route::post('student/preference', 'Web\UserController@user_preference');
+Route::get('student/preference', 'Web\UserController@get_user_preference');
 
 //**************** Feedback routes ****************
 
@@ -466,9 +467,17 @@ Route::get('admin/teachers/ratings', 'AdminController@teacher_ratings');
 Route::post('admin/course/reassign/teacher', 'AdminController@reassign_teacher');
 Route::post('admin/course/teacher/reassign', 'AdminController@reassignTeacher');
 Route::get('admin/teachers', 'AdminController@teachers');
-Route::get('admin/teachers/rejected', 'AdminController@rejected_teachers');
-Route::get('admin/teachers/pending', 'AdminController@pending_teachers');
-Route::get('admin/teachers/current', 'AdminController@current_teachers');
+
+Route::get('admin/rejected-teachers/', 'AdminController@rejected_teachers');
+Route::get('admin/pending-teachers/', 'AdminController@pending_teachers');
+Route::get('admin/current-teachers/', 'AdminController@current_teachers');
+Route::get('admin/subject/{subject_id}/teachers', 'AdminController@subject_teachers');
+Route::get('admin/subject/{subject_id}/active-classes', 'AdminController@subject_activeclasses');
+Route::get('admin/subject/{subject_id}/upcoming-classes', 'AdminController@subject_upcomingclasses');
+Route::get('admin/subject/{subject_id}/canceled-classes', 'AdminController@subject_canceledclasses');
+Route::get('admin/subject/{subject_id}/rescheduled-classes', 'AdminController@subject_rescheduledclasses');
+
+
 // });
 
 

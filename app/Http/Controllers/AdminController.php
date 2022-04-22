@@ -8,17 +8,20 @@ use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\Newsletter;
+use App\Models\RescheduleClass;
 use App\Models\Role;
 use App\Models\Testimonial;
 use App\User;
 use App\Models\UserFeedback;
 use App\Models\UserTestimonial;
+use App\Subject;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use stdClass;
 use App\TeacherInterviewRequest;
+use App\TeacherSubject;
 
 class AdminController extends Controller
 {
@@ -631,7 +634,7 @@ class AdminController extends Controller
 
     public function rejected_teachers()
     {
-        $teachers = User::where('role_name', 'teacher')->where('admin_approval', 'rejected')->get();
+        $teachers = User::with('teacherQualifications')->where('role_name', 'teacher')->where('admin_approval', 'rejected')->get();
 
         return response()->json([
             'status' => true,
@@ -643,7 +646,7 @@ class AdminController extends Controller
 
     public function pending_teachers()
     {
-        $teachers = User::where('role_name', 'teacher')->where('admin_approval', 'pending')->orWhere('admin_approval', null)->where('status', 'pending')->get();
+        $teachers = User::with('teacherQualifications')->where('role_name', 'teacher')->where('admin_approval', 'pending')->orWhere('admin_approval', null)->where('status', 'pending')->get();
 
         return response()->json([
             'status' => true,
@@ -655,7 +658,7 @@ class AdminController extends Controller
 
     public function current_teachers()
     {
-        $teachers = User::where('role_name', 'teacher')->where('status', 'active')->where('admin_approval', 'approved')->get();
+        $teachers = User::with('teacher_subjects','teacherQualifications')->where('role_name', 'teacher')->where('admin_approval', 'approved')->get();
 
         return response()->json([
             'status' => true,
@@ -666,33 +669,32 @@ class AdminController extends Controller
     }
 
 
-    public function schedule_meeting(Request $request){
+    public function schedule_meeting(Request $request)
+    {
 
-          $rules = [
+        $rules = [
             'interview_request_id' => 'required',
             'date' => 'required',
             'start_time' => 'required',
             'end_time' => 'required',
         ];
-        
-        $validator=Validator::make($request->all(),$rules);
 
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-           
+            ], 400);
         }
 
         // return $request->all();
 
-        $int=TeacherInterviewRequest::find($request->interview_request_id);
+        $int = TeacherInterviewRequest::find($request->interview_request_id);
 
 
         $apiURL = 'https://api.braincert.com/v2/schedule';
@@ -719,36 +721,34 @@ class AdminController extends Controller
         $statusCode = $response->getStatusCode();
         $responseBody = json_decode($response->getBody(), true);
         if ($responseBody['status'] == "ok") {
-          
+
             $int->meeting_id = $responseBody['class_id'];
             $int->status = "scheduled";
-           
+
             $int->update();
-          
+
             return response()->json([
                 'success' => true,
                 'message' => "Meeting Scheduled Successfully",
-                
+
             ]);
         } else {
 
-             return response()->json([
+            return response()->json([
                 'success' => true,
                 'message' => $responseBody,
-                
-            ],400);
-            
+
+            ], 400);
         }
 
         return $int;
-
-
     }
 
 
-    public function join_meeting(Request $request,$id){
+    public function join_meeting(Request $request, $id)
+    {
 
-          $int=TeacherInterviewRequest::find($request->interview_request_id);
+        $int = TeacherInterviewRequest::find($request->interview_request_id);
 
 
         $token_1 = JWTAuth::getToken();
@@ -791,17 +791,89 @@ class AdminController extends Controller
                 'error' => $responseBody['error'],
             ], 400);
         } else {
-          
+
 
             return response()->json([
                 'status' => true,
                 'meeting_url' => $responseBody['launchurl'],
             ]);
         }
-
     }
 
+    public function subject_teachers($subject_id)
+    {
+        $subject_teachers = TeacherSubject::where('subject_id', $subject_id)->pluck("user_id");
 
+        $teachers = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')->whereIn('id', $subject_teachers)->get();
 
+        return response()->json([
+            'status' => true,
+            'message' => "Active Teachers related to Subject!",
+            'teachers_count' => count($teachers),
+            'teachers' => $teachers,
+        ]);
+    }
 
+    public function subject_activeclasses($subject_id)
+    {
+        // $subject_courses = Course::whereHas('classes', function ($q) {
+        //     $q->where('status', 'inprogress');
+        // })->with('classes', function ($q) {
+        //     $q->where('status', 'inprogress');
+        // })->where('subject_id', $subject_id)->get();
+
+        $subject_courses = Course::where('subject_id', $subject_id)->pluck('id');
+
+        $classes = AcademicClass::where('status', 'inprogress')->whereIn('course_id', $subject_courses)->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Active Classes related to Subject!",
+            'classes_count' => count($classes),
+            'classes' => $classes,
+        ]);
+    }
+
+    public function subject_upcomingclasses($subject_id)
+    {
+        $subject_courses = Course::where('subject_id', $subject_id)->pluck('id');
+
+        $classes = AcademicClass::where('status', 'scheduled')->whereIn('course_id', $subject_courses)->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Upcoming Classes related to Subject!",
+            'classes_count' => count($classes),
+            'classes' => $classes,
+        ]);
+    }
+
+    public function subject_canceledclasses($subject_id)
+    {
+        // $subject_canceled_classes = Course::whereHas('canceled_classes')->with('canceled_classes')->where('subject_id', $subject_id)->get();
+
+        $subject_courses = Course::where('subject_id', $subject_id)->pluck('id');
+
+        $classes = CanceledCourse::whereIn('course_id', $subject_courses)->get();
+        return response()->json([
+            'status' => true,
+            'message' => "Canceled Classes related to Subject!",
+            'classes_count' => count($classes),
+            'classes' => $classes,
+        ]);
+    }
+
+    public function subject_rescheduledclasses($subject_id)
+    {
+        $subject_courses = Course::where('subject_id', $subject_id)
+            ->pluck('id');
+
+        $classes = RescheduleClass::whereIn('course_id', $subject_courses)->get();
+        return response()->json([
+            'status' => true,
+            'message' => "Rescheduled Classes related to Subject!",
+            'classes_count' => count($classes),
+            'classes' => $classes,
+        ]);
+    }
 }

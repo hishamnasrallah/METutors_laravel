@@ -716,15 +716,15 @@ class UserController extends Controller
         }
     }
 
-    public function user_prefrences(Request $request)
+    public function user_preference(Request $request)
     {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
         $rules = [
-            'preffered_language' => 'required|integer',
-            'preffered_gender' => 'required|string',
-            'teacher_language' => 'required|integer',
+            'preferred_language' => 'required|integer',
+            'preferred_gender' => 'required|string',
+            // 'teacher_language' => 'required|integer',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -748,14 +748,35 @@ class UserController extends Controller
         }
 
         $prefrence->user_id = $token_user->id;
-        $prefrence->preffered_language = $request->preffered_language;
-        $prefrence->preffered_gender = $request->preffered_gender;
-        $prefrence->teacher_language = $request->teacher_language;
+        $prefrence->preferred_language = $request->preferred_language;
+        $prefrence->preferred_gender = $request->preferred_gender;
+        if($request->teacher_language){
+             $prefrence->teacher_language = $request->teacher_language;
+        }else{
+              $prefrence->teacher_language = null;
+        }
+       
         $prefrence->save();
 
         return response()->json([
             'status' => true,
-            'errors' => "User Prefrences Added Successfully",
+            'message' => "User Prefrences Added Successfully",
+        ]);
+    }
+
+
+    public function get_user_preference(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+       
+        $pref = UserPrefrence::where('user_id', $token_user->id)->first();
+       
+        return response()->json([
+            'status' => true,
+            'message' => "User Prefrences",
+            'preference' => $pref,
         ]);
     }
 

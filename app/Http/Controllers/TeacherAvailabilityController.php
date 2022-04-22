@@ -59,8 +59,8 @@ class TeacherAvailabilityController extends Controller
             'startDate' => $start_date,
             'endDate' => $end_date,
             'weekdays' => array_unique($finalWeekDays),
-            // 'availabilites' => $availabilites,
-            'availabilites' => $finalAvailabilities,
+            'availabilites' => $availabilites,
+            'final_availabilites' => $finalAvailabilities,
         ]);
     }
 }

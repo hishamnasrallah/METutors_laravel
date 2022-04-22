@@ -109,9 +109,12 @@ class InterviewRequestController extends Controller
       $interviewRequest->addtional_comments = $request->addtional_comments;
       $interviewRequest->save();
 
+      $interviewRequest=TeacherInterviewRequest::find($interviewRequest->id);
+
       return response()->json([
         'status' => true,
-        'message' => 'Your interview request has been submitted to the admin'
+        'message' => 'Your interview request has been submitted to the admin',
+        'interview_request' => $interviewRequest
       ]);
     } else {
 
