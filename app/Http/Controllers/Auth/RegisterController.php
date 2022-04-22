@@ -219,6 +219,21 @@ class RegisterController extends Controller
         $checkConfirmed = $verificationController->checkConfirmed($user, $username, $value);
 
         if ($checkConfirmed['status'] == 'send') {
+
+            if($user->role_name == 'teacher'){
+                $user_count=User::where('role_name','teacher')->count();
+                $user_count=$user_count + 1;
+                $id_number='TIN'.$user_count;
+            }
+             if($user->role_name == 'student'){
+                $user_count=User::where('role_name','student')->count();
+                $user_count=$user_count + 1;
+                $id_number='SIN'.$user_count;
+            }
+
+            $update_user=User::find($user->id);
+            $update_user->id_number=$id_number;
+            $update_user->update();
             
              return response()->json([
                         'status'=>true,

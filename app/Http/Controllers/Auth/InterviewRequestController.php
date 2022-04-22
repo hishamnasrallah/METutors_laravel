@@ -23,7 +23,7 @@ class InterviewRequestController extends Controller
 
     if (isset($id)) {
 
-      $interviewRequests = TeacherInterviewRequest::with('user', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
+      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country','user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
     }
 
     return response()->json([
@@ -36,7 +36,7 @@ class InterviewRequestController extends Controller
   {
 
 
-    $interviewRequests = TeacherInterviewRequest::with('user', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->get();
+    $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->get();
 
 
     //   return $_GET['teacher_name'];
@@ -62,7 +62,7 @@ class InterviewRequestController extends Controller
 
       'date_for_interview' => 'required',
       'time_for_interview' => 'required',
-      'addtional_comments' => 'required|max:60',
+     
     ];
 
 
@@ -106,7 +106,10 @@ class InterviewRequestController extends Controller
       $interviewRequest->user_id = $user->id;
       $interviewRequest->date_for_interview = $request->date_for_interview;
       $interviewRequest->time_for_interview = $request->time_for_interview;
-      $interviewRequest->addtional_comments = $request->addtional_comments;
+      if($request->addtional_comments){
+         $interviewRequest->addtional_comments = $request->addtional_comments;
+      }
+     
       $interviewRequest->save();
 
       $interviewRequest=TeacherInterviewRequest::find($interviewRequest->id);

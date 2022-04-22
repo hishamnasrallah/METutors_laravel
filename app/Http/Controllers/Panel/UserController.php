@@ -840,6 +840,11 @@ class UserController extends Controller
                      $user->middle_name = $request->middle_name;
                     
                 }
+                if($request->address2){
+                    
+                     $user->address2 = $request->address2;
+                    
+                }
 
                    $user->update();
               
@@ -2222,20 +2227,11 @@ class UserController extends Controller
                    $user->update();
               
              
-                   
-              $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                        
-             $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-
-             
-            //  return $user;
-        
-           
              return response()->json([
                     
                     'status' => true,
                     'message' => 'data updated succesfully',
-                    'token' => $token,
+                    
                     ]);
               
               
@@ -2268,17 +2264,11 @@ class UserController extends Controller
            $user->update();
 
 
-
-                   
-                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                     
-               $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-           
              return response()->json([
                     
                     'status' => true,
-                    'message' => 'data updated succesfully',
-                    'token' => $token,
+                    'message' => 'data updated succesfully'
+                
                     ]);
               
               
@@ -2315,18 +2305,12 @@ class UserController extends Controller
                    $teaching_quali->update();  
                    
                    
-                 
-                   
-                     $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                     
-                     
-               $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                   
+              
                      return response()->json([
                     
                     'status' => true,
-                    'message' => 'data updated succesfully',
-                    'token' => $token,
+                    'message' => 'data updated succesfully'
+                    
                     ]) ;
                      
                      
@@ -2355,19 +2339,14 @@ class UserController extends Controller
                    $teaching_specs->availability_start_date = $request->availability_start_date;
                    $teaching_specs->availability_end_date =$request->availability_end_date;
                    $teaching_specs->update();  
-                   
-                                
-                   
-             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                        
-            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
+         
                    
                      return response()->json([
                     
                     'status' => true,
-                    'message' => 'data updated succesfully',
-                    'token' => $token,
-                    ]) ;
+                    'message' => 'data updated succesfully'
+                   
+                    ]);
                      
                      
                  }
@@ -2429,33 +2408,16 @@ class UserController extends Controller
                   $user=User::find($token_user->id);
                     $user->profile_completed_step=5;
                    $user->update();
-               
-                                
-                   
-             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id',$token_user->id)->first();
-                        
-            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                   
+        
                      return response()->json([
                     
                     'status' => true,
-                    'message' => 'data updated succesfully',
-                    'token' => $token,
+                    'message' => 'data updated succesfully'
+                   
                     ]) ;
-                     
-                
-            
+                   
             }
-            
-            
-            
-        
-      
+           
     }
-    
-
-
-
-
-
+   
 }
