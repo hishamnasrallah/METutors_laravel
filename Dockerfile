@@ -20,7 +20,7 @@ RUN echo "</VirtualHost>" >> /etc/apache2/sites-enabled/000-default.conf
 RUN mv .env.example .env
 RUN composer install
 RUN composer update
-RUN su -c "php artisan optimize" www-data
+RUN php artisan optimize
 RUN chmod +x /var/www/html/entry.sh
 
 ENTRYPOINT ["/var/www/html/entry.sh"]
