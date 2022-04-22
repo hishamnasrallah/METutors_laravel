@@ -187,7 +187,7 @@ class UserController extends Controller
              
                     $details  = [
                         'title' => 'Invitation to join MEtutors',
-                        'link' => 'https://localhost:4200/',
+                        'link' => 'https://frontend.eshapsough.com/',
                         'message' => $user->first_name." ".$user->last_name.' has invited you yo join MEtutors',
                        
                         'ignoremessage' => "If you don't want to join, please ignore it.",
