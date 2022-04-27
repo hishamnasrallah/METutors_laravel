@@ -9,6 +9,7 @@ WORKDIR /var/www/html
 RUN rm index.html
 COPY . .
 RUN chown www-data:www-data . -R
+RUN apt-get install php-mbstring
 RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#g' /etc/apache2/sites-enabled/000-default.conf
 RUN sed -i 's#</VirtualHost>##g' /etc/apache2/sites-enabled/000-default.conf
 RUN echo "<Directory /var/www/html/public>" >> /etc/apache2/sites-enabled/000-default.conf
