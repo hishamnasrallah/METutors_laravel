@@ -367,15 +367,15 @@ class ClassController extends Controller
             'date' => $class->start_date,
             'currency' => "USD",
             'ispaid' => null,
-            'is_recurring' => 1,
-            'repeat' => 1,
+            'is_recurring' => 0,
+            'repeat' => 0,
             'weekdays' => $course->weekdays,
             'end_date' => $class->end_date,
             'seat_attendees' => null,
             'record' => 0,
             'isRecordingLayout ' => 1,
             'isVideo  ' => 1,
-            'isBoard ' => 0,
+            'isBoard ' => 1,
             'isLang ' => null,
             'isRegion ' => null,
             'isCorporate ' => null,
@@ -461,6 +461,14 @@ class ClassController extends Controller
             $course->status = "inprogress";
             $course->update();
 
+            $classrooms = ClassRoom::where('course_id', $class->course_id)->get();
+            if (count($classrooms) > 0) {
+                foreach ($classrooms as $classroom) {
+                    $classroom->status = "inprogress";
+                    $classroom->save();
+                }
+            }
+
             // User Attendence starts
             $check_attd = Attendance::where('user_id', $token_user->id)->where('academic_class_id', $class->id)->count();
             if ($check_attd == 0) {
@@ -469,6 +477,12 @@ class ClassController extends Controller
                 $attendance->academic_class_id = $class->id;
                 $attendance->course_id = $class->course_id;
                 $attendance->status = 'present';
+                if ($token_user->rolename == 'teacher') {
+                    $attendance->rolename = 'teacher';
+                }
+                if ($token_user->rolename == 'student') {
+                    $attendance->rolename = 'teacher';
+                }
                 $attendance->save();
             }
             // User Attendence ends
@@ -583,8 +597,8 @@ class ClassController extends Controller
                 $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id','desc')->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id','desc')->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
 
                 return response()->json([
@@ -607,8 +621,8 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id','desc')->get();
+                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
 
                     return response()->json([
@@ -630,8 +644,8 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     return response()->json([
@@ -657,8 +671,8 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id','desc')->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
 
                 return response()->json([
@@ -675,8 +689,8 @@ class ClassController extends Controller
         } else {
 
             $program = Program::where('code', $request->program)->first();
-            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id','desc')->get();
-            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id','desc')->get();
+            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id', 'desc')->get();
+            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id', 'desc')->get();
             $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
 
             return response()->json([
@@ -751,9 +765,9 @@ class ClassController extends Controller
         //************ If class date and time passed then roll call attendence ************
         foreach ($course['classes'] as $class) {
             $classStart = Carbon::parse($class->start_date)->format('Y-m-d');
-            if ($classStart <= $current_date) {
+            if ($current_date >= $classStart) {
                 $current_time = Carbon::now();
-                $endTime = ($class->end_time);
+                $endTime = Carbon::parse($class->end_time);
                 if ($current_time > $endTime) {
                     //for students
                     foreach ($class->participants as $participant) {
@@ -765,6 +779,7 @@ class ClassController extends Controller
                             $userAttendence->course_id = $class->course_id;
                             $userAttendence->user_id = $participant->student_id;
                             $userAttendence->status = 'absent';
+                            $userAttendence->role_name = 'student';
                             $userAttendence->save();
                         }
                     }
@@ -776,6 +791,7 @@ class ClassController extends Controller
                         $userAttendence->course_id = $class->course_id;
                         $userAttendence->user_id = $class->teacher_id;
                         $userAttendence->status = 'absent';
+                        $userAttendence->role_name = 'teacher';
                         $userAttendence->save();
                     }
                 }
@@ -784,7 +800,13 @@ class ClassController extends Controller
         // ************************************************
 
         $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student', 'attendence')
+            ->with('course', 'course.subject', 'course.student')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
             ->where('start_date', $current_date)
             ->with('course')
             ->where($userrole, $user_id)
@@ -792,7 +814,13 @@ class ClassController extends Controller
             ->get();
 
         $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student', 'attendence')
+            ->with('course', 'course.subject', 'course.student')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
             ->where('start_date', '>', $current_date)
             ->with('course')
             ->where($userrole, $user_id)
@@ -805,7 +833,13 @@ class ClassController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student', 'attendence')
+            ->with('course', 'course.subject', 'course.student')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
             ->whereHas('attendence', function ($query) use ($user_id) {
                 $query->where(['user_id' => $user_id]);
             })
@@ -984,7 +1018,7 @@ class ClassController extends Controller
 
                 $apiURL = 'https://api.braincert.com/v2/updateclass';
                 $postInput = [
-                    'apikey' => 'PU0MLbUZrGbmonA3PHny',
+                    'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                     'id' => $class->class_id,
                     'start_time' => $request->start_time,
                     'end_time' => $request->end_time,

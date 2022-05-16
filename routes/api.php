@@ -254,6 +254,7 @@ Route::post('admin/approve-document/{id}', 'Admin\UserController@approve_documen
 Route::post('admin/reject-document/{id}', 'Admin\UserController@reject_document');
 
 Route::get('filtered-teacher', 'Web\UserController@filteredTeacher');
+Route::get('available-teachers', 'Web\UserController@avail_teachers');
 
 Route::group(['namespace' => 'Web', 'middleware' => ['impersonate', 'share']], function () {
 
@@ -361,7 +362,7 @@ Route::get('programs/{id}/subjects', 'ClassController@program_subjects');
 Route::get('teacher/kudos-points', 'ClassController@kudos_points');
 
 
-
+Route::get('courses/{id}', 'AdminController@program_subjects');
 
 Route::get('search/{searchQuery}', 'TeacherController@overallSearch');
 
@@ -394,7 +395,8 @@ Route::get('class-attendees/{class_id}', 'TeacherController@classAttendees');
 Route::get('todays-classes', 'TeacherController@todaysClasses');
 Route::post('teacher/class/reschedule', 'Teacher\ClassController@reschedule_class');
 Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
-
+Route::post('teacher/class/view', 'Teacher\ClassController@view_class_recording');
+Route::post('student/class/view', 'Student\ClassController@view_class_recording');
 Route::post('student/course/{course_id}/class', 'Student\ClassController@addClass');
 
 
@@ -464,10 +466,11 @@ Route::delete('admin/course/feedback', 'AdminController@del_coursefeedback');
 Route::get('admin/testimonials', 'AdminController@platform_feedbacks');
 Route::delete('admin/testimonial/{sender_id}', 'AdminController@del_usertestimonial');
 Route::get('admin/teachers/ratings', 'AdminController@teacher_ratings');
-Route::post('admin/course/reassign/teacher', 'AdminController@reassign_teacher');
-Route::post('admin/course/teacher/reassign', 'AdminController@reassignTeacher');
+Route::post('admin/canceled-course/reassign/teacher', 'AdminController@reassign_teacher');
+Route::post('admin/rejected-course/teacher/reassign', 'AdminController@reassignTeacher');
 Route::get('admin/teachers', 'AdminController@teachers');
 
+Route::get('admin/suspended-teachers/', 'AdminController@suspended_teachers');
 Route::get('admin/rejected-teachers/', 'AdminController@rejected_teachers');
 Route::get('admin/pending-teachers/', 'AdminController@pending_teachers');
 Route::get('admin/current-teachers/', 'AdminController@current_teachers');
@@ -476,6 +479,16 @@ Route::get('admin/subject/{subject_id}/active-classes', 'AdminController@subject
 Route::get('admin/subject/{subject_id}/upcoming-classes', 'AdminController@subject_upcomingclasses');
 Route::get('admin/subject/{subject_id}/canceled-classes', 'AdminController@subject_canceledclasses');
 Route::get('admin/subject/{subject_id}/rescheduled-classes', 'AdminController@subject_rescheduledclasses');
+
+Route::get('admin/workforce-capacity', 'AdminController@workforce_capacity');
+Route::get('admin/subject/{subject_id}/bookings', 'AdminController@subject_bookings');
+Route::get('admin/subject/{subject_id}/hired-teachers', 'AdminController@hired_teachers');
+Route::get('admin/subject/{subject_id}/available-teachers', 'AdminController@available_teachers');
+Route::get('admin/course/{course_id}/detail', 'AdminController@course_detail');
+Route::get('admin/bookings', 'AdminController@classroom');
+Route::get('admin/course/{course_id}/feedbacks', 'AdminController@student_feedbacks');
+Route::get('admin/course/{course_id}/previous-teachers', 'AdminController@previous_teachers');
+Route::get('admin/cancelled-courses', 'AdminController@cancelledCourses');
 
 
 // });
@@ -495,10 +508,10 @@ Route::get('teacher/course/{course_id}/attendance', 'Student\CourseController@te
 // });
 
 // Route::group(['middleware' => ['auth.jwt', 'isStudent']], function () {
-Route::get('student/course/{course_id}/refund', 'Student\CourseController@refundCourse');
-Route::Post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourse');
-Route::post('student/course/cancel/selective_classes', 'Student\CourseController@refundClasses');
-Route::post('student/course/cancel/reason', 'Student\CourseController@cancelCourseReason');
+Route::get('student/refund/course/{course_id}', 'Student\CourseController@refundCourse');
+// Route::Post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourse');
+Route::get('student/refund/course/{course_id}/classes', 'Student\CourseController@refundClasses');
+Route::post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourseReason');
 
 Route::get('student/course/{course_id}/attendance', 'Student\CourseController@getCourseAttendence');
 // Feedback Routes
@@ -508,7 +521,14 @@ Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
 Route::get('student/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
 
 Route::post('student/teachers/available', 'Web\UserController@availableTeachers');
-Route::post('student/class/{academic_class_id}/makeup-slots', 'Student\ClassController@makeupClassAvailability');
+Route::get('student/class/{academic_class_id}/makeup-slots', 'Student\ClassController@makeupClassAvailability');
 Route::post('student/class/{academic_class_id}/makeup', 'Student\ClassController@makeupClass');
 
+
+Route::get('student/class/{academic_class_id}/recording', 'Student\ClassController@class_recording');
+Route::post('student/course/{course_id}/select-teacher', 'Student\ClassController@teacher_replacement');
+Route::post('student/course/{course_id}/request-admin', 'Student\CourseController@request_admin');
+
+Route::get('local-utc', 'ClassController@local_to_utc');
+Route::get('utc-local', 'ClassController@utc_to_local');
 // });

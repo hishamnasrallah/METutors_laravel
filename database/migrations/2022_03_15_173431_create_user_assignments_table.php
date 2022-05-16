@@ -17,6 +17,8 @@ class CreateUserAssignmentsTable extends Migration
             $table->id();
             $table->integer("user_id");
             $table->integer("assignment_id");
+            $table->longText("description")->nullable();
+            $table->string("file")->nullable();
             $table->string("status");
             $table->timestamps();
         });

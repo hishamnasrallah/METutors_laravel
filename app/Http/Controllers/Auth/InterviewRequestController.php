@@ -152,12 +152,31 @@ class InterviewRequestController extends Controller
 
     $apiURL = 'https://api.braincert.com/v2/schedule';
     $postInput = [
-      'apikey' =>  "PU0MLbUZrGbmonA3PHny",
+      'apikey' =>  "xKUyaLJHtbvBUtl3otJc",
       'title' =>  $request->title,
       'timezone' => 90,
       'start_time' => $class->start_time,
       'end_time' => $class->end_time,
       'date' => $class->start_date,
+      'currency' => "USD",
+      'ispaid' => null,
+      'is_recurring' => 0,
+      'repeat' => 0,
+      'weekdays' => null,
+      'end_date' => $class->end_date,
+      'seat_attendees' => null,
+      'record' => 0,
+      'isRecordingLayout ' => 1,
+      'isVideo  ' => 1,
+      'isBoard ' => 1,
+      'isLang ' => null,
+      'isRegion ' => null,
+      'isCorporate ' => null,
+      'isScreenshare ' => 1,
+      'isPrivateChat  ' => 0,
+      'description ' => null,
+      'keyword ' => null,
+      'format ' => "json",
     ];
 
     $client = new Client();

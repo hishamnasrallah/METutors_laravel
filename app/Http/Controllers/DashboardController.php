@@ -244,7 +244,7 @@ class DashboardController extends Controller
         $message = "Profile updated Successfully";
 
         //*********** Sending Rejection Email to Student  ************\\
-       
+    
         $user->update();
 
         event(new UpdateProfile($user, $user->id, $message));

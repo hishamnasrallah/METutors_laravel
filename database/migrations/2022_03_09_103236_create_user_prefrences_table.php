@@ -18,7 +18,7 @@ class CreateUserPrefrencesTable extends Migration
             $table->integer('user_id');
             $table->integer('preffered_language');
             $table->string('preffered_gender');
-            $table->integer('teacher_language');
+            $table->integer('teacher_language')->nullable();
             $table->timestamps();
         });
     }

@@ -41,4 +41,9 @@ class CancelCourse
     {
         return new PrivateChannel('channel-name');
     }
+
+    public function broadcastAs()
+    {
+        return 'cancel_course';
+    }
 }

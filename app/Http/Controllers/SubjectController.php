@@ -75,9 +75,10 @@ class SubjectController extends Controller
          $rules = [
 
             'program_id' => 'required',
-         
+            
             'field_id' => 'required',
             'name' => 'required',
+            'description' => 'required',
             'price_per_hour' => 'required',
         ];
 
@@ -111,6 +112,7 @@ class SubjectController extends Controller
                  $FieldOfStudy->grade=$request->grade;
             }
         $subject->name=$request->name;
+        $subject->description=$request->description;
         $subject->price_per_hour=$request->price_per_hour;
         $subject->save();
 

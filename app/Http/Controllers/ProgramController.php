@@ -68,6 +68,7 @@ class ProgramController extends Controller
          $rules = [
 
             'name' => 'required',
+            'description' => 'required',
         ];
 
         
@@ -88,6 +89,7 @@ class ProgramController extends Controller
 
         $program=new Program();
         $program->name=$request->name;
+        $program->description=$request->description;
         $program->save();
 
         $program=Program::find($program->id);

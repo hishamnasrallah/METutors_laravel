@@ -19,6 +19,7 @@ class CreateAttendancesTable extends Migration
             $table->integer('user_id');
             $table->integer('course_id');
             $table->string('status');
+            $table->string('role_name');
             $table->timestamps();
         });
     }

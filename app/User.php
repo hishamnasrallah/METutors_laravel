@@ -122,9 +122,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(TeacherSubject::class);
     }
 
-     public function country()
+    public function country()
     {
-        return $this->belongsTo('App\Country', 'country', 'id')->select('id','name');
+        return $this->belongsTo('App\Country', 'country', 'id')->select('id', 'name');
     }
 
 
@@ -399,6 +399,17 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(ClassRoom::class, 'teacher_id', 'id');
     }
 
+
+    public function teacher_students()
+    {
+        return $this->hasMany(ClassRoom::class, 'teacher_id', 'id');
+    }
+
+   public function teacher_course()
+    {
+        return $this->hasMany(Course::class, 'teacher_id', 'id');
+    }
+
     public function course()
     {
         return $this->hasMany(Course::class, 'teacher_id', 'id');
@@ -408,4 +419,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Course::class, 'student_id', 'id');
     }
+     public function teacher_feedbacks()
+    {
+        return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
+    }
+
+
 }

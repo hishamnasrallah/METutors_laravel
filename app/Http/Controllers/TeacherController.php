@@ -9,6 +9,7 @@ use App\Events\StudentAcceptCourse;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\Attendance;
+use App\Models\CanceledClass;
 use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\ClassTopic;
@@ -262,14 +263,14 @@ class TeacherController extends Controller
                 'currency' => "USD",
                 'ispaid' => null,
                 'is_recurring' => 0,
-                'repeat' => 1,
-                'weekdays' => $course->weekdays,
+                'repeat' => 0,
+                'weekdays' => null,
                 'end_date' => $class->end_date,
                 'seat_attendees' => null,
                 'record' => 0,
                 'isRecordingLayout ' => 1,
                 'isVideo  ' => 1,
-                'isBoard ' => 0,
+                'isBoard ' => 1,
                 'isLang ' => null,
                 'isRegion ' => null,
                 'isCorporate ' => null,
@@ -352,7 +353,6 @@ class TeacherController extends Controller
         $user = User::find($course->student_id);
         $teacher = User::find($course->teacher_id);
 
-
         $rejected = new RejectedCourse();
         $rejected->course_id = $course->id;
         $rejected->course_id = $course->id;
@@ -361,12 +361,11 @@ class TeacherController extends Controller
         $rejected->reason = $request->reason;
         $rejected->save();
 
-
         $classes = AcademicClass::where('course_id', $course->id)->where('teacher_id', $user->id)->get();
         foreach ($classes as $class) {
             $cls = AcademicClass::find($class->id);
             $cls->status = "rejected";
-            $cls->teacher_id = null;
+            // $cls->teacher_id = null;
             $cls->update();
         }
 
@@ -382,7 +381,7 @@ class TeacherController extends Controller
         // event(new RejectCourse($course, $course->student_id, $student_message, $user));
 
         $course->status = "rejected";
-        $course->teacher_id = null;
+        // $course->teacher_id = null;
         $course->update();
 
 
@@ -894,7 +893,6 @@ class TeacherController extends Controller
     public function cancelCourse($course_id, Request $request)
     {
 
-        // return $course_id;
         $rules = [
             'reason' =>  'required',
         ];
@@ -918,7 +916,7 @@ class TeacherController extends Controller
         $user = User::find($course->student_id);
         $teacher = User::find($course->teacher_id);
 
-        if ($course->status == 'canceled') {
+        if ($course->status == 'canceled_by_teacher' || $course->status == 'canceled_by_student' || $course->status == 'canceled_by_admin') {
             return response()->json([
                 'status' => true,
                 'message' => 'Course Already cancelled!',
@@ -927,24 +925,29 @@ class TeacherController extends Controller
 
         $classes = AcademicClass::where('course_id', $course->id)->where('teacher_id', $teacher->id)->get();
 
+
+        $canceledCourse = new CanceledCourse();
+        $canceledCourse->cancelled_by = $token_user->role_name;
+        $canceledCourse->student_id = $course->student_id;
+        $canceledCourse->teacher_id = $course->teacher_id;
+        $canceledCourse->course_id = $course->id;
+        $canceledCourse->canceled_classes_count = count($classes->where('status', '!=', 'completed'));
+        $canceledCourse->reason = $request->reason;
+        $canceledCourse->save();
+
         foreach ($classes as $class) {
             if ($class->status != 'completed') {
                 $cls = AcademicClass::find($class->id);
-                $cls->teacher_id = null;
+                // $cls->teacher_id = null;
                 $cls->status = 'canceled';
 
-                $canceledCourse = new CanceledCourse();
-                $canceledCourse->user_id = $token_user->id;
-                $canceledCourse->user_id = $token_user->id;
-                $canceledCourse->course_id = $course->id;
-                $canceledCourse->academic_class_id = $cls->id;
-                $canceledCourse->reason = $request->reason;
-                $canceledCourse->save();
+                $canceledClass = new CanceledClass();
+                $canceledClass->academic_class_id = $cls->id;
+                $canceledClass->canceled_course_id = $canceledCourse->id;
+                $canceledClass->save();
                 $cls->update();
             }
         }
-
-
 
         $teacher_message = "Course Canceled Successfully";
         $student_message = "Teacher Canceled Course";
@@ -952,11 +955,11 @@ class TeacherController extends Controller
         // event(new CancelCourse($course, $course->teacher_id, $teacher_message, $teacher));
         // event(new CancelCourse($course, $course->student_id, $student_message, $user));
 
-        $course->teacher_id = null;
-        $course->status = 'canceled';
+        // $course->teacher_id = null;
+        $course->status = 'cancelled_by_teacher';
         $clasroom = ClassRoom::where('course_id', $course_id)->get();
         foreach ($clasroom as $room) {
-            $room->status = 'canceled';
+            $room->status = 'cancelled_by_teacher';
             $room->update();
         }
         $course->update();

@@ -48,24 +48,21 @@ class FeedbackController extends Controller
         }
 
 
-        $count = UserFeedback::where('course_id', $request->course_id)->where('sender_id', $token_user->id)->count();
-        // return $request->feedbacks;
+        $feedbk = UserFeedback::where('course_id', $request->course_id)->where('sender_id', $token_user->id)->get();
         $course = Course::find($request->course_id);
-
-        if ($count == 0) {
-            $decoded_feedbacks = json_decode(json_encode($request->feedbacks));
+        $decoded_feedbacks = json_decode(json_encode($request->feedbacks));
+        if (count($feedbk) == 0) {
 
             foreach ($decoded_feedbacks as $feed) {
                 // print_r($feedback);
                 $feedback = new UserFeedback();
-
                 if ($token_user->role_name == 'student') {
                     $feedback->receiver_id = $course->teacher_id;
                 } else {
                     $feedback->receiver_id = $request->receiver_id;
                 }
                 $feedback->sender_id = $token_user->id;
-                $user = User::find($token_user->id);
+                $user = User::find($feedback->receiver_id);
                 $user->kudos_points = $user->kudos_points + ($feed->rating * 20);
 
                 $feedback->review = $request->review;
@@ -83,10 +80,41 @@ class FeedbackController extends Controller
                 'feedback' => $feedbacks,
             ]);
         } else {
+            if ($token_user->role_name == 'student') {
+                $points_id = $course->teacher_id;
+            } else {
+                $points_id = $request->receiver_id;
+            }
+
+            $user = User::find($points_id);
+            $user->kudos_points = $user->kudos_points - ($feedbk->sum('kudos_points'));
+
+            foreach ($decoded_feedbacks as $feed) {
+                $feedback = UserFeedback::where('feedback_id', $feed->feedback_id)->first();
+                if ($token_user->role_name == 'student') {
+                    $feedback->receiver_id = $course->teacher_id;
+                } else {
+                    $feedback->receiver_id = $request->receiver_id;
+                }
+
+                $feedback->sender_id = $token_user->id;
+                $user->kudos_points = $user->kudos_points + ($feed->rating * 20);
+
+                $feedback->review = $request->review;
+                $feedback->course_id = $request->course_id;
+                $feedback->rating = $feed->rating;
+                $feedback->feedback_id = $feed->feedback_id;
+                $feedback->kudos_points = $feed->rating * 20;
+                $feedback->save();
+                $user->update();
+            }
+
+            $feedbacks = UserFeedback::where('course_id', $request->course_id)->where('sender_id', $token_user->id)->get();
             return response()->json([
-                'status' => false,
-                'message' => "Your have already submitted Feedback on this Course!",
-            ], 400);
+                'status' => true,
+                'message' => "Your Feedback has Successfully Updated!",
+                'feedback' => $feedbacks,
+            ]);
         }
     }
 

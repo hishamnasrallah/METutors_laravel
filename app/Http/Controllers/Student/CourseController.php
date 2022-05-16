@@ -6,6 +6,7 @@ use App\Events\CancelCourse;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
+use App\Models\CanceledClass;
 use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\Course;
@@ -28,7 +29,7 @@ class CourseController extends Controller
         $refundable_classes_id = [];
         $today = Carbon::today()->format('Y-m-d');
         $remaining_classes = $course['classes']->where('status', '!=', 'completed');
-        $classes = $course['classes']->where('start_date', '>=', $today);
+        $classes = $course['classes']->where('start_date', '>=', $today)->where('status', '!=', 'completed');
         $duration = 0;
         foreach ($classes as $class) {
             $now = Carbon::now();
@@ -51,18 +52,19 @@ class CourseController extends Controller
                 'total_classes' => count($course['classes']),
                 'remaining_classes' => count($remaining_classes),
                 'total_refundable_classes' => count($refundable_classes),
-                'non_refundable_classes' => count($non_refundable_classes),
-                'per_class_refund' =>  $subject->price_per_hour,
+                'total_non_refundable_classes' => count($non_refundable_classes),
+                'per_hour_price' =>  $subject->price_per_hour,
                 'service_fee' => $service_fee,
                 'total_duration' => $duration,
-                'total_refunds' => $duration  * $subject->price_per_hour,
+                'subtotal_refunds' => $duration  * $subject->price_per_hour,
+                'total_refunds' => $duration  * $subject->price_per_hour - count($refundable_classes)  * $service_fee,
                 'total_service_fee' => count($refundable_classes)  * $service_fee,
                 'course' => $course,
             ]);
         }
 
 
-        if ($request->has('selective_classes')) {
+        if ($request->has('selected_classes')) {
 
             return response()->json([
 
@@ -76,8 +78,9 @@ class CourseController extends Controller
     public function cancelCourse($course_id, Request $request)
     {
         $rules = [
+
             'reason' =>  'required',
-            'total_funds' =>  'required',
+
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -95,7 +98,12 @@ class CourseController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        return $course = Course::with('classes')->findOrFail($course_id);
+        $course = Course::find($course_id);
+
+        return response()->json([
+            'status' => true,
+            'message' => "Classes cancelled successfully",
+        ]);
     }
 
     public function getCourseAttendence(Request $request, $course_id)
@@ -146,10 +154,9 @@ class CourseController extends Controller
         ]);
     }
 
-    public function refundClasses(Request $request)
+    public function refundClasses(Request $request, $course_id)
     {
         $rules = [
-            'course_id' =>  'required',
             'academic_classes' =>  'required',
         ];
 
@@ -169,33 +176,58 @@ class CourseController extends Controller
         // $token_user = JWTAuth::toUser($token_1);
         $service_fee = 1;
 
-        $course = Course::find($request->course_id);
+        $course = Course::find($course_id);
         $classes = json_decode(json_encode($request->academic_classes));
 
         $duration = 0;
         foreach ($classes as $class) {
-            $academic_class = AcademicClass::find($class->id);
+            $academic_class = AcademicClass::find($class);
             $duration = $duration + $academic_class->duration;
         }
 
         $subject = Subject::find($course->subject_id);
         return response()->json([
             'status' => true,
+            'per_hour_price' => $subject->price_per_hour,
             'total_classes' => count($classes),
+            'total_refundable_classes' => count($classes),
             'price_per_hour' => $subject->price_per_hour,
             'total_duration' => $duration,
             'service_fee' => $service_fee,
-            'total_refund' =>  $duration * $subject->price_per_hour,
+            'subtotal_refunds' =>  $duration * $subject->price_per_hour,
+            'total_refunds' =>  $duration * $subject->price_per_hour - count($classes) * $service_fee,
             'total_service_fee' =>  count($classes) * $service_fee,
+
         ]);
     }
 
-    public function cancelCourseReason(Request $request)
+    public function cancelCourseReason(Request $request, $course_id)
     {
         $rules = [
-            'academic_classes' =>  'required',
+            'is_complete' =>  'required',
             'reason' =>  'required|string',
         ];
+
+        if($request->is_complete == 0){
+             $rules = [
+                'academic_classes' =>  'required',
+            ];
+
+
+            $validator = Validator::make($request->academic_classes, $rules);
+
+            if ($validator->fails()) {
+                $messages = $validator->messages();
+                $errors = $messages->all();
+
+                return response()->json([
+                    'status' => false,
+                    'errors' => $errors,
+                ], 400);
+            }
+
+        }
+
 
         $validator = Validator::make($request->all(), $rules);
 
@@ -212,32 +244,130 @@ class CourseController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $course = Course::find($request->course_id);
-        $classes = json_decode(json_encode($request->academic_classes));
-        $canceled_classes = [];
-        foreach ($classes as $class) {
-            $academic_class = AcademicClass::find($class->id);
-            $academic_class->teacher_id = null;
-            array_push($canceled_classes, $academic_class);
+        $course = Course::find($course_id);
 
-            $course = new CanceledCourse();
-            $course->course_id = $academic_class->course_id;
-            $course->academic_class_id = $class->id;
-            $course->user_id = $token_user->id;
-            $course->reason = $request->reason;
-            $course->save();
-            $academic_class->update();
+
+
+        // return $request->is_complete;
+        if ($request->is_complete == '0') {
+           
+            if ($course->status == 'cancelled_by_teacher' || $course->status == 'cancelled_by_student' || $course->status == 'cancelled_by_admin') {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Course Already cancelled!',
+                ], 400);
+            }
+
+            $classes = json_decode(json_encode($request->academic_classes));
+
+            $canceledCourse = new CanceledCourse();
+            $canceledCourse->cancelled_by = $token_user->role_name;
+            $canceledCourse->student_id = $course->student_id;
+            $canceledCourse->teacher_id = $course->teacher_id;
+            $canceledCourse->course_id = $course->id;
+            $canceledCourse->canceled_classes_count = count($classes);
+            $canceledCourse->reason = $request->reason;
+            $canceledCourse->save();
+
+            $canceled_classes = [];
+            foreach ($classes as $class) {
+                $academic_class = AcademicClass::find($class);
+                // $academic_class->teacher_id = null;
+                $academic_class->status = 'canceled';
+                array_push($canceled_classes, $academic_class);
+
+                $canceledClass = new CanceledClass();
+                $canceledClass->academic_class_id = $academic_class->id;
+                $canceledClass->canceled_course_id = $canceledCourse->id;
+                $canceledClass->save();
+                $academic_class->update();
+            }
         }
+
+        if ($request->is_complete == '1') {
+
+
+
+            $refundable_classes = [];
+            //finding refundable classes
+            foreach ($course->classes as $class) {
+                $now = Carbon::now();
+                $classStartDate = Carbon::parse($class->start_date);
+                $difference =   $now->diffInHours($classStartDate);
+                if ($difference >= 72) {
+                    array_push($refundable_classes, $class);
+                }
+            }
+
+            $canceledCourse = new CanceledCourse();
+            $canceledCourse->cancelled_by = $token_user->role_name;
+            $canceledCourse->student_id = $course->student_id;
+            $canceledCourse->teacher_id = $course->teacher_id;
+            $canceledCourse->course_id = $course->id;
+            $canceledCourse->canceled_classes_count = count($refundable_classes);
+            $canceledCourse->reason = $request->reason;
+            $canceledCourse->save();
+
+            //Cancelling refundable classes
+            $canceled_classes = [];
+            foreach ($refundable_classes as $class) {
+                $academic_class = AcademicClass::find($class->id);
+                // $academic_class->teacher_id = null;
+                $academic_class->status = 'canceled';
+                array_push($canceled_classes, $academic_class);
+
+                $canceledClass = new CanceledClass();
+                $canceledClass->academic_class_id = $academic_class->id;
+                $canceledClass->canceled_course_id = $canceledCourse->id;
+                $canceledClass->save();
+                $academic_class->update();
+            }
+        }
+
 
         $clasroom = ClassRoom::where('course_id', $course->id)->get();
         foreach ($clasroom as $room) {
-            $room->status = 'canceled';
+            $room->status = 'cancelled_by_student';
             $room->update();
         }
+
+        $course->status = 'cancelled_by_student';
+        // $course->teacher_id = null;
+        $course->update();
+
+        $course = Course::find($course_id);
         return response()->json([
             'status' => true,
             'reason' => $request->reason,
+            'course' => $course,
             'canceledclasses' => $canceled_classes,
+        ]);
+    }
+
+    public function request_admin($course_id)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $course = Course::findOrFail($course_id);
+        $course->status = 'requested_to_metutors';
+        $course->update();
+
+        $clasrooms = ClassRoom::where('course_id', $course_id)->get();
+        foreach ($clasrooms as $clasroom) {
+            $clasroom->status = 'requested_to_metutors';
+            $clasroom->update();
+        }
+
+        foreach ($course->classes as $class) {
+            $class->status = 'requested';
+            $class->update();
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "Request Successfully Sent to METUTORS!",
+            'course' => $course,
         ]);
     }
 }

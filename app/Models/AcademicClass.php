@@ -23,7 +23,7 @@ class AcademicClass extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function course()
@@ -49,5 +49,25 @@ class AcademicClass extends Model
     public function participants()
     {
         return $this->hasMany(ClassRoom::class, 'course_id', 'course_id');
+    }
+
+    public function attendees()
+    {
+        return $this->hasMany(ClassRoom::class, 'course_id', 'course_id');
+    }
+
+    public function teacher_attendence()
+    {
+        return $this->hasOne(Attendance::class);
+    }
+
+    public function student_attendence()
+    {
+        return $this->hasOne(Attendance::class);
+    }
+
+    public function topic()
+    {
+        return $this->hasOne(Topic::class, 'id', 'topic_id');
     }
 }

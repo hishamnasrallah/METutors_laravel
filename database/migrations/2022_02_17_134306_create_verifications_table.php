@@ -15,7 +15,7 @@ class CreateVerificationsTable extends Migration
     {
         Schema::create('verifications', function (Blueprint $table) {
             $table->id();
-            $table->integer("user_id");
+            $table->integer("user_id")->nullable();
             $table->string("mobile")->nullable();
             $table->string("email")->nullable();
             $table->string("code");

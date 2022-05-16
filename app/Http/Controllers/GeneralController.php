@@ -151,7 +151,7 @@ class GeneralController extends Controller
 
    public function subjects(){
 
-       $subjects=Subject::all();
+       $subjects=Subject::with('field')->get();
 
        return response()->json([
 

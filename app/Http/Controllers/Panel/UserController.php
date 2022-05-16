@@ -187,7 +187,7 @@ class UserController extends Controller
              
                     $details  = [
                         'title' => 'Invitation to join MEtutors',
-                        'link' => 'https://frontend.eshapsough.com/',
+                        'link' => 'https://localhost:4200/',
                         'message' => $user->first_name." ".$user->last_name.' has invited you yo join MEtutors',
                        
                         'ignoremessage' => "If you don't want to join, please ignore it.",
@@ -251,6 +251,7 @@ class UserController extends Controller
              $user=User::find($interview_req->user_id);
              if($user != null){
                  
+                 $user->status='rejected';
                  $user->admin_approval='rejected';
                  $user->update();
                  
@@ -322,6 +323,7 @@ class UserController extends Controller
              $user=User::find($interview_req->user_id);
              if($user != null){
                  
+                 $user->status='active';
                  $user->admin_approval='approved';
                  $user->update();
                  

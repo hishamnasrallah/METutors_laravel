@@ -43,7 +43,7 @@ class Course extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function student()
@@ -99,5 +99,38 @@ class Course extends Model
     public function canceled_classes()
     {
         return $this->hasMany(CanceledCourse::class,  'course_id', 'id');
+    }
+
+    public function students()
+    {
+        return $this->hasMany(ClassRoom::class, 'course_id', 'id');
+    }
+
+    public function remaining_classes()
+    {
+        return $this->hasMany(AcademicClass::class);
+    }
+
+    public function completed_classes()
+    {
+        return $this->hasMany(AcademicClass::class);
+    }
+
+    public function student_rating()
+    {
+        return $this->hasMany(UserFeedback::class);
+    }
+
+    public function cancelled_classes($course_id)
+    {
+        $cancelled_course = CanceledCourse::where('course_id', $course_id)->first();
+        $cancelled_classes = $cancelled_course->classes;
+        return $cancelled_classes;
+    }
+
+    public function active_classes($course_id)
+    {
+        $completed_classes = AcademicClass::where('status', 'completed')->get();
+        return $completed_classes;
     }
 }

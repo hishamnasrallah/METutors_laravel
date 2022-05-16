@@ -15,8 +15,11 @@ class CreateCanceledCoursesTable extends Migration
     {
         Schema::create('canceled_courses', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id');
             $table->integer('course_id');
+            $table->string('cancelled_by');
+            $table->integer('student_id');
+            $table->integer('teacher_id');
+            $table->integer('canceled_classes_count');
             $table->longText('reason');
             $table->timestamps();
         });

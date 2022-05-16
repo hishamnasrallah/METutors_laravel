@@ -260,7 +260,10 @@ class VerificationController extends Controller
                 if (\Auth::loginUsingId($authUser->id)) {
 
                     $user1=User::find($authUser->id);
-                    $user1->status = 'active';
+                    if($user1->role_name == 'student'){
+                        $user1->status = 'active';
+                    }
+                    
                     $user1->verified = 1;
                     $user1->update();
 

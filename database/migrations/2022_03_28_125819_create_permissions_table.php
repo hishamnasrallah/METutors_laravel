@@ -17,7 +17,7 @@ class CreatePermissionsTable extends Migration
             $table->id();
             $table->integer('role_id')->nullable();
             $table->integer('section_id')->nullable();
-            $table->integer('allow');
+            $table->integer('allow')->default(0);
             $table->timestamps();
         });
     }

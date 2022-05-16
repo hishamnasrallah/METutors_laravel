@@ -21,7 +21,7 @@ class CreateAssignmentsTable extends Migration
             $table->longText('description');
             $table->text('start_date');
             $table->text('deadline');
-            $table->string('urls');
+            $table->longText('urls');
             $table->string('files');
             $table->string('status');
             $table->timestamps();

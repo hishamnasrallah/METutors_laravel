@@ -18,7 +18,7 @@ class Feedback extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
+        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
     }
 
     public function course()

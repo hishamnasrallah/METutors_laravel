@@ -17,7 +17,9 @@ class CreateFieldOfStudiesTable extends Migration
             $table->id();
             $table->integer('program_id')->nullable();
             $table->integer('country_id')->nullable();
+            $table->integer('grade')->nullable();
             $table->string('name');
+            $table->string('status')->default(1);
             $table->timestamps();
         });
     }

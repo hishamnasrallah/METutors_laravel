@@ -15,9 +15,14 @@ class CreateSubjectsTable extends Migration
     {
         Schema::create('subjects', function (Blueprint $table) {
             $table->id();
+            $table->integer('program_id')->nullable();
+            $table->integer('country_id')->nullable();
+            $table->integer('grade')->nullable();
             $table->integer('field_id');
             $table->string('name');
-            $table->string('price_per_hour')->nullable();
+            $table->longText('description')->nullable();
+            $table->integer('price_per_hour')->nullable();
+            $table->integer('status')->default(1);
             $table->timestamps();
         });
     }

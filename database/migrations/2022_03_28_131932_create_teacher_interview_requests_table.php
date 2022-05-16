@@ -18,9 +18,10 @@ class CreateTeacherInterviewRequestsTable extends Migration
             $table->integer('user_id');	
             $table->string('date_for_interview');
             $table->string('time_for_interview');
-            $table->longText('additional_comments');
-            $table->string('status');
-            $table->longText('admin_comments');
+            $table->string('additional_comments')->nullable();
+            $table->string('status')->default('pending');
+            $table->longText('admin_comments')->nullable();
+            $table->longText('meeting_id')->nullable();
             $table->timestamps();
         });
     }

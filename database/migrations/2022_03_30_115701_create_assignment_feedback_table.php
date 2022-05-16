@@ -15,11 +15,13 @@ class CreateAssignmentFeedbackTable extends Migration
     {
         Schema::create('assignment_feedback', function (Blueprint $table) {
             $table->id();
-            $table->string('assignment_id');
+            $table->integer('user_assignment_id')->nullable();
+            $table->integer('assignment_id');
             $table->integer('student_id');
-            $table->longText('review');
-            $table->integer('rating');
-            $table->string('file');
+            $table->longText('review')->nullable();
+            $table->integer('rating')->nullable();
+            $table->string('file')->nullable();
+            $table->longText('description')->nullable();
             $table->string('status');
             $table->integer('feedback_by');
             $table->timestamps();

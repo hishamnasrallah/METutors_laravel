@@ -17,9 +17,8 @@ class CreateTeachingSpecificationsTable extends Migration
             $table->increments('id');
             $table->integer('user_id')->unsigned();
             $table->string('type_of_tutoring');
-            $table->string('availability_start_date');
-            $table->string('availability_end_date');
-            $table->string('teaching_hours')->nullable();
+            $table->text('availability_start_date');
+            $table->text('availability_end_date');
             $table->timestamps();
         });
     }
