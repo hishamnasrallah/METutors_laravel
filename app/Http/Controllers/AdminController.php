@@ -447,12 +447,16 @@ class AdminController extends Controller
 
     public function course_feedbacks()
     {
-        $user_feedbacks = UserFeedback::with('sender', 'reciever', 'course', 'feedback')->get();
+        $feedbacks = UserFeedback::whereHas('sender', function ($q) {
+            $q->where('role_name', 'student');
+        })
+            ->get();
+
 
         return response()->json([
             'status' => true,
-            'message' => "All User Feedbacks",
-            'user_feedbacks' => $user_feedbacks,
+            'message' => "Students Feedbacks",
+            'user_feedbacks' => $feedbacks,
         ]);
     }
 
@@ -1335,7 +1339,6 @@ class AdminController extends Controller
         foreach ($user_feedbacks as $user_feedback) {
             array_push($feedbacks, $user_feedback);
         }
-
         return response()->json([
             'status' => true,
             'message' => "Student feedback on Course!",
@@ -1435,6 +1438,49 @@ class AdminController extends Controller
                 'by_students' => $by_students,
                 'by_admins' => $by_admins,
                 'cancelled_courses' => $courses,
+            ]);
+        }
+    }
+
+    public function teacher_status(Request $request)
+    {
+        $rules = [
+            'teacher_id' =>  'required|integer',
+            'status' =>  'required|string',
+            'reason' =>  'required|string',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ]);
+        }
+
+        $courses = Course::where('teacher_id', $request->teacher_id)
+            ->whereIn('status', ['active', 'inprogress'])
+            ->get();
+
+        //if teacher has active courses
+        if (count($courses) > 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Access Denied! Please assign these courses to someone else.',
+                'courses' => $courses,
+            ], 400);
+        } else {
+            $teacher = User::findOrFail($request->teacher_id);
+            $teacher->status = $request->status;
+            $teacher->update();
+            return response()->json([
+                'status' => true,
+                'message' => 'Status updated successfully! ',
+                'teacher' => $teacher,
             ]);
         }
     }

@@ -186,10 +186,77 @@ class UserController extends Controller
     }
 
 
-    public function teacher_profile(Request $request,$id)
+    public function teacher_profile(Request $request, $id)
     {
 
-         $user=\App\User::with('country','userMetas','teacherSpecifications','teacherQualifications','teacherAvailability','spokenLanguages','spokenLanguages.language','teacher_subjects','teacher_subjects.program','teacher_subjects.field','teacher_subjects.subject.country','teacher_interview_request','teacher_feedbacks.feedback','teacher_feedbacks.sender','teacher_feedbacks.reciever')->withCount('teacher_students')->withCount('teacher_course')->find($id);
+        $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
+            ->withCount('teacher_students')
+            ->withCount('teacher_course')
+            ->withCount('teacher_feedbacks')
+            ->find($id);
+
+        $average_rating = 5;
+        //teacher rating
+        $teacher = User::findOrFail($id);
+        $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+
+        $user->average_rating = $average_rating;
+
+        // students rating
+        foreach ($user['teacher_feedbacks'] as $feedback) {
+            #for student
+            $student_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $feedback->sender_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $feedback->sender_id)->count();
+            if ($total_reviews > 0) {
+                $student_rating = $rating_sum / $total_reviews;
+            }
+            $feedback->average_rating = $student_rating;
+        }
+
+        $feedback_id_1 = 5;
+        $feedback_id_2 = 5;
+        $feedback_id_2 = 5;
+        $feedback_id_4 = 5;
+
+        $feedback_rating = [];
+
+        $user_feedbacks = $user['teacher_feedbacks'];
+        $feedback_rating_1 = $user_feedbacks->where('feedback_id', 1)->sum('rating');
+        $feedback_count_1 = $user_feedbacks->where('feedback_id', 1)->count();
+        if ($feedback_count_1) {
+            $feedback_id_1 = $feedback_rating_1 / $feedback_count_1;
+        }
+
+        $feedback_rating_2 = $user_feedbacks->where('feedback_id', 2)->sum('rating');
+        $feedback_count_2 = $user_feedbacks->where('feedback_id', 2)->count();
+        if ($feedback_count_2) {
+            $feedback_id_2 = $feedback_rating_2 / $feedback_count_2;
+        }
+        $feedback_rating_3 = $user_feedbacks->where('feedback_id', 3)->sum('rating');
+        $feedback_count_3 = $user_feedbacks->where('feedback_id', 3)->count();
+        if ($feedback_count_3) {
+            $feedback_id_3 = $feedback_rating_3 / $feedback_count_3;
+        }
+
+        $feedback_rating_4 = $user_feedbacks->where('feedback_id', 4)->sum('rating');
+        $feedback_count_4 = $user_feedbacks->where('feedback_id', 4)->count();
+        if ($feedback_count_3) {
+            $feedback_id_4 = $feedback_rating_4 / $feedback_count_4;
+        }
+
+        $user->feedback_rating = [
+            'Expert in the subject' => $feedback_id_1,
+            'Present Complex Topics clearly and easily' => $feedback_id_2,
+            'Skillfull in engaging students' => $feedback_id_3,
+            'Always on time' => $feedback_id_4,
+        ];
+
+
 
 
         return response()->json([
@@ -1032,7 +1099,7 @@ class UserController extends Controller
 
 
 
-         $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', 'teacher')->where('verified', 1)->where('status', 'active')->get();
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', 'teacher')->where('verified', 1)->where('status', 'active')->get();
 
         return response()->json([
             'success' => true,

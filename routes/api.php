@@ -489,6 +489,7 @@ Route::get('admin/bookings', 'AdminController@classroom');
 Route::get('admin/course/{course_id}/feedbacks', 'AdminController@student_feedbacks');
 Route::get('admin/course/{course_id}/previous-teachers', 'AdminController@previous_teachers');
 Route::get('admin/cancelled-courses', 'AdminController@cancelledCourses');
+Route::post('admin/teacher-status', 'AdminController@teacher_status');
 
 
 // });

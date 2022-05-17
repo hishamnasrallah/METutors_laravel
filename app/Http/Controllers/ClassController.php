@@ -639,6 +639,7 @@ class ClassController extends Controller
 
                 $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
 
                 return response()->json([
@@ -648,6 +649,7 @@ class ClassController extends Controller
                     'countries' => $countries,
                     'newly_assigned_courses' => $newly_assigned_courses,
                     'active_courses' => $active_courses,
+                    'cancelled_courses' => $cancelled_courses,
                     'completed_courses' => $completed_courses,
                 ]);
             }
@@ -663,6 +665,7 @@ class ClassController extends Controller
 
                     $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
 
                     return response()->json([
@@ -672,6 +675,7 @@ class ClassController extends Controller
                         'countries' => $countries,
                         'newly_assigned_courses' => $newly_assigned_courses,
                         'active_courses' => $active_courses,
+                        'cancelled_courses' => $cancelled_courses,
                         'completed_courses' => $completed_courses,
 
                     ]);
@@ -685,7 +689,8 @@ class ClassController extends Controller
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get(); 
+                     $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     return response()->json([
@@ -695,6 +700,7 @@ class ClassController extends Controller
                         'countries' => $countries,
                         'newly_assigned_courses' => $newly_assigned_courses,
                         'active_courses' => $active_courses,
+                        'cancelled_courses' => $cancelled_courses,
                         'completed_courses' => $completed_courses,
 
                     ]);
@@ -713,6 +719,7 @@ class ClassController extends Controller
 
                 $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
 
                 return response()->json([
@@ -722,6 +729,7 @@ class ClassController extends Controller
                     'countries' => $countries,
                     'newly_assigned_courses' => $newly_assigned_courses,
                     'active_courses' => $active_courses,
+                    'cancelled_courses' => $cancelled_courses,
                     'completed_courses' => $completed_courses,
 
                 ]);
@@ -731,6 +739,7 @@ class ClassController extends Controller
             $program = Program::where('code', $request->program)->first();
             $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id', 'desc')->get();
             $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id', 'desc')->get();
+            $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
             $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
 
             return response()->json([
@@ -738,6 +747,7 @@ class ClassController extends Controller
                 'programs' => $programs,
                 'newly_assigned_courses' => $newly_assigned_courses,
                 'active_courses' => $active_courses,
+                'cancelled_courses' => $cancelled_courses,
                 'completed_courses' => $completed_courses,
             ]);
         }
