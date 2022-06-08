@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Subject extends Model
 {
 
-    protected $fillable = ['program_id', 'country_id', 'grade', 'field_id', 'name','description', 'price_per_hour', 'status'];
+    protected $fillable = ['program_id', 'country_id', 'grade', 'field_id', 'name', 'description', 'price_per_hour', 'status'];
 
     public function teacherSubject()
     {
@@ -17,7 +17,7 @@ class Subject extends Model
 
     public function program()
     {
-        return $this->belongsTo('App\Program', 'program_id', 'id')->select('id', 'name');
+        return $this->belongsTo('App\Program', 'program_id', 'id')->select('id', 'name', 'code');
     }
     public function field()
     {

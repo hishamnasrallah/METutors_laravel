@@ -62,10 +62,35 @@ class TicketsController extends Controller
                 'message' => 'access denied',
             ],401);
         }
+
         $tickets = Ticket::with('category','user','priority')->orderBy('created_at', 'desc')->get();
+        $total_tickets= Ticket::count();
+        $open_tickets= Ticket::where('status','open')->count();
+        $closed_tickets= Ticket::where('status','closed')->count();
+        $urgent_tickets= Ticket::where('status','open')->where('priority',1)->count();
+
+        if(isset($request->status) && $request->status == 'open'){
+
+             $tickets = Ticket::with('category','user','priority')->where('status','open')->orderBy('created_at', 'desc')->get();
+        }
+
+       if(isset($request->status) && $request->status == 'closed'){
+
+             $tickets = Ticket::with('category','user','priority')->where('status','closed')->orderBy('created_at', 'desc')->get();
+        }
+
+       if(isset($request->status) && $request->status == 'urgent'){
+
+             $tickets = Ticket::with('category','user','priority')->where('status','open')->where('priority',1)->orderBy('created_at', 'desc')->get();
+        }
+        
 
         return response()->json([
             'success' => 'true',
+            'total_tickets' => $total_tickets,
+            'open_tickets' => $open_tickets,
+            'closed_tickets' => $closed_tickets,
+            'urgent_tickets' => $urgent_tickets,
             'tickets' => $tickets
         ]);
         return view('tickets.index', compact('tickets'));

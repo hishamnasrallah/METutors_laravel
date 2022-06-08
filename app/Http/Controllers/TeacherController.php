@@ -291,6 +291,7 @@ class TeacherController extends Controller
                 $class->class_id = $responseBody['class_id'];
                 $class->status = "scheduled";
                 $course->status = "active";
+                $course->teacher_status = "available";
                 $course->update();
                 $class->update();
             } else {
@@ -371,7 +372,7 @@ class TeacherController extends Controller
 
         $clasroom = ClassRoom::where('course_id', $course_id)->get();
         foreach ($clasroom as $room) {
-            $room->status = 'rejected';
+            $room->status = 'declined_by_teacher';
             $room->update();
         }
         $teacher_message = "Course Rejected Successfully";
@@ -380,8 +381,9 @@ class TeacherController extends Controller
         // event(new RejectCourse($course, $course->teacher_id, $teacher_message, $teacher));
         // event(new RejectCourse($course, $course->student_id, $student_message, $user));
 
-        $course->status = "rejected";
+        $course->status = "declined_by_teacher";
         // $course->teacher_id = null;
+        $course->teacher_status = "not-available";
         $course->update();
 
 

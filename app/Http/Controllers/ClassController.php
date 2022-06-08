@@ -12,8 +12,10 @@ use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\ClassSession;
 use App\Models\Feedback;
+use App\Models\NoTeacherCourse;
 use App\Models\RescheduleClass;
 use App\Models\UserFeedback;
+use App\Models\RequestedCourse;
 use App\User;
 use App\Program;
 use App\Subject;
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use JWTAuth;
 use Stevebauman\Location\Facades\Location;
+use Devinweb\LaravelHyperpay\Events\SuccessTransaction;
 
 class ClassController extends Controller
 {
@@ -47,7 +50,7 @@ class ClassController extends Controller
             'subject_id' =>  'required',
             'weekdays' =>  'required',
 
-            'teacher_id' =>  'required',
+            // 'teacher_id' =>  'required',
             'start_date' =>  'required',
             'end_date' =>  'required',
             'start_time' =>  'required',
@@ -75,7 +78,10 @@ class ClassController extends Controller
             ]);
         }
 
-        //*********** Saving records to Courses table ***********
+
+        //*********** Saving records to Database ***********
+
+        // Adding Course Data
         $course = new Course();
         if ($request->program_id == 3) {
             $course->program_id = $request->program_id;
@@ -126,7 +132,9 @@ class ClassController extends Controller
         $course->total_hours = $request->total_hours;
         $course->total_classes = $request->total_classes;
         $course->subject_id = $request->subject_id;
-        $course->teacher_id = $request->teacher_id;
+        if ($request->has('teacher_id')) {
+            $course->teacher_id = $request->teacher_id;
+        }
         $course->student_id = $token_user->id;
         $course->weekdays = $request->weekdays;
         $course->start_date = $request->start_date;
@@ -136,12 +144,15 @@ class ClassController extends Controller
         $course->status = 'pending';
         $course->save();
 
+        //Adding Academic Classes data
         $classes = $request->classes;
         $classes = json_decode($classes);
         foreach ($classes as $session) {
             $class = new AcademicClass();
             $class->course_id = $course->id;
-            $class->teacher_id = $request->teacher_id;
+            if ($request->has('teacher_id')) {
+                $class->teacher_id = $request->teacher_id;
+            }
             $class->student_id = $token_user->id;
             $class->start_date = $session->date;
             $class->end_date = $request->end_date;
@@ -165,26 +176,38 @@ class ClassController extends Controller
 
 
         $course = Course::with('subject', 'language', 'field', 'teacher', 'program')->find($course->id);
-        $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '-') . ($course_count);
 
+        // Adding Course Code
+        $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
+
+        // Adding Course name 
         if ($course_count == null) {
             $course->course_name = $subject->name . "0001";
         } else {
             $course->course_name = $subject->name . "000" . $course_count;
         }
-
-
         $course->update();
 
+        //Adding Classroom Data
         $classRoom = new ClassRoom();
         $classRoom->course_id = $course->id;
-        $classRoom->teacher_id = $request->teacher_id;
+        if ($request->has('teacher_id')) {
+            $classRoom->teacher_id = $request->teacher_id;
+        }
+
         $classRoom->student_id = $token_user->id;
         $classRoom->status = 'pending';
         $classRoom->save();
 
         $user = User::find($token_user->id);
-        $teacher = User::find($request->teacher_id);
+        if ($request->has('teacher_id')) {
+            $teacher = User::find($request->teacher_id);
+        } else {
+            $noTeacher = new NoTeacherCourse();
+            $noTeacher->course_id = $course->id;
+            $noTeacher->save();
+        }
+
 
         // Event notification
         $teacher_message = 'New Course Created!';
@@ -192,6 +215,7 @@ class ClassController extends Controller
 
         // event(new NewCourse($course, $course->teacher_id, $teacher_message, $teacher));
         // event(new NewCourse($course, $course->student_id, $student_message, $user));
+
 
         return response()->json([
             'message' => "Course data added Successfully!",
@@ -201,6 +225,55 @@ class ClassController extends Controller
     }
 
     //*********/ Deleting class session *********
+    public function request_course(Request $request)
+    {
+        $rules = [
+            'program_id' =>  'required',
+            // 'country_id' =>  'required',
+            // 'grade' =>  'required',
+            'subject' =>  'required',
+            'gender_preference' =>  'required',
+            'language_preference' =>  'required',
+            'course_description' =>  'required',
+            'student_name' =>  'required',
+            'email' =>  'required',
+        ];
+
+        if ($request->program_id == 3) {
+            $rules['country_id'] = 'required';
+            $rules['grade'] = 'required';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $requestedCourse = new RequestedCourse();
+        $requestedCourse->program_id = $request->program_id;
+        $requestedCourse->country_id = $request->country_id;
+        $requestedCourse->grade = $request->grade;
+        $requestedCourse->subject = $request->subject;
+        $requestedCourse->gender_preference = $request->gender_preference;
+        $requestedCourse->language_preference = $request->language_preference;
+        $requestedCourse->course_description = $request->course_description;
+        $requestedCourse->student_name = $request->student_name;
+        $requestedCourse->email = $request->email;
+        $requestedCourse->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Your request has been submitted. Our team will contact you soon!",
+        ]);
+    }
+
     public function del_session(Request $request)
     {
         $rules = [
@@ -438,7 +511,6 @@ class ClassController extends Controller
         }
     }
 
-
     //*********/ Start Class *********
     public function class_url(Request $request, $id)
     {
@@ -574,7 +646,6 @@ class ClassController extends Controller
     //*********/ Search Student *********
     public function search_student(Request $request)
     {
-
         $query = $request->search_query;
         $student = (User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'created_at')
             ->where('first_name', 'LIKE', "%$query%")
@@ -616,7 +687,7 @@ class ClassController extends Controller
         ]);
     }
 
-    //*********/ Classroom Dashboard *********
+    //********* Classroom Dashboard *********
     public function courses(Request $request)
     {
         $token_1 = JWTAuth::getToken();
@@ -689,8 +760,8 @@ class ClassController extends Controller
                     $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get(); 
-                     $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     return response()->json([

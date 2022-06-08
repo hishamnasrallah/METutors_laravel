@@ -11,6 +11,7 @@ use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\ClassSession;
 use App\Models\Feedback;
+use App\Models\MakeupClass;
 use App\Models\RescheduleClass;
 use App\Models\UserFeedback;
 use App\User;
@@ -1266,6 +1267,7 @@ class ClassController extends Controller
             $academicClass->teacher_id = $course->teacher_id;
             $academicClass->class_type = $course->classes[0]->class_type;
             $academicClass->course_id = $course_id;
+            $academicClass->class_paradigm = "added";
             // $academicClass->save();
 
             /// Curl Implementation
@@ -1438,6 +1440,9 @@ class ClassController extends Controller
             ], 400);
         }
 
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         $day = Carbon::parse($request->start_date)->format('D');
         if ($day == 'Sun') {
             $day = 1;
@@ -1499,6 +1504,7 @@ class ClassController extends Controller
         $academic_class->end_time = $request->end_time;
         $academic_class->day = $day;
 
+
         $apiURL = 'https://api.braincert.com/v2/schedule';
         $postInput = [
             'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
@@ -1536,7 +1542,14 @@ class ClassController extends Controller
         if ($responseBody['status'] == "ok") {
             $academic_class->class_id = $responseBody['class_id'];
             $academic_class->status = "scheduled";
-            $academic_class->save();
+
+            $makeup_class = new MakeupClass();
+            $makeup_class->academic_class_id = $academic_class->id;
+            $makeup_class->course_id = $academic_class->course_id;
+            $makeup_class->user_id =  $token_user->id;
+            $makeup_class->save();
+
+            $academic_class->update();
         } else {
             return response()->json([
                 'status' => false,

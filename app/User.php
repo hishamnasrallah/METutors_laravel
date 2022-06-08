@@ -27,10 +27,12 @@ use App\Models\UserFeedback;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Devinweb\LaravelHyperpay\Traits\ManageUserTransactions;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, Notifiable;
+
+    use HasApiTokens, Notifiable, ManageUserTransactions;
 
     static $active = 'active';
     static $pending = 'pending';
@@ -405,7 +407,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(ClassRoom::class, 'teacher_id', 'id');
     }
 
-   public function teacher_course()
+    public function teacher_course()
     {
         return $this->hasMany(Course::class, 'teacher_id', 'id');
     }
@@ -419,10 +421,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Course::class, 'student_id', 'id');
     }
-     public function teacher_feedbacks()
+    public function teacher_feedbacks()
     {
         return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
     }
-
-
 }

@@ -23,4 +23,9 @@ class ClassRoom extends Model
     {
         return $this->hasMany(AcademicClass::class, 'course_id', 'course_id');
     }
+
+    public function student()
+    {
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+    }
 }

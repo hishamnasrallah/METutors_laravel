@@ -8,6 +8,7 @@ use App\Events\AddResource;
 use App\Events\CancelCourse;
 use App\Events\CourseBooked;
 use App\Events\NewCourse;
+use App\Events\OrderEvent;
 use App\Events\RejectAssignment;
 use App\Events\RejectCourse;
 use App\Events\StudentAcceptCourse;
@@ -18,6 +19,7 @@ use App\Listeners\AcceptCourseListener;
 use App\Listeners\CancelCourseListener;
 use App\Listeners\CourseBookedListener;
 use App\Listeners\NewCourseListener;
+use App\Listeners\OrderEventListener;
 use App\Listeners\RejectAssignmentListener;
 use App\Listeners\RejectCourseListener;
 use App\Listeners\ResourceListener;
@@ -72,6 +74,12 @@ class EventServiceProvider extends ServiceProvider
         ],
         AddResource::class => [
             ResourceListener::class,
+        ],
+        OrderEvent::class => [
+            OrderEventListener::class,
+        ],
+        'Devinweb\LaravelHyperpay\Events\SuccessTransaction' => [
+            'App\Listeners\TransactionSuccessListener',
         ],
 
     ];

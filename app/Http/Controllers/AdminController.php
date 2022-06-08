@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\CancelCourse;
+use App\Models\RequestedCourse;
 use App\Models\AcademicClass;
 use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
@@ -16,6 +17,13 @@ use App\Models\UserFeedback;
 use App\Models\UserTestimonial;
 use App\Subject;
 use App\FieldOfStudy;
+use App\Models\Assignment;
+use App\Models\Attendance;
+use App\Models\NoTeacherCourse;
+use App\Models\Order;
+use App\Models\RefundCourse;
+use App\Models\RejectedCourse;
+use App\Models\UserAssignment;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -24,6 +32,7 @@ use stdClass;
 use App\TeacherInterviewRequest;
 use App\TeacherSubject;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
@@ -108,10 +117,14 @@ class AdminController extends Controller
             'teacher_id' => 'required'
         ]);
 
+        $average_rating = 5;
         $user = User::find($request->teacher_id);
         $rating_sum = UserFeedback::where('receiver_id', $user->id)->sum('rating');
         $total_reviews = UserFeedback::where('receiver_id', $user->id)->count();
-        $average_rating = $rating_sum / $total_reviews;
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+
 
         return response()->json([
             'status' => true,
@@ -233,7 +246,7 @@ class AdminController extends Controller
 
     public function course_detail($id)
     {
-        $course = Course::with('teacher', 'program', 'field')
+        $course = Course::with('teacher', 'program', 'field', 'student')
             ->withCount('students')
             ->withCount(['remaining_classes' => function ($q) {
                 $q->where('status', '!=', 'completed');
@@ -243,14 +256,14 @@ class AdminController extends Controller
             }])
             ->findOrFail($id);
 
-        $rating =
+        // $rating =
 
-            $completed_classes = [];
+        $completed_classes = [];
         $remaining_classes = [];
 
-        $course1 = Course::findOrFail($id);
+        $course1 = Course::with('classes.attendees.student')->findOrFail($id);
 
-        foreach ($course1->classes as $class) {
+        foreach ($course1['classes'] as $class) {
             if ($class->status == 'completed') {
                 $class->topic;
                 $class->attendees;
@@ -271,11 +284,70 @@ class AdminController extends Controller
             $average_rating = $rating_sum / $total_reviews;
         }
 
+        $reassigned_classes = AcademicClass::where(['course_id' => $course->id, 'status' => 'reassigned'])->get();
+        $course->course_progress = $progress;
+        $course['teacher']->teacher_rating = $average_rating;
+
         return response()->json([
             'status' => true,
             'message' => "Course Detail!",
-            'course_progress' => $progress,
-            'teacher_rating' => $average_rating,
+            // 'course_progress' => $progress,
+            // 'teacher_rating' => $average_rating,
+            'course' => $course,
+            // 'reassigned_classes' => $reassigned_classes,
+            'remaining_classes' => $remaining_classes,
+            'completed_classes' => $completed_classes,
+        ]);
+    }
+
+    public function teacher_course_detail($teacher_id, $course_id)
+    {
+        $course = Course::with('teacher', 'program', 'field')
+            ->withCount('students')
+            ->withCount(['remaining_classes' => function ($q) {
+                $q->where('status', '!=', 'reassigned');
+            }])
+            ->withCount(['completed_classes' => function ($q) {
+                $q->where('status', 'completed');
+            }])
+            ->where('id', $course_id)->where('teacher_id', $teacher_id)->first();
+
+        $rescheduled_classes = RescheduleClass::where('course_id', $course->id)->get();
+        $course->rescheduled_classes_count = count($rescheduled_classes);
+        // $rating =
+
+        $completed_classes = [];
+        $remaining_classes = [];
+
+        $course1 = Course::with('classes.attendees.student')->findOrFail($course_id);
+
+        foreach ($course1['classes'] as $class) {
+            if ($class->status == 'completed') {
+                $class->topic;
+                array_push($completed_classes, $class);
+            } else {
+                $class->topic;
+                array_push($remaining_classes, $class);
+            }
+        }
+
+        $progress = ($course->completed_classes_count / $course->total_classes) * 100;
+
+        $average_rating = 5.0;
+        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+
+        $course->course_progress = $progress;
+        $course['teacher']->teacher_rating = $average_rating;
+
+        return response()->json([
+            'status' => true,
+            'message' => "Course Detail!",
+            // 'course_progress' => $progress,
+            // 'teacher_rating' => $average_rating,
             'course' => $course,
             'remaining_classes' => $remaining_classes,
             'completed_classes' => $completed_classes,
@@ -460,14 +532,406 @@ class AdminController extends Controller
         ]);
     }
 
-    public function platform_feedbacks()
+    public function platform_feedbacks(Request $request)
     {
         $testimonials = UserTestimonial::with('sender', 'testimonial')->get();
 
+        // if he is student
+        if ($request->feedback_by == 'student') {
+
+            $testimonials = UserTestimonial::whereHas('sender', function ($q) {
+                $q->where('role_name', 'student');
+            })->with('testimonial', 'sender')->get();
+
+
+            //overall average stars for teacher
+            $five_stars = $testimonials->where('rating', 5)->count();
+            $four_stars = $testimonials->where('rating', 4)->count();
+            $three_stars = $testimonials->where('rating', 3)->count();
+            $two_stars = $testimonials->where('rating', 2)->count();
+            $one_stars = $testimonials->where('rating', 1)->count();
+
+            $overall_stars = array(
+
+                array(
+                    "title" => "5",
+                    "value" => $five_stars,
+                ),
+
+                array(
+                    "title" => "4",
+                    "value" => $four_stars,
+                ),
+
+                array(
+                    "title" => "3",
+                    "value" => $three_stars,
+                ),
+
+                array(
+                    "title" => "2",
+                    "value" => $two_stars,
+                ),
+
+                array(
+                    "title" => "1",
+                    "value" => $one_stars,
+                ),
+            );
+
+            //overall average feedback
+            $feedback_id_1 = 5;
+            $feedback_id_2 = 5;
+            $feedback_id_3 = 5;
+            $feedback_id_4 = 5;
+            $feedback_id_5 = 5;
+            $feedback_id_6 = 5;
+            $feedback_rating_1 = $testimonials->where('testimonial_id', 1)->sum('rating');
+            $feedback_count_1 = $testimonials->where('testimonial_id', 1)->count();
+            if ($feedback_count_1) {
+                $feedback_id_1 = $feedback_rating_1 / $feedback_count_1;
+            }
+
+            $feedback_rating_2 = $testimonials->where('testimonial_id', 2)->sum('rating');
+            $feedback_count_2 = $testimonials->where('testimonial_id', 2)->count();
+            if ($feedback_count_2) {
+                $feedback_id_2 = $feedback_rating_2 / $feedback_count_2;
+            }
+            $feedback_rating_3 = $testimonials->where('testimonial_id', 3)->sum('rating');
+            $feedback_count_3 = $testimonials->where('testimonial_id', 3)->count();
+            if ($feedback_count_3) {
+                $feedback_id_3 = $feedback_rating_3 / $feedback_count_3;
+            }
+
+            $feedback_rating_4 = $testimonials->where('testimonial_id', 4)->sum('rating');
+            $feedback_count_4 = $testimonials->where('testimonial_id', 4)->count();
+            if ($feedback_count_4) {
+                $feedback_id_4 = $feedback_rating_4 / $feedback_count_4;
+            }
+
+            $feedback_rating_5 = $testimonials->where('testimonial_id', 5)->sum('rating');
+            $feedback_count_5 = $testimonials->where('testimonial_id', 5)->count();
+            if ($feedback_count_5) {
+                $feedback_id_5 = $feedback_rating_5 / $feedback_count_5;
+            }
+            $feedback_rating_6 = $testimonials->where('testimonial_id', 6)->sum('rating');
+            $feedback_count_6 = $testimonials->where('testimonial_id', 6)->count();
+            if ($feedback_count_6) {
+                $feedback_id_5 = $feedback_rating_5 / $feedback_count_6;
+            }
+
+
+            $overall_feedback = array(
+
+                array(
+                    "title" => 'This site is intuative and easy to use',
+                    "value" => $feedback_id_1,
+                ),
+
+                array(
+                    "title" => 'This site addresses my educational needs.',
+                    "value" => $feedback_id_2,
+                ),
+
+                array(
+                    "title" => 'Flexibility of choosing my courses.',
+                    "value" => $feedback_id_3,
+                ),
+
+                array(
+                    "title" => 'Flexibility of creating my class schedule.',
+                    "value" => $feedback_id_4,
+                ),
+                array(
+                    "title" => 'pricing competitiveness.',
+                    "value" => $feedback_id_5,
+                ),
+                array(
+                    "title" => 'Support team responsiveness.',
+                    "value" => $feedback_id_6,
+                ),
+
+            );
+
+
+            $feedbacks = [];
+            $user_feedbacks = $testimonials->groupBy('sender_id');
+            $flag = 0;
+            //finding average rating of feedback
+            $average_rating = 5;
+            foreach ($user_feedbacks as $user_feedback) {
+                // return $user_feedback;
+                $counter = 0;
+                $rating_sum = $user_feedback->where('sender_id', $user_feedback[0]->sender_id)->sum('rating');
+                $total_reviews = $user_feedback->where('sender_id', $user_feedback[0]->sender_id)->count();
+                if ($total_reviews > 0) {
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+
+
+                foreach ($user_feedback as $feedback) {
+                    $counter++;
+                    if ($counter == 1) {
+                        array_push($feedbacks, [
+                            'status' => $feedback->status,
+                            'review' => $feedback->review,
+                            'sender' => $feedback->sender,
+                        ]);
+                    }
+                    // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
+                    $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+
+                    $feedbacks[$flag]['feedbacks'][] = array(
+                        "title" => $feedback->testimonial->name,
+                        "value" => $feedback->rating,
+                    );
+                }
+                $flag++;
+            }
+            return response()->json([
+                'status' => true,
+                'message' => "Student Testimonials",
+                'reviews_count' => count($user_feedbacks),
+                'overall_stars' => $overall_stars,
+                'overall_feedback' => $overall_feedback,
+                'user_testimonials' => $feedbacks,
+            ]);
+        }
+
+        // if he is teacher
+        if ($request->feedback_by == 'teacher') {
+            $testimonials = UserTestimonial::whereHas('sender', function ($q) {
+                $q->where('role_name', 'teacher');
+            })->with('testimonial', 'sender')->get();
+
+            //overall average stars for teacher
+            $five_stars = $testimonials->where('rating', 5)->count();
+            $four_stars = $testimonials->where('rating', 4)->count();
+            $three_stars = $testimonials->where('rating', 3)->count();
+            $two_stars = $testimonials->where('rating', 2)->count();
+            $one_stars = $testimonials->where('rating', 1)->count();
+
+            $overall_stars = array(
+
+                array(
+                    "title" => "5",
+                    "value" => $five_stars,
+                ),
+
+                array(
+                    "title" => "4",
+                    "value" => $four_stars,
+                ),
+
+                array(
+                    "title" => "3",
+                    "value" => $three_stars,
+                ),
+
+                array(
+                    "title" => "2",
+                    "value" => $two_stars,
+                ),
+
+                array(
+                    "title" => "1",
+                    "value" => $one_stars,
+                ),
+            );
+
+            //overall average feedback
+            $feedback_id_1 = 5;
+            $feedback_id_2 = 5;
+            $feedback_id_3 = 5;
+            $feedback_id_4 = 5;
+            $feedback_id_5 = 5;
+            $feedback_rating_1 = $testimonials->where('testimonial_id', 7)->sum('rating');
+            $feedback_count_1 = $testimonials->where('testimonial_id', 7)->count();
+            if ($feedback_count_1) {
+                $feedback_id_1 = $feedback_rating_1 / $feedback_count_1;
+            }
+
+            $feedback_rating_2 = $testimonials->where('testimonial_id', 8)->sum('rating');
+            $feedback_count_2 = $testimonials->where('testimonial_id', 8)->count();
+            if ($feedback_count_2) {
+                $feedback_id_2 = $feedback_rating_2 / $feedback_count_2;
+            }
+            $feedback_rating_3 = $testimonials->where('testimonial_id', 9)->sum('rating');
+            $feedback_count_3 = $testimonials->where('testimonial_id', 9)->count();
+            if ($feedback_count_3) {
+                $feedback_id_3 = $feedback_rating_3 / $feedback_count_3;
+            }
+
+            $feedback_rating_4 = $testimonials->where('testimonial_id', 10)->sum('rating');
+            $feedback_count_4 = $testimonials->where('testimonial_id', 10)->count();
+            if ($feedback_count_4) {
+                $feedback_id_4 = $feedback_rating_4 / $feedback_count_4;
+            }
+
+            $feedback_rating_5 = $testimonials->where('testimonial_id', 11)->sum('rating');
+            $feedback_count_5 = $testimonials->where('testimonial_id', 11)->count();
+            if ($feedback_count_5) {
+                $feedback_id_5 = $feedback_rating_5 / $feedback_count_5;
+            }
+
+
+            $overall_feedback = array(
+
+                array(
+                    "title" => 'MEtutors platform is intuitive and easy to use',
+                    "value" => $feedback_id_1,
+                ),
+
+                array(
+                    "title" => 'MEtutors meets my teaching requirements.',
+                    "value" => $feedback_id_2,
+                ),
+
+                array(
+                    "title" => 'Flexibility of managing my students and classes.',
+                    "value" => $feedback_id_3,
+                ),
+
+                array(
+                    "title" => 'Support team is responsible and responsive.',
+                    "value" => $feedback_id_4,
+                ),
+                array(
+                    "title" => 'MEtutors pays fairly compared to industry standards.',
+                    "value" => $feedback_id_5,
+                ),
+
+            );
+
+
+            $feedbacks = [];
+            $user_feedbacks = $testimonials->groupBy('sender_id');
+            $flag = 0;
+            //finding average rating of feedback
+            $average_rating = 5;
+            foreach ($user_feedbacks as $user_feedback) {
+                // return $user_feedback;
+                $counter = 0;
+                $rating_sum = $user_feedback->where('sender_id', $user_feedback[0]->sender_id)->sum('rating');
+                $total_reviews = $user_feedback->where('sender_id', $user_feedback[0]->sender_id)->count();
+                if ($total_reviews > 0) {
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+
+
+                foreach ($user_feedback as $feedback) {
+                    $counter++;
+                    if ($counter == 1) {
+                        array_push($feedbacks, [
+                            'status' => $feedback->status,
+                            'review' => $feedback->review,
+                            'sender' => $feedback->sender,
+                        ]);
+                    }
+                    // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
+                    $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+
+                    $feedbacks[$flag]['feedbacks'][] = array(
+                        "title" => $feedback->testimonial->name,
+                        "value" => $feedback->rating,
+                    );
+                }
+                $flag++;
+            }
+            return response()->json([
+                'status' => true,
+                'message' => "Teachers Testimonials!",
+                'reviews_count' => count($user_feedbacks),
+                'overall_stars' => $overall_stars,
+                'overall_feedback' => $overall_feedback,
+                'user_testimonials' => $feedbacks,
+            ]);
+        }
+    }
+
+
+    public function edit_testimonial(Request $request, $user_id)
+    {
+        $testimonials = UserTestimonial::where('sender_id', $user_id)->get();
+
+        $token_user = User::find($user_id);
+
+        if ($token_user->role_name == 'teacher') {
+            $params = Testimonial::select('id', 'name')->where('role_name', 'teacher')->get();
+        }
+        if ($token_user->role_name == 'student') {
+            $params = Testimonial::select('id', 'name')->where('role_name', 'student')->get();
+        }
+        $counter = 0;
+
+        foreach ($params as $param) {
+
+
+            $feedback = $testimonials->where('testimonial_id', $param->id);
+
+            // print_r($feedback);
+            $param->rating = $feedback[$counter]->rating;
+            $counter++;
+        }
+
         return response()->json([
             'status' => true,
-            'message' => "All User Testimonials",
-            'user_testimonials' => $testimonials,
+            'message' => "Required Params for Platform Feedback!",
+            'review' => $testimonials[0]->review,
+            'params' => $params,
+        ]);
+    }
+
+
+    public function update_testimonial(Request $request, $user_id)
+    {
+        $testimonials = UserTestimonial::where('sender_id', $user_id)->get();
+
+        $token_user = User::find($user_id);
+
+        $decoded_feedbacks = json_decode(json_encode($request->feedbacks));
+
+
+        foreach ($decoded_feedbacks as $feedback) {
+            $platform = UserTestimonial::where('sender_id', $token_user->id)->where('testimonial_id', $feedback->testimonial_id)->first();
+            $platform->review = $request->review;
+            $platform->rating = $feedback->rating;
+            $platform->update();
+        }
+
+        $user_feedbacks = UserTestimonial::with('sender', 'testimonial')->where('sender_id', $token_user->id)->get();
+
+        $flag = 0;
+        $counter = 0;
+        //finding average rating of feedback
+        $average_rating = 5;
+        $feedbacks = array();
+
+
+
+        foreach ($user_feedbacks as $feedback) {
+            $counter++;
+            if ($counter == 1) {
+
+                $feedbacks['status'] = $feedback->status;
+                $feedbacks['review'] = $feedback->review;
+                $feedbacks['sender'] = $feedback->sender;
+            }
+            // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
+            $feedbacks['average_rating'] = $average_rating; //feedback average rating
+
+            $feedbacks['feedbacks'][] = array(
+                "title" => $feedback->testimonial->name,
+                "value" => $feedback->rating,
+            );
+        }
+
+
+
+        return response()->json([
+            'status' => true,
+            'message' => "Your Feedback Updated Successfully!",
+            'feedbacks' => $feedbacks,
         ]);
     }
 
@@ -560,12 +1024,67 @@ class AdminController extends Controller
             ]);
         }
 
+        $course = Course::findOrFail($request->course_id);
         $classes = AcademicClass::where('course_id', $request->course_id)->where('status', 'canceled')->get();
 
+        $counter = 1;
         foreach ($classes as  $class) {
-            $class->teacher_id = $request->teacher_id;
-            $class->status = 'reassigned_by_admin';
-            $class->update();
+
+            if ($counter == 1) {
+                $class->title = "Introduction|class1";
+                $class->lesson_name = "introduction";
+            } else {
+                $class->title = "class" . $counter;
+                $class->lesson_name = "lesson" . $counter;
+            }
+
+            /// Curl Implementation
+            $apiURL = 'https://api.braincert.com/v2/schedule';
+            $postInput = [
+                'apikey' => 'xKUyaLJHtbvBUtl3otJc',
+                'title' =>  'Introduction|class1',
+                'timezone' => 90,
+                'start_time' => $class->start_time,
+                'end_time' => $class->end_time,
+                'date' => $class->start_date,
+                'currency' => "USD",
+                'ispaid' => null,
+                'is_recurring' => 0,
+                'repeat' => 0,
+                'weekdays' => $course->weekdays,
+                'end_date' => $class->end_date,
+                'seat_attendees' => null,
+                'record' => 0,
+                'isRecordingLayout ' => 1,
+                'isVideo  ' => 1,
+                'isBoard ' => 1,
+                'isLang ' => null,
+                'isRegion ' => null,
+                'isCorporate ' => null,
+                'isScreenshare ' => 1,
+                'isPrivateChat  ' => 0,
+                'description ' => null,
+                'keyword ' => null,
+                'format ' => "json",
+            ];
+
+            $client = new Client();
+            $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+
+            $statusCode = $response->getStatusCode();
+            $responseBody = json_decode($response->getBody(), true);
+            if ($responseBody['status'] == "ok") {
+                $class->class_id = $responseBody['class_id'];
+                $class->status = "scheduled";
+                $class->teacher_id = $request->teacher_id;
+                $class->update();
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $responseBody['error'],
+                ], 400);
+            }
+            $counter++;
         }
 
         $class_rooms = ClassRoom::where('course_id', $request->course_id)->get();
@@ -676,13 +1195,13 @@ class AdminController extends Controller
         $class_rooms = ClassRoom::where('course_id', $request->course_id)->get();
         foreach ($class_rooms as  $class_room) {
             $class_room->teacher_id = $request->teacher_id;
-            $class_room->status = 'active';
+            $class_room->status = 'reassigned_by_admin';
             $class_room->update();
         }
 
 
         $course->teacher_id = $request->teacher_id;
-        $course->status = 'active';
+        $course->status = 'reassigned_by_admin';
         $course->update();
 
         $course = Course::with('classes')->find($request->course_id);
@@ -1228,10 +1747,12 @@ class AdminController extends Controller
     public function subject_bookings($subject_id)
     {
         $subject = Subject::with(['courses'  => function ($q) {
-            $q->with('teacher');
+            $q->with('teacher', 'student', 'program', 'field', 'subject');
             // $q->where('status', 'active')->with('teacher');
         }])
             ->findorfail($subject_id);
+
+        $subject->total_bookings = $subject->courses->count();
 
         return response()->json([
             'status' => true,
@@ -1306,52 +1827,141 @@ class AdminController extends Controller
             ->where('course_id', $course->id)
             ->get();
 
-
         $feedbacks_count = $user_feedbacks->pluck('sender_id')->unique()->count();
 
-        foreach ($user_feedbacks as $user_feedback) {
-            $rating_sum = $user_feedbacks->where('sender_id', $user_feedback->sender_id)->sum('rating');
-            $total_reviews = $user_feedbacks->where('sender_id', $user_feedback->sender_id)->count();
-            $average_rating = $rating_sum / $total_reviews;
-            $user_feedback->average_rating = $average_rating;
-        }
-
+        //overall average stars for teacher
         $five_stars = $user_feedbacks->where('rating', 5)->count();
         $four_stars = $user_feedbacks->where('rating', 4)->count();
         $three_stars = $user_feedbacks->where('rating', 3)->count();
         $two_stars = $user_feedbacks->where('rating', 2)->count();
         $one_stars = $user_feedbacks->where('rating', 1)->count();
 
-        $feedback_id_1 = $user_feedbacks->where('feedback_id', 1)->sum('rating');
-        $feedback_id_1 = $feedback_id_1 /  $user_feedbacks->where('feedback_id', 1)->count();
+        //overall average feedback
+        $feedback_id_1 = 5;
+        $feedback_id_2 = 5;
+        $feedback_id_3 = 5;
+        $feedback_id_4 = 5;
+        $feedback_rating_1 = $user_feedbacks->where('feedback_id', 1)->sum('rating');
+        $feedback_count_1 = $user_feedbacks->where('feedback_id', 1)->count();
+        if ($feedback_count_1) {
+            $feedback_id_1 = $feedback_rating_1 / $feedback_count_1;
+        }
 
-        $feedback_id_2 = $user_feedbacks->where('feedback_id', 2)->sum('rating');
-        $feedback_id_2 = $feedback_id_2 /  $user_feedbacks->where('feedback_id', 1)->count();
+        $feedback_rating_2 = $user_feedbacks->where('feedback_id', 2)->sum('rating');
+        $feedback_count_2 = $user_feedbacks->where('feedback_id', 2)->count();
+        if ($feedback_count_2) {
+            $feedback_id_2 = $feedback_rating_2 / $feedback_count_2;
+        }
+        $feedback_rating_3 = $user_feedbacks->where('feedback_id', 3)->sum('rating');
+        $feedback_count_3 = $user_feedbacks->where('feedback_id', 3)->count();
+        if ($feedback_count_3) {
+            $feedback_id_3 = $feedback_rating_3 / $feedback_count_3;
+        }
 
-        $feedback_id_3 = $user_feedbacks->where('feedback_id', 3)->sum('rating');
-        $feedback_id_3 = $feedback_id_3 /  $user_feedbacks->where('feedback_id', 1)->count();
-
-        $feedback_id_4 = $user_feedbacks->where('feedback_id', 4)->sum('rating');
-        $feedback_id_4 = $feedback_id_4 /  $user_feedbacks->where('feedback_id', 1)->count();
+        $feedback_rating_4 = $user_feedbacks->where('feedback_id', 4)->sum('rating');
+        $feedback_count_4 = $user_feedbacks->where('feedback_id', 4)->count();
+        if ($feedback_count_4) {
+            $feedback_id_4 = $feedback_rating_4 / $feedback_count_4;
+        }
 
         $feedbacks = [];
         $user_feedbacks = $user_feedbacks->groupBy('sender_id');
+        $flag = 0;
+        //finding average rating of feedback
+        $average_rating = 5;
         foreach ($user_feedbacks as $user_feedback) {
-            array_push($feedbacks, $user_feedback);
+            $counter = 0;
+            $rating_sum = $user_feedback->where('sender_id', $user_feedback[0]->sender_id)->sum('rating');
+            $total_reviews = $user_feedback->where('sender_id', $user_feedback[0]->sender_id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+
+
+            foreach ($user_feedback as $feedback) {
+                $counter++;
+                if ($counter == 1) {
+                    array_push($feedbacks, [
+                        'review' => $feedback->review,
+                        'sender' => $feedback->sender,
+                    ]);
+                }
+                // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
+                $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+
+                $feedbacks[$flag]['feedbacks'][] = array(
+
+                    "title" => $feedback->feedback->name,
+                    "value" => $feedback->rating,
+                );
+            }
+            $flag++;
         }
+
+        $overall_feedback = array(
+
+            array(
+                "title" => 'Expert in the subject',
+                "value" => $feedback_id_1,
+            ),
+
+            array(
+                "title" => 'Present Complex Topics clearly and easily',
+                "value" => $feedback_id_2,
+            ),
+
+            array(
+                "title" => 'Skillfull in engaging students',
+                "value" => $feedback_id_3,
+            ),
+
+            array(
+                "title" => 'Always on time',
+                "value" => $feedback_id_4,
+            ),
+
+
+        );
+
+        $overall_stars = array(
+
+            array(
+                "title" => "5",
+                "value" => $five_stars,
+            ),
+
+            array(
+                "title" => "4",
+                "value" => $four_stars,
+            ),
+
+            array(
+                "title" => "3",
+                "value" => $three_stars,
+            ),
+
+            array(
+                "title" => "2",
+                "value" => $two_stars,
+            ),
+
+            array(
+                "title" => "1",
+                "value" => $one_stars,
+            ),
+        );
+
+        $feedback_rating_plus = $feedback_id_1 + $feedback_id_2 + $feedback_id_3 + $feedback_id_4;
+
+        $feedback_rating = $feedback_rating_plus / 4;
+
         return response()->json([
             'status' => true,
             'message' => "Student feedback on Course!",
             'feedbacks_count' => $feedbacks_count,
-            'five_stars' => $five_stars,
-            'four_stars' => $four_stars,
-            'three_stars' => $three_stars,
-            'two_stars' => $two_stars,
-            'one_stars' => $one_stars,
-            'Expert in the subject' => $feedback_id_1,
-            'Present Complex Topics clearly and easily' => $feedback_id_2,
-            'Skillfull in engaging students' => $feedback_id_3,
-            'Always on time' => $feedback_id_4,
+            'feedback_rating' => $feedback_rating,
+            'overall_feedback' => $overall_feedback,
+            'overall_stars' => $overall_stars,
             'student_feedbacks' => $feedbacks,
         ]);
     }
@@ -1374,8 +1984,7 @@ class AdminController extends Controller
 
     public function cancelledCourses(Request $request)
     {
-        $course = Course::find(7);
-        return $cancelled_classes = $course->cancelled_classes(7);
+
 
         $courses = CanceledCourse::with('teacher', 'student', 'course')
             ->get();
@@ -1383,17 +1992,17 @@ class AdminController extends Controller
         $by_students =  $courses->where('cancelled_by', 'student')->count();
         $by_admins =  $courses->where('cancelled_by', 'admin')->count();
 
-        if ($request->has('student')) {
+        if ($request->cancelled_by == "student") {
             $courses = CanceledCourse::with('teacher', 'student', 'course')
                 ->where('cancelled_by', 'student')
                 ->get();
         }
-        if ($request->has('teacher')) {
+        if ($request->cancelled_by == "teacher") {
             $courses = CanceledCourse::with('teacher', 'student', 'course')
                 ->where('cancelled_by', 'teacher')
                 ->get();
         }
-        if ($request->has('admin')) {
+        if ($request->cancelled_by == "admin") {
             $courses = CanceledCourse::with('teacher', 'student', 'course')
                 ->where('cancelled_by', 'admin')
                 ->get();
@@ -1483,5 +2092,1172 @@ class AdminController extends Controller
                 'teacher' => $teacher,
             ]);
         }
+    }
+
+    public function students(Request $request)
+    {
+        $courses = ClassRoom::all();
+
+        //all Students having courses
+        $students =  $courses->pluck('student_id')->unique();
+        $enrolled_students = [];
+
+        foreach ($students as $student) {
+            array_push($enrolled_students, $student);
+        }
+
+        //total Students
+        $registered_students = User::where('role_name', 'student')->get();
+        $students_array = [];
+
+        foreach ($registered_students as $student) {
+            $prices = 0;
+            if (!(in_array($student->id, $enrolled_students))) {
+                array_push($students_array, $student);
+            }
+            //Student's average rating
+            $average_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $student->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $student->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $student->average_rating =  $average_rating;
+            //finding student courses
+            $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
+            if (count($student_courses) == 0) {
+                $student->total_spendings = 0;
+            } else {
+                foreach ($student_courses as  $student_course) {
+                    if (isset($student_course->course)) {
+                        $prices = $prices + $student_course->course->total_price;
+                    }
+                }
+                $student->total_spendings = $prices;
+            }
+            $student->total_bookings = count($student_courses);
+        }
+        $active_students = $registered_students->where('status', 'active');
+        $suspended_students = $registered_students->where('status', 'inactive');
+
+        if (isset($request->status) && $request->status == "active") {
+
+            $enrolled_students = [];
+            //total enrolled active students
+            foreach ($students as $student) {
+                $user = User::find($student);
+                if ($user->status == 'active' && $user->role_name == "student") {
+                    array_push($enrolled_students, $student);
+                }
+            }
+            //total active Students
+            $active_students = User::where('role_name', 'student')->where('status', 'active')->get();
+
+            foreach ($active_students as $student) {
+                //Active Student's average rating
+                $average_rating = 5;
+                $rating_sum = UserFeedback::where('receiver_id', $student->id)->sum('rating');
+                $total_reviews = UserFeedback::where('receiver_id', $student->id)->count();
+                if ($total_reviews > 0) {
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+                $student->average_rating =  $average_rating;
+
+                //finding student courses
+                $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
+                if (count($student_courses) == 0) {
+                    $student->total_spendings = 0;
+                } else {
+                    foreach ($student_courses as  $student_course) {
+                        if (isset($student_course->course)) {
+                            $prices = $prices + $student_course->course->total_price;
+                        }
+                    }
+                    $student->total_spendings = $prices;
+                }
+                $student->total_bookings = count($student_courses);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Active Students ',
+                'Total' => count($active_students),
+                'enrolled' => count($enrolled_students),
+                'unenrolled' => count($active_students) - count($enrolled_students),
+                'active_students' => $active_students,
+
+            ]);
+        }
+
+        if (isset($request->status) && $request->status == "inactive") {
+
+            $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')->get();
+
+            foreach ($inactive_students as $student) {
+                //inActive Student's average rating
+                $average_rating = 5;
+                $rating_sum = UserFeedback::where('receiver_id', $student->id)->sum('rating');
+                $total_reviews = UserFeedback::where('receiver_id', $student->id)->count();
+                if ($total_reviews > 0) {
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+                $student->average_rating =  $average_rating;
+
+                //finding student courses
+                $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
+                if (count($student_courses) == 0) {
+                    $student->total_spendings = 0;
+                } else {
+                    foreach ($student_courses as  $student_course) {
+                        if (isset($student_course->course)) {
+                            $prices = $prices + $student_course->course->total_price;
+                        }
+                    }
+                    $student->total_spendings = $prices;
+                }
+                $student->total_bookings = count($student_courses);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Inactive Students ',
+                'inactive_students' => $inactive_students,
+
+            ]);
+        }
+        //Response
+        return response()->json([
+            'status' => true,
+            'message' => 'All Students ',
+            'Total' => count($registered_students),
+            'enrolled' => count($enrolled_students),
+            'active' => count($active_students),
+            'suspended' => count($suspended_students),
+            'registered_students' => $registered_students,
+        ]);
+    }
+
+    public function student_bookings($student_id)
+    {
+        $student = User::find($student_id);
+        $bookings = ClassRoom::with(['course' => function ($q) {
+            $q->with('teacher', 'program', 'subject', 'field');
+        }])->where('student_id', $student_id)->get();
+        $courses = [];
+        foreach ($bookings as $booking) {
+            array_push($courses, $booking['course']);
+        }
+        //rating
+        $average_rating = 5;
+        $rating_sum = UserFeedback::where('receiver_id', $student_id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $student_id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+
+        $attendence_count = 0;
+        $completed_clasess = 0;
+        $attendence_rate = 0;
+        foreach ($courses as $course) {
+            if (isset($course)) {
+                $classes = $course->classes->where('status', 'completed');
+                $completed_clasess = $completed_clasess + count($classes);
+                foreach ($classes as $class) {
+                    $attendence = Attendance::where('academic_class_id', $class->id)
+                        ->where('status', 'present')
+                        ->where('user_id', $student_id)
+                        ->first();
+                    if ($attendence != null) {
+                        $attendence_count++;
+                    }
+                }
+            }
+        }
+
+        if ($completed_clasess > 0) {
+            $attendence_rate = ($attendence_count / $completed_clasess) * 100;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'All Bookings!',
+            'student' => $student,
+            'total_bookings' => count($bookings),
+            'average_rating' => $average_rating,
+            // 'attendence_count' => $attendence_count,
+            // 'completed_clasess' => $completed_clasess,
+            'attendence_rate' => $attendence_rate,
+            'bookings' => $courses,
+        ]);
+    }
+
+
+    public function student_profile($student_id)
+    {
+
+        $student_details = User::find($student_id);
+        $bookings = ClassRoom::with(['course' => function ($q) {
+            $q->with('teacher', 'program', 'subject', 'field');
+        }])->where('student_id', $student_id)->get();
+        $courses = [];
+        foreach ($bookings as $booking) {
+            array_push($courses, $booking['course']);
+        }
+        //rating
+        $average_rating = 5;
+        $rating_sum = UserFeedback::where('receiver_id', $student_id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $student_id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+
+        $attendence_count = 0;
+        $completed_clasess = 0;
+        $attendence_rate = 0;
+        $total_spendings = 0;
+        foreach ($courses as $course) {
+            if (isset($course)) {
+                $total_spendings = $total_spendings + $course->total_price;
+                $classes = $course->classes->where('status', 'completed');
+                $completed_clasess = $completed_clasess + count($classes);
+                foreach ($classes as $class) {
+                    $attendence = Attendance::where('academic_class_id', $class->id)->where('status', 'present')->first();
+                    if ($attendence != null) {
+                        $attendence_count++;
+                    }
+                }
+            }
+        }
+
+        if ($completed_clasess > 0) {
+            $attendence_rate = ($attendence_count / $completed_clasess) * 100;
+        }
+
+        $completed_courses =  $bookings->where('status', 'completed');
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Student profile!',
+            'total_courses' => count($bookings),
+            'completed_courses' => count($completed_courses),
+            'average_rating' => number_format($average_rating, 2),
+            'total_spendings' => $total_spendings,
+            'attendence_rate' => $attendence_rate,
+            'student' => $student_details,
+            'courses' => $courses,
+        ]);
+    }
+
+    public function booking_detail($student_id, $course_id)
+    {
+        $course = Course::with('program', 'subject', 'field', 'teacher', 'classes.teacher')
+            // ->with(['classes' => function ($q) {
+            //     $q->where('status', 'completed');
+            // }])
+            ->find($course_id);
+        $student = User::find($student_id);
+
+
+        $attendence_count = 0;
+        $completed_clasess = 0;
+        $attendence_percentage = 0;
+
+        if (isset($course)) {
+            $classes = $course->classes->where('status', 'completed');
+            $completed_clasess = $completed_clasess + count($classes);
+            foreach ($classes as $class) {
+                $attendence = Attendance::where('academic_class_id', $class->id)->where('status', 'present')->first();
+                if ($attendence != null) {
+                    $attendence_count++;
+                }
+            }
+            if ($completed_clasess > 0) {
+                $attendence_percentage = ($attendence_count / $completed_clasess) * 100;
+            }
+        }
+
+        //calculating classes stats
+        $course->attendence_percentage = $attendence_percentage;
+        $completed_classes = $course['classes']->where('status', 'completed');
+        $course->completed_classes = count($completed_classes);
+        $remaining_classes = $course['classes']->where('status', '!=', 'completed');
+        $course->remaining_classes = count($remaining_classes);
+        $rescheduled_classes = RescheduleClass::where('course_id', $course->id)->get();
+        $course->rescheduled_classes = count($rescheduled_classes);
+        $added_classes = $course['classes']->where('class_paradigm', 'added');
+        $course->added_classes = count($added_classes);
+        $course->student = $student;
+
+        //student_rating
+        $average_rating = 5;
+        $user = User::find($student_id);
+        $rating_sum = UserFeedback::where('receiver_id', $student_id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $student_id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+        $student->average_rating = $average_rating;
+
+        //Calculating Assignment completion rate
+        $assignment_completion_rate = 100;
+        $student_assignments = Assignment::with(['assignees' => function ($q) use ($student_id) {
+            $q->where('user_id', $student_id);
+        }])->where('course_id', $course_id)->get();
+
+        $completed_assignments = [];
+        foreach ($student_assignments as $student_assignment) {
+            if ($student_assignment['assignees'] != []) {
+                foreach ($student_assignment['assignees'] as $assignee) {
+                    if ($assignee->status == 'completed') {
+                        array_push($completed_assignments, $assignee);
+                    }
+                }
+            }
+        }
+
+        if (count($student_assignments) > 0) {
+            $assignment_completion_rate = (count($completed_assignments) / count($student_assignments)) * 100;
+        }
+        $student->assignment_completion_rate = $assignment_completion_rate;
+
+        //Calculating Attendence Percentage
+        $attendence_percentage = 0;
+        $atendence = Attendance::where('course_id', $course_id)->where('user_id', $student_id)->get();
+        $present_attendence = $atendence->where('status', 'present');
+        $completed_classes = $course['classes']->where('status', 'completed');
+        if (count($completed_classes) > 0) {
+            $attendence_percentage = (count($present_attendence) / count($completed_classes)) * 100;
+        }
+        $student->attendence_percentage = $attendence_percentage;
+
+        //Calculating Teacher rating
+        $average_rating = 5;
+        foreach ($course['classes'] as $class) {
+            $user = User::find($student_id);
+            $rating_sum = UserFeedback::where('receiver_id', $class->teacher_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $class->teacher_id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $teacher = $class['teacher'];
+            $teacher->average_rating = $average_rating;
+
+            //Checking class Attendence
+            $attendence = Attendance::where('academic_class_id', $class->id)->first();
+            if ($attendence != null) {
+                $class->class_attendence = $attendence->status;
+            } else {
+                $class->class_attendence = "N/A";
+            }
+        }
+        $course->assignment_completion_rate = $assignment_completion_rate;
+
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Booking Detail!',
+            'course' => $course,
+        ]);
+    }
+
+    public function assignment_summary($student_id, $course_id)
+    {
+        $student_assignments = Assignment::with('teacher')
+            ->with(['assignees' => function ($q) use ($student_id) {
+                $q->with('feedback')->where('user_id', $student_id);
+            }])
+            ->where('course_id', $course_id)->get();
+
+        //Calculating Accuracy
+        $assignmnets_accuracy = 0;
+        $total_rating = 0;
+        $counter = 0;
+        foreach ($student_assignments as $student_assignment) {
+            foreach ($student_assignment['assignees'] as $assignee) {
+                $counter++;
+                $total_rating = $total_rating + $assignee['feedback']->sum('rating');
+            }
+        }
+        if ($counter > 0) {
+            $assignmnets_accuracy = ($total_rating / ($counter * 10)) * 100;
+        }
+
+        //Calculating Assignment completion rate
+        $completed_assignments = [];
+        $assignment_completion_rate = 0;
+        $on_date = 0;
+        $late_assignment = [];
+        foreach ($student_assignments as $student_assignment) {
+            if ($student_assignment['assignees'] != []) {
+                foreach ($student_assignment['assignees'] as $assignee) {
+                    if ($assignee->status == 'completed') {
+                        array_push($completed_assignments, $assignee);
+                    }
+
+                    //Checking for Late Submitted Assignments
+                    if ($assignee->updated_at > $student_assignment->deadline) {
+                        array_push($late_assignment, $assignee);
+                    }
+                }
+            }
+        }
+
+        if (count($late_assignment) > 0) {
+            $on_date = count($late_assignment) / count($student_assignments);
+        }
+
+        if (count($student_assignments) > 0) {
+            $assignment_completion_rate = (count($completed_assignments) / count($student_assignments)) * 100;
+        }
+
+
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Assignment Summary',
+            'assignmnets_accuracy' => $assignmnets_accuracy,
+            'assignment_completion_rate' => $assignment_completion_rate,
+            'assignments_by_due_date' => $on_date,
+            'Assignments' => $student_assignments,
+        ]);
+    }
+
+    public function studentFeedback($student_id, $course_id)
+    {
+        $feedbacks = UserFeedback::with('feedback', 'sender')->where('receiver_id', $student_id)->where('course_id', $course_id)->get();
+
+        $student_feedback = [];
+        $counter = 0;
+
+        foreach ($feedbacks as $feedback) {
+            array_push($student_feedback, $feedback['feedback']);
+            $student_feedback[$counter]['rating'] = $feedback->rating;
+            $counter++;
+        }
+
+        if (isset($feedbacks[0])) {
+            $review = $feedbacks[0]->review;
+            $teacher = $feedbacks[0]->sender;
+        } else {
+            $review = Null;
+            $teacher = Null;
+        }
+
+
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Student Feedback!',
+            'review' => $review,
+            'teacher' => $teacher,
+            'feedback' => $student_feedback,
+        ]);
+    }
+
+    public function subject_courses(Request $request)
+    {
+        $courses_subjects = [];
+        $subjects = Course::all()->pluck('subject_id')->unique();
+
+        $running_courses_count = 0;
+        $pending_courses_count = 0;
+        $completed_courses_count = 0;
+        $cancelled_courses_count = 0;
+        $reassigned_courses_count = 0;
+
+
+        if ($request->status == 'running') {
+            foreach ($subjects as $subject) {
+                foreach ($subjects as $subject) {
+                    $all_courses = Course::where("subject_id", $subject)->get();
+                    $course_subject = Subject::with('program', 'field')->find($subject);
+                    $courses = Course::where("subject_id", $subject)->where("status", "inprogress")->get();
+
+
+                    if (count($courses) > 0) {
+                        $course_subject->total_booking = $courses->count();
+                        $course_subject->total_amount = $courses->sum('total_price');
+                        $course_subject->status = "active";
+                        $courses_subjects[] = $course_subject;
+                    }
+
+
+                    $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                    $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+                    $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                    $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                    $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+                }
+                // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Running Courses!',
+                    'running_courses_count' => $running_courses_count,
+                    'pending_courses_count' => $pending_courses_count,
+                    'completed_courses_count' => $completed_courses_count,
+                    'cancelled_courses_count' => $cancelled_courses_count,
+                    'reassigned_courses_count' => $reassigned_courses_count,
+                    'subjects' => $courses_subjects,
+                ]);;
+            }
+        }
+
+        if ($request->status == 'pending') {
+
+            foreach ($subjects as $subject) {
+                $all_courses = Course::where("subject_id", $subject)->get();
+                $course_subject = Subject::with('program', 'field')->find($subject);
+                $course_subject->status = "upcoming";
+                $courses = Course::where("subject_id", $subject)->where("status", "pending")->get();
+
+
+
+                if (count($courses) > 0) {
+                    $course_subject->total_booking = $courses->count();
+                    $course_subject->total_amount = $courses->sum('total_price');
+                    $courses_subjects[] = $course_subject;
+                }
+
+
+                $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+                $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+            }
+            // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Pending Courses!',
+                'running_courses_count' => $running_courses_count,
+                'pending_courses_count' => $pending_courses_count,
+                'completed_courses_count' => $completed_courses_count,
+                'cancelled_courses_count' => $cancelled_courses_count,
+                'reassigned_courses_count' => $reassigned_courses_count,
+                'subjects' => $courses_subjects,
+            ]);
+        }
+
+        if ($request->status == 'cancelled') {
+            foreach ($subjects as $subject) {
+                foreach ($subjects as $subject) {
+                    $all_courses = Course::where("subject_id", $subject)->get();
+
+                    $course_subject = Subject::with('program', 'field')->find($subject);
+                    $courses = Course::where("subject_id", $subject)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->get();
+
+                    if (count($courses) > 0) {
+                        $course_subject->total_booking = $courses->count();
+                        $course_subject->total_amount = $courses->sum('total_price');
+                        $course_subject->status = "cancelled";
+
+                        $courses_subjects[] = $course_subject;
+                    }
+
+
+
+                    $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                    $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+                    $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                    $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                    $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+                }
+                // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Cancelled Courses!',
+                    'running_courses_count' => $running_courses_count,
+                    'pending_courses_count' => $pending_courses_count,
+                    'completed_courses_count' => $completed_courses_count,
+                    'cancelled_courses_count' => $cancelled_courses_count,
+                    'reassigned_courses_count' => $reassigned_courses_count,
+                    'subjects' => $courses_subjects,
+                ]);;
+            }
+        }
+
+        if ($request->status == 'completed') {
+            foreach ($subjects as $subject) {
+                $all_courses = Course::where("subject_id", $subject)->get();
+                $course_subject = Subject::with('program', 'field')->find($subject);
+                $courses = Course::where("subject_id", $subject)->where("status", "completed")->get();
+
+                if (count($courses) > 0) {
+                    $course_subject->total_booking = $courses->count();
+                    $course_subject->total_amount = $courses->sum('total_price');
+                    $course_subject->status = "completed";
+                    $courses_subjects[] = $course_subject;
+                }
+
+
+
+
+                $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+                $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+            }
+            // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Completed Courses!',
+                'running_courses_count' => $running_courses_count,
+                'pending_courses_count' => $pending_courses_count,
+                'completed_courses_count' => $completed_courses_count,
+                'cancelled_courses_count' => $cancelled_courses_count,
+                'reassigned_courses_count' => $reassigned_courses_count,
+                'subjects' => $courses_subjects,
+            ]);
+        }
+
+        if ($request->status == 'reassigned') {
+            foreach ($subjects as $subject) {
+                $all_courses = Course::where("subject_id", $subject)->get();
+                $course_subject = Subject::with('program', 'field')->find($subject);
+                $courses = Course::where("subject_id", $subject)->where("status", "reassigned")->get();
+
+                if (count($courses) > 0) {
+                    $course_subject->total_booking = $courses->count();
+                    $course_subject->total_amount = $courses->sum('total_price');
+                    $course_subject->status = "rescheduled";
+                    $courses_subjects[] = $course_subject;
+                }
+
+
+
+                $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+                $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+            }
+            // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Reassigned Courses!',
+                'running_courses_count' => $running_courses_count,
+                'pending_courses_count' => $pending_courses_count,
+                'completed_courses_count' => $completed_courses_count,
+                'cancelled_courses_count' => $cancelled_courses_count,
+                'reassigned_courses_count' => $reassigned_courses_count,
+                'subjects' => $courses_subjects,
+            ]);
+        }
+    }
+
+    public function teacher_bookings($teacher_id)
+    {
+        $courses = Course::with('student', 'program', 'subject', 'field')
+            ->where('teacher_id', $teacher_id)
+            ->get();
+        $teacher = User::find($teacher_id);
+
+        //rating
+        $average_rating = 5;
+        $rating_sum = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $teacher_id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
+        }
+
+        $attendence_count = 0;
+        $completed_clasess = 0;
+        $attendence_rate = 0;
+        foreach ($courses as $course) {
+            $classes = $course->classes->where('status', 'completed');
+            $completed_clasess = $completed_clasess + count($classes);
+            foreach ($classes as $class) {
+                $attendence = Attendance::where('academic_class_id', $class->id)
+                    ->where('status', 'present')
+                    ->where('user_id', $teacher_id)
+                    ->first();
+                if ($attendence != null) {
+                    $attendence_count++;
+                }
+            }
+        }
+
+        if ($completed_clasess > 0) {
+            $attendence_rate = ($attendence_count / $completed_clasess) * 100;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'All Bookings!',
+            'teacher' => $teacher,
+            'total_bookings' => count($courses),
+            'average_rating' => $average_rating,
+            'attendence_rate' => $attendence_rate,
+            'bookings' => $courses,
+        ]);
+    }
+
+    public function teacher_assignment(Request $request)
+    {
+
+        $rules = [
+
+            'status' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        if ($request->status == 'not-available') {
+            // return  $noTeacherCourses = NoTeacherCourse::unique()->get();
+            $courses = Course::with('program', 'subject', 'teacher', 'student')->where('status', 'pending')->get();
+            $flag = 0;
+
+            foreach ($courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
+                    $hours = floor($difference / 3600);
+                    $minutes = floor(($difference / 60) % 60);
+                    $seconds = $difference % 60;
+                    $counter =  $hours . " H " . $minutes . " Min";
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Coursees With no Teacher!',
+                'courses_count' => count($courses),
+                'courses' => $courses,
+            ]);
+        }
+        if ($request->status == 'declined') {
+            $rejected_courses = RejectedCourse::pluck('course_id');
+            $new_courses = Course::with('program', 'subject', 'teacher', 'student')->whereIn('id', $rejected_courses)->where('status', 'rejected')->get();
+            $flag = 0;
+            $newly = [];
+            foreach ($new_courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
+                    $hours = floor($difference / 3600);
+                    $minutes = floor(($difference / 60) % 60);
+                    $seconds = $difference % 60;
+                    $counter =  $hours . " H " . $minutes . " Min";
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+                array_push($newly, $course);
+            }
+            $completed_courses = Course::with('program', 'subject', 'teacher', 'student')->whereIn('id', $rejected_courses)->where('status', '!=', 'rejected')->get();
+
+            $flag = 0;
+            $completed = [];
+            foreach ($completed_courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
+                    $hours = floor($difference / 3600);
+                    $minutes = floor(($difference / 60) % 60);
+                    $seconds = $difference % 60;
+                    $counter =  $hours . " H " . $minutes . " Min";
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+                array_push($completed, $course);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Rejected Courses!',
+                'newly_courses_count' => count($new_courses),
+                'completed_courses_count' => count($completed_courses),
+                'newly_requested_courses' => $newly,
+                'completed_courses' => $completed,
+            ]);
+        }
+
+        if ($request->status == 'cancelled') {
+            $cancelled_courses = CanceledCourse::pluck('course_id');
+            $new_courses = Course::with('program', 'subject', 'teacher', 'student')->whereIn('id', $cancelled_courses)->where('status', 'cancelled_by_teacher')->get();
+            $flag = 0;
+            $newly = [];
+            foreach ($new_courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diff(Carbon::parse($course->start_date));
+                    $counter =  $difference->format('%H Hours %I Minutes');
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+                array_push($newly, $course);
+            }
+
+            $completed_courses = Course::with('program', 'subject', 'teacher', 'student')->whereIn('id', $cancelled_courses)->where('status', '!=', 'cancelled_by_teacher')->get();
+            $flag = 0;
+            $completed = [];
+            foreach ($completed_courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diff(Carbon::parse($course->start_date));
+                    $counter =  $difference->format('%H Hours %I Minutes');
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+                array_push($completed, $course);
+            }
+
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Cancelled Courses!',
+                'newly_courses_count' => count($new_courses),
+                'completed_courses_count' => count($completed_courses),
+                'newly_requested_courses' => $newly,
+                'completed_courses' => $completed,
+            ]);
+        }
+
+        if ($request->status == 'running') {
+            $courses = Course::with('program', 'subject', 'teacher')->where('status', 'inprogress')->get();
+            $flag = 0;
+
+            foreach ($courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diff(Carbon::parse($course->start_date));
+                    $counter =  $difference->format('%H Hours %I Minutes');
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Running Courses!',
+                'courses_count' => count($courses),
+                'courses' => $courses,
+            ]);
+        }
+    }
+
+    public function send_mail(Request $request)
+    {
+        $rules = [
+            'email' => 'required',
+            'message' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+        //*********** Sending Email  ************\\
+        $user_email = $request->email;
+        $message_data = $request->message;
+        $to_email = $user_email;
+
+        $data = array('email' =>  $user_email, 'message_data' =>  $message_data);
+
+        Mail::send('email.send_mail', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('Course Email');
+            $message->from('metutorsmail@gmail.com', 'MeTutor');
+        });
+
+        //********* Sending Email ends **********//
+        return response()->json([
+            'status' => true,
+            'message' => "Email sent Successfully!",
+            'email' => $request->email,
+            'message' => $request->message,
+        ]);
+    }
+
+    public function testimonial_status($user_id, Request $request)
+    {
+        $rules = [
+            'status' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+        $user_testimonials = UserTestimonial::where('sender_id', $user_id)->get();
+        foreach ($user_testimonials as $testimonial) {
+            $testimonial->status = $request->status;
+            $testimonial->update();
+        }
+        $user_testimonials = UserTestimonial::where('sender_id', $user_id)->get();
+        return response()->json([
+            'status' => true,
+            'message' => "Status Updated Successfully",
+            'user_testimonials' => $user_testimonials,
+        ]);
+    }
+
+    public function requested_courses(Request $request)
+    {
+
+        $requested_courses = RequestedCourse::with('program', 'country', 'language')->where('status', 'pending')->orderBy('id', 'DESC')->get();
+        $completed_courses = RequestedCourse::with('program', 'country', 'language')->where('status', '!=', 'pending')->orderBy('id', 'DESC')->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => "All Requested Courses",
+            'new_request_count' => count($requested_courses),
+            'completed_count' => count($requested_courses),
+            'requested_courses' => $requested_courses,
+            'completed_courses' => $completed_courses,
+        ]);
+    }
+
+    public function orders()
+    {
+        $orders = Order::with('transaction', 'user')->with(['course' => function ($q) {
+            $q->withCount('classes');
+        }])->get();
+
+        // Calculating student rating
+        foreach ($orders as $order) {
+            $student_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $order->course->student_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $order->course->student_id)->count();
+            if ($total_reviews > 0) {
+                $student_rating = $rating_sum / $total_reviews;
+            }
+            $order->user->student_rating = $student_rating;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "All Orders",
+            'orders' => $orders,
+        ]);
+    }
+
+    public function refund_orders()
+    {
+        $orders = RefundCourse::with('student', 'teacher', 'course', 'canceled_course', 'refunded_classes.academic_class')->get();
+
+        //calculating the ratings
+        foreach ($orders as $order) {
+            #for student
+            $student_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $order->student_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $order->student_id)->count();
+            if ($total_reviews > 0) {
+                $student_rating = $rating_sum / $total_reviews;
+            }
+            $order->student->rating = $student_rating;
+
+            #for teacher
+            $teacher_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $order->teacher_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $order->teacher_id)->count();
+            if ($total_reviews > 0) {
+                $teacher_rating = $rating_sum / $total_reviews;
+            }
+            $order->teacher->rating = $teacher_rating;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "All Orders to refund!",
+            'orders' => $orders,
+        ]);
+    }
+
+    public function refund_details($course_id)
+    {
+        $refunds = RefundCourse::with('course',  'canceled_course', 'refunded_classes')->where('course_id', $course_id)->first();
+
+        // foreach($refunds as $refund){
+        //     $refund->remaining_classes = $refund()
+        // }
+        $refunds->remaining_classes = $refunds['course']->total_classes -  $refunds->refunded_classes_count;
+        $refunds->subtotal = $refunds->total_refunds +  $refunds['refunded_classes']->sum('service_fee');
+
+        return response()->json([
+            'status' => true,
+            'message' => "Course refund details!",
+            'refund_detail' => $refunds,
+        ]);
+    }
+    public function requested_courses_status(Request $request, $id)
+    {
+
+        $rules = [
+            'status' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $requested_course = RequestedCourse::find($id);
+        $requested_course->status = $request->status;
+        $requested_course->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => "status changed successfully",
+        ]);
+    }
+
+    public function teacherStatus($course_id, Request $request)
+    {
+
+        $rules = [
+            'status' =>  'required|string'
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ]);
+        }
+        $course = Course::findOrFail($course_id);
+        $course->teacher_status = $request->status;
+        $course->update();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Status changed successfully!",
+            'course' => $course,
+        ]);
+    }
+
+    public function subject_orders($subject_id)
+    {
+        $orders = Order::with('transaction', 'user')->whereHas('course', function ($q) use ($subject_id) {
+            $q->where('subject_id', $subject_id)->withCount('classes');
+        })->get();
+
+        // Calculating student rating
+        foreach ($orders as $order) {
+            $student_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $order->course->student_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $order->course->student_id)->count();
+            if ($total_reviews > 0) {
+                $student_rating = $rating_sum / $total_reviews;
+            }
+            $order->user->student_rating = $student_rating;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "Subject Orders",
+            'orders' => $orders,
+        ]);
+    }
+
+    public function order_detail($course_id)
+    {
+        $order = Order::with('transaction', 'user')->where('course_id', $course_id)->first();
+
+        // Calculating student rating
+        if ($order) {
+            $student_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $order->course->student_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $order->course->student_id)->count();
+            if ($total_reviews > 0) {
+                $student_rating = $rating_sum / $total_reviews;
+            }
+            $order->user->student_rating = $student_rating;
+            $order->course->classes_count = count($order['course']->classes);
+            // removes classes object from response
+            unset($order['course']['classes']);
+        }
+
+
+        return response()->json([
+            'status' => true,
+            'message' => "Order Details!",
+            'order_detail' => $order,
+        ]);
+    }
+
+    public function teacher_profile(Request $request, $id)
+    {
+
+
+        if (isset($id)) {
+
+            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
+        }
+
+        $teacher_profile = User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->where('id', $id)->first();
+
+        return response()->json([
+            'status' => true,
+            'teacher_profile' => $teacher_profile,
+
+        ]);
     }
 }

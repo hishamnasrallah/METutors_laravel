@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\VedioController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,10 +19,13 @@ Route::get('/index', function () {
     return "hello";
 });
 
-Route::get('join-meeting',[VedioController::class,'index']);
-Route::get('join-meeting/{string}',[VedioController::class,'meeting_join']);
+Route::get('join-meeting', [VedioController::class, 'index']);
+Route::get('join-meeting/{string}', [VedioController::class, 'meeting_join']);
 
 Route::get('search-student', [VedioController::class, 'student']);
 Route::post('search-student', [VedioController::class, 'search_student'])->name('search_student');
 
 Auth::routes(['verify' => true]);
+
+Route::get('payment/prepare-checkout', 'PaymentController@prepareCheckout');
+Route::get('payment/status', 'PaymentController@paymentStatus')->name('payment_status');

@@ -144,11 +144,10 @@ class FeedbackController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $count = UserTestimonial::where('sender_id', $token_user->id)->count();
+        $testimonials = UserTestimonial::where('sender_id', $token_user->id)->get();
+        $decoded_feedbacks = json_decode(json_encode($request->feedbacks));
 
-        if ($count == 0) {
-            $decoded_feedbacks = json_decode(json_encode($request->feedbacks));
-
+        if (count($testimonials) == 0) {
 
             foreach ($decoded_feedbacks as $feedback) {
                 $platform = new UserTestimonial();
@@ -165,10 +164,17 @@ class FeedbackController extends Controller
                 'feedbacks' => $feedbacks,
             ]);
         } else {
+            foreach ($decoded_feedbacks as $feedback) {
+                $platform = UserTestimonial::where('sender_id', $token_user->id)->where('testimonial_id', $feedback->testimonial_id)->first();
+                $platform->review = $request->review;
+                $platform->rating = $feedback->rating;
+                $platform->update();
+            }
             return response()->json([
-                'status' => false,
-                'message' => "You have already added a feedback!",
-            ], 400);
+                'status' => true,
+                'message' => "You Feedback Updated Successfully!",
+                'feedbacks' => $testimonials,
+            ]);
         }
     }
 

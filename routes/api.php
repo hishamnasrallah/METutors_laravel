@@ -109,21 +109,14 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     //**************** Teacher routes ends****************
 
-
-
-
-
-
-
-
-
-
     Route::get('access-token', 'TwilioController@generate_token');
 
 
     //*************** */ Faq Api's***************
 
     //************** / Manage Classes Api's***************
+
+    Route::Post('course/request', 'ClassController@request_course');
 
     Route::Post('create-course', 'ClassController@create_course');
     Route::Post('create-class', 'ClassController@create_course');
@@ -463,7 +456,10 @@ Route::get('admin/teachers/schedule', 'AdminController@teachers_schedule');
 Route::get('admin/students/schedule', 'AdminController@students_schedule');
 Route::get('admin/feedbacks/course', 'AdminController@course_feedbacks');
 Route::delete('admin/course/feedback', 'AdminController@del_coursefeedback');
+Route::get('admin/testimonial/{user_id}', 'AdminController@edit_testimonial');
+Route::post('admin/testimonial/{user_id}', 'AdminController@update_testimonial');
 Route::get('admin/testimonials', 'AdminController@platform_feedbacks');
+Route::post('admin/user-testimonial/{user_id}', 'AdminController@testimonial_status');
 Route::delete('admin/testimonial/{sender_id}', 'AdminController@del_usertestimonial');
 Route::get('admin/teachers/ratings', 'AdminController@teacher_ratings');
 Route::post('admin/canceled-course/reassign/teacher', 'AdminController@reassign_teacher');
@@ -490,6 +486,29 @@ Route::get('admin/course/{course_id}/feedbacks', 'AdminController@student_feedba
 Route::get('admin/course/{course_id}/previous-teachers', 'AdminController@previous_teachers');
 Route::get('admin/cancelled-courses', 'AdminController@cancelledCourses');
 Route::post('admin/teacher-status', 'AdminController@teacher_status');
+Route::get('admin/teacher/{teacher_id}', 'AdminController@teacher_profile');
+
+Route::get('admin/requested-courses', 'AdminController@requested_courses');
+Route::post('admin/requested-course/{id}/status', 'AdminController@requested_courses_status');
+Route::get('admin/students', 'AdminController@students');
+Route::get('admin/student/{student_id}/bookings', 'AdminController@student_bookings');
+Route::get('admin/teacher/{teacher_id}/bookings', 'AdminController@teacher_bookings');
+Route::get('admin/student/{student_id}/course/{course_id}/booking-details', 'AdminController@booking_detail');
+Route::get('admin/teacher/{teacher_id}/course/{course_id}/booking-details', 'AdminController@teacher_course_detail');
+Route::get('admin/student/{student_id}/course/{course_id}/assignment-summary', 'AdminController@assignment_summary');
+
+Route::get('admin/student/{student_id}/course/{course_id}/feedback', 'AdminController@studentFeedback');
+Route::get('admin/subject-courses', 'AdminController@subject_courses');
+Route::get('admin/student/{student_id}', 'AdminController@student_profile');
+Route::get('admin/assign-teacher', 'AdminController@teacher_assignment');
+Route::post('admin/send-email', 'AdminController@send_mail');
+Route::get('admin/orders', 'AdminController@orders');
+Route::get('admin/course/{course_id}/order-detail', 'AdminController@order_detail');
+Route::get('admin/subject/{subject_id}/orders', 'AdminController@subject_orders');
+Route::get('admin/courses/refund', 'AdminController@refund_orders');
+Route::get('admin/course/{course_id}/refund/detail', 'AdminController@refund_details');
+Route::post('admin/course/{course_id}/teacher-status', 'AdminController@teacherStatus');
+
 
 
 // });
@@ -510,7 +529,6 @@ Route::get('teacher/course/{course_id}/attendance', 'Student\CourseController@te
 
 // Route::group(['middleware' => ['auth.jwt', 'isStudent']], function () {
 Route::get('student/refund/course/{course_id}', 'Student\CourseController@refundCourse');
-// Route::Post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourse');
 Route::get('student/refund/course/{course_id}/classes', 'Student\CourseController@refundClasses');
 Route::post('student/course/{course_id}/cancel', 'Student\CourseController@cancelCourseReason');
 
@@ -521,7 +539,7 @@ Route::get('student/feedback/params', 'FeedbackController@feedback_params');
 Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
 Route::get('student/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
 
-Route::post('student/teachers/available', 'Web\UserController@availableTeachers');
+Route::get('student/teachers/available', 'Web\UserController@availableTeachers');
 Route::get('student/class/{academic_class_id}/makeup-slots', 'Student\ClassController@makeupClassAvailability');
 Route::post('student/class/{academic_class_id}/makeup', 'Student\ClassController@makeupClass');
 
@@ -530,6 +548,15 @@ Route::get('student/class/{academic_class_id}/recording', 'Student\ClassControll
 Route::post('student/course/{course_id}/select-teacher', 'Student\ClassController@teacher_replacement');
 Route::post('student/course/{course_id}/request-admin', 'Student\CourseController@request_admin');
 
+
+
+
+
 Route::get('local-utc', 'ClassController@local_to_utc');
 Route::get('utc-local', 'ClassController@utc_to_local');
 // });
+
+Route::get('payment/prepare-checkout', 'PaymentController@prepareCheckout');
+Route::get('payment/status', 'PaymentController@paymentStatus');
+Route::get('payment/details', 'PaymentController@payment_details');
+Route::get('payment/debit', 'PaymentController@debit_request');

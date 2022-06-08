@@ -42,13 +42,56 @@ class UserController extends Controller
     public function filteredTeacher(Request $request)
     {
 
-        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', 'teacher')->where('verified', 1)->where('status', 'active')->get();
+        // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+        //     ->where('role_name', 'teacher')
+        //     ->where('verified', 1)
+        //     ->where('status', 'active')
+        //     ->get();
+
+        // return response()->json([
+        //     'success' => true,
+        //     'filtered_teacher' => $filtered_teacher,
+        // ]);
+
+
+          $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+            ->where('role_name', 'teacher')
+            ->where('verified', 1)
+            ->where('status', 'active')->where('id','!=',1212 )
+            ->get();
+
+
+        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+            ->where('role_name', 'teacher')
+            ->where('verified', 1)
+            ->where('status', 'active')->where('id',1212 )
+            ->get();
+
+
 
         return response()->json([
             'success' => true,
-            'filtered_teacher' => $filtered_teacher,
+            'available_teachers' => $filtered_teacher,
+            'suggested_teachers' => $suggestedTeachers,
         ]);
 
+
+        $rules = [
+            'classes' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
 
 
         $token_1 = JWTAuth::getToken();
@@ -151,9 +194,11 @@ class UserController extends Controller
 
 
         $selectedTeachers = User::whereIn('id', $final_teachers)->get();
+        $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
         return response()->json([
             'success' => true,
-            'filtered_teacher' => $selectedTeachers,
+            'available_teachers' => $selectedTeachers,
+            'suggested_teachers' => $suggestedTeachers,
         ]);
     }
 
@@ -218,9 +263,11 @@ class UserController extends Controller
             $feedback->average_rating = $student_rating;
         }
 
+
+
         $feedback_id_1 = 5;
         $feedback_id_2 = 5;
-        $feedback_id_2 = 5;
+        $feedback_id_3 = 5;
         $feedback_id_4 = 5;
 
         $feedback_rating = [];
@@ -1314,16 +1361,16 @@ class UserController extends Controller
 
 
         $selectedTeachers = User::whereIn('id', $final_teachers)->get();
+        // $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name','teacher')->get();
         return response()->json([
             'success' => true,
-            'filtered_teacher' => $selectedTeachers,
+            'available_teachers' => $selectedTeachers,
+            // 'suggested_teachers' => $suggestedTeachers,
         ]);
     }
 
     public function account_setting(Request $request)
     {
-
-
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 

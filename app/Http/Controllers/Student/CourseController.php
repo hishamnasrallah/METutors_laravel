@@ -10,6 +10,8 @@ use App\Models\CanceledClass;
 use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\Course;
+use App\Models\RefundClass;
+use App\Models\RefundCourse;
 use App\Subject;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,7 +37,7 @@ class CourseController extends Controller
             $now = Carbon::now();
             $classStartDate = Carbon::parse($class->start_date);
             $difference =   $now->diffInHours($classStartDate);
-            if ($difference >= 72) {
+            if ($difference >= 72 &&  $now < $classStartDate) {
                 array_push($refundable_classes, $class);
                 array_push($refundable_classes_id, $class->id);
                 $duration = $duration + $class->duration;
@@ -208,24 +210,25 @@ class CourseController extends Controller
             'reason' =>  'required|string',
         ];
 
-        if($request->is_complete == 0){
-             $rules = [
+        if ($request->is_complete == 0) {
+            // $rules = [
+            //     'academic_classes' =>  'required',
+            // ];
+
+            // $validator = Validator::make($request->academic_classes, $rules);
+
+            // if ($validator->fails()) {
+            //     $messages = $validator->messages();
+            //     $errors = $messages->all();
+
+            //     return response()->json([
+            //         'status' => false,
+            //         'errors' => $errors,
+            //     ], 400);
+            // }
+            $request->validate([
                 'academic_classes' =>  'required',
-            ];
-
-
-            $validator = Validator::make($request->academic_classes, $rules);
-
-            if ($validator->fails()) {
-                $messages = $validator->messages();
-                $errors = $messages->all();
-
-                return response()->json([
-                    'status' => false,
-                    'errors' => $errors,
-                ], 400);
-            }
-
+            ]);
         }
 
 
@@ -245,12 +248,19 @@ class CourseController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $course = Course::find($course_id);
+        if ($course->status == 'completed') {
+            return response()->json([
+                'status' => true,
+                'message' => 'Access Denied! Course has been Completed!',
+            ], 400);
+        }
+        $subject = Subject::find($course->subject_id);
 
 
 
         // return $request->is_complete;
         if ($request->is_complete == '0') {
-           
+
             if ($course->status == 'cancelled_by_teacher' || $course->status == 'cancelled_by_student' || $course->status == 'cancelled_by_admin') {
                 return response()->json([
                     'status' => true,
@@ -269,9 +279,12 @@ class CourseController extends Controller
             $canceledCourse->reason = $request->reason;
             $canceledCourse->save();
 
+
+
             $canceled_classes = [];
+            $duration = 0;
             foreach ($classes as $class) {
-                $academic_class = AcademicClass::find($class);
+                $academic_class = AcademicClass::findOrFail($class->id);
                 // $academic_class->teacher_id = null;
                 $academic_class->status = 'canceled';
                 array_push($canceled_classes, $academic_class);
@@ -281,6 +294,28 @@ class CourseController extends Controller
                 $canceledClass->canceled_course_id = $canceledCourse->id;
                 $canceledClass->save();
                 $academic_class->update();
+
+                $duration = $academic_class->duration + $duration;
+            }
+
+            //Refund Course
+            $refund_course = new RefundCourse();
+            $refund_course->course_id =  $course->id;
+            $refund_course->student_id = $course->student_id;
+            $refund_course->teacher_id = $course->teacher_id;
+            $refund_course->refunded_classes_count = count($classes);
+            $refund_course->total_refunds = ($duration * $subject->price_per_hour) - (count($classes) * 1);
+            $refund_course->total_service_fee = count($classes) * 1;
+            $refund_course->save();
+            //Refunded Classes
+            foreach ($classes as $class) {
+                $academic_class = AcademicClass::findOrFail($class->id);
+                $refund_class = new RefundClass();
+                $refund_class->refund_course_id = $refund_course->id;
+                $refund_class->academic_class_id = $academic_class->id;
+                $refund_class->service_fee = 1;
+                $refund_class->refund = $academic_class->duration * $subject->price_per_hour;
+                $refund_class->save();
             }
         }
 
@@ -294,9 +329,16 @@ class CourseController extends Controller
                 $now = Carbon::now();
                 $classStartDate = Carbon::parse($class->start_date);
                 $difference =   $now->diffInHours($classStartDate);
-                if ($difference >= 72) {
+                if ($difference >= 72  &&  $now < $classStartDate) {
                     array_push($refundable_classes, $class);
                 }
+            }
+
+            if (count($refundable_classes) == 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Course has no class to refund!",
+                ], 400);
             }
 
             $canceledCourse = new CanceledCourse();
@@ -308,8 +350,13 @@ class CourseController extends Controller
             $canceledCourse->reason = $request->reason;
             $canceledCourse->save();
 
+
+
+
+
             //Cancelling refundable classes
             $canceled_classes = [];
+            $duration = 0;
             foreach ($refundable_classes as $class) {
                 $academic_class = AcademicClass::find($class->id);
                 // $academic_class->teacher_id = null;
@@ -321,6 +368,29 @@ class CourseController extends Controller
                 $canceledClass->canceled_course_id = $canceledCourse->id;
                 $canceledClass->save();
                 $academic_class->update();
+
+                //Calculating duration 
+                $academic_class = AcademicClass::find($class->id);
+                $duration = $duration + $academic_class->duration;
+            }
+
+            //Refund Course
+            $refund_course = new RefundCourse();
+            $refund_course->course_id =  $course->id;
+            $refund_course->student_id = $course->student_id;
+            $refund_course->teacher_id = $course->teacher_id;
+            $refund_course->refunded_classes_count = count($refundable_classes);
+            $refund_course->total_refunds = ($duration * $subject->price_per_hour) - (count($refundable_classes) * 1);
+            $refund_course->total_service_fee = count($refundable_classes) * 1;
+            $refund_course->save();
+            //Refunded Classes
+            foreach ($refundable_classes as $class) {
+                $refund_class = new RefundClass();
+                $refund_class->refund_course_id = $refund_course->id;
+                $refund_class->academic_class_id = $class->id;
+                $refund_class->service_fee = 1;
+                $refund_class->refund = $class->duration * $subject->price_per_hour;
+                $refund_class->save();
             }
         }
 
@@ -338,6 +408,7 @@ class CourseController extends Controller
         $course = Course::find($course_id);
         return response()->json([
             'status' => true,
+            'message' => "Course Cancelled Successfully!",
             'reason' => $request->reason,
             'course' => $course,
             'canceledclasses' => $canceled_classes,
