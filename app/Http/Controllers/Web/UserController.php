@@ -42,16 +42,16 @@ class UserController extends Controller
     public function filteredTeacher(Request $request)
     {
 
-        // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
-        //     ->where('role_name', 'teacher')
-        //     ->where('verified', 1)
-        //     ->where('status', 'active')
-        //     ->get();
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+            ->where('role_name', 'teacher')
+            ->where('verified', 1)
+            ->where('status', 'active')
+            ->get();
 
-        // return response()->json([
-        //     'success' => true,
-        //     'filtered_teacher' => $filtered_teacher,
-        // ]);
+        return response()->json([
+            'success' => true,
+            'filtered_teacher' => $filtered_teacher,
+        ]);
 
 
           $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')

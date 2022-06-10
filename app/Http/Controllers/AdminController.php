@@ -3053,11 +3053,13 @@ class AdminController extends Controller
         $requested_courses = RequestedCourse::with('program', 'country', 'language')->where('status', 'pending')->orderBy('id', 'DESC')->get();
         $completed_courses = RequestedCourse::with('program', 'country', 'language')->where('status', '!=', 'pending')->orderBy('id', 'DESC')->get();
 
+    
+
         return response()->json([
             'status' => true,
             'message' => "All Requested Courses",
-            'new_request_count' => count($requested_courses),
-            'completed_count' => count($requested_courses),
+            'new_request_count' => $requested_courses->count(),
+            'completed_count' => $completed_courses->count(),
             'requested_courses' => $requested_courses,
             'completed_courses' => $completed_courses,
         ]);
