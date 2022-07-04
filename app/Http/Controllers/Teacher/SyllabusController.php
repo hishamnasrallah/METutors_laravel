@@ -1,8 +1,10 @@
 <?php
 
 namespace App\Http\Controllers\Teacher;
-use App\Http\Controllers\Controller;
 
+use App\Events\AddSyllabusEvent;
+use App\Http\Controllers\Controller;
+use App\Jobs\AddSyllabusJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\Attendance;
@@ -25,7 +27,7 @@ use Illuminate\Support\Facades\Validator;
 
 class SyllabusController extends Controller
 {
-   
+
     public function addTopic(Request $request)
     {
 
@@ -92,37 +94,41 @@ class SyllabusController extends Controller
                     $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
 
                     $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                    $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
+                    $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
                     $total = AcademicClass::where('topic_id', $topic->id)->get();
-            
+
                     $totaltopicHours = 0;
                     foreach ($total as $class) {
                         $totaltopicHours = $totaltopicHours + $class->duration;
                     }
-            
+
                     $topicProgress = 0;
                     if ($totalTopicClases > 0) {
                         $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
                     }
-    
 
+
+                    $teacher = User::find($token_user->id);
+                    $student = User::find($course->student_id);
+                    $student_message = "Syllabus has been added to course";
+                    $teacher_message = "Syllabus added Successfully!";
+
+                    event(new AddSyllabusEvent($student->id, $student, $topic, $student_message));
+                    event(new AddSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
+                    dispatch(new AddSyllabusJob($student->id, $student, $topic, $student_message));
+                    dispatch(new AddSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
 
                     return response()->json([
                         'success' => true,
                         'message' => 'Topic Added Successfully!',
-                        
                         'unclassified_classes' => $academic_classes_count,
-                        
-
-                         'topic_detail' => [
-
-                                    'topic' => $topicClasses,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
-
-                                ],
+                        'topic_detail' => [
+                            'total_classes' => $totalTopicClases,
+                            'completedTopicClases' => $completedTopicClases,
+                            'total_topic_hours' => $totaltopicHours,
+                            "topic_progress" => $topicProgress,
+                            'topic' => $topicClasses,
+                        ],
                     ]);
                 }
                 $counter++;
@@ -146,20 +152,29 @@ class SyllabusController extends Controller
             }
 
 
+            $teacher = User::find($token_user->id);
+            $student = User::find($course->student_id);
+            $student_message = "Syllabus has been added to course";
+            $teacher_message = "Syllabus added Successfully!";
+
+            event(new AddSyllabusEvent($student->id, $student, $topic, $student_message));
+            event(new AddSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
+            dispatch(new AddSyllabusJob($student->id, $student, $topic, $student_message));
+            dispatch(new AddSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Topic Added Successfully!',
-               
+
                 'unclassified_classes' => $academic_classes_count,
                 'topic_detail' => [
+                    'total_classes' => $totalTopicClases,
+                    'completedTopicClases' => $completedTopicClases,
+                    'total_topic_hours' => $totaltopicHours,
+                    "topic_progress" => $topicProgress,
+                    'topic' => $topicClasses,
 
-                                    'topic' => $topicClasses,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
-
-                                ],
+                ],
             ]);
         }
     }
@@ -169,11 +184,11 @@ class SyllabusController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-         if($token_user->role_name == 'teacher'){
-            $userrole='teacher_id';
-       }elseif($token_user->role_name == 'student') {
-         $userrole='student_id';
-        } 
+        if ($token_user->role_name == 'teacher') {
+            $userrole = 'teacher_id';
+        } elseif ($token_user->role_name == 'student') {
+            $userrole = 'student_id';
+        }
 
         $teacher = User::find($token_user->id);
         $course = Course::with('subject', 'language', 'program', 'student', 'student')->find($course_id);
@@ -244,7 +259,7 @@ class SyllabusController extends Controller
         }
     }
 
-   
+
 
     public function updateTopic(Request $request)
     {
@@ -320,28 +335,28 @@ class SyllabusController extends Controller
                             $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
                             // $classified_classes = AcademicClass::where('topic_id',$topic->id )->where('course_id', $course->id)->get();
 
-                              $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
-                                $total = AcademicClass::where('topic_id', $topic->id)->get();
-                        
-                                $totaltopicHours = 0;
-                                foreach ($total as $class) {
-                                    $totaltopicHours = $totaltopicHours + $class->duration;
-                                }
-                        
-                                $topicProgress = 0;
-                                if ($totalTopicClases > 0) {
-                                    $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
-                                }
-                                   
+                            $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+                            $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
+                            $total = AcademicClass::where('topic_id', $topic->id)->get();
+
+                            $totaltopicHours = 0;
+                            foreach ($total as $class) {
+                                $totaltopicHours = $totaltopicHours + $class->duration;
+                            }
+
+                            $topicProgress = 0;
+                            if ($totalTopicClases > 0) {
+                                $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
+                            }
+
 
                             return response()->json([
                                 'success' => true,
                                 'message' => 'Topic Added Successfully!',
-                                
+
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
-                                 'topic_detail' => [
+                                'topic_detail' => [
 
                                     'topic' => $classTopic,
                                     'total_classes' => $totalTopicClases,
@@ -388,23 +403,23 @@ class SyllabusController extends Controller
                             $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
                             // $classified_classes = AcademicClass::where('topic_id',$topic->id )->where('course_id', $course->id)->get();
 
-                              $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
-                                $total = AcademicClass::where('topic_id', $topic->id)->get();
-                        
-                                $totaltopicHours = 0;
-                                foreach ($total as $class) {
-                                    $totaltopicHours = $totaltopicHours + $class->duration;
-                                }
-                        
-                                $topicProgress = 0;
-                                if ($totalTopicClases > 0) {
-                                    $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
-                                }
+                            $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+                            $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
+                            $total = AcademicClass::where('topic_id', $topic->id)->get();
+
+                            $totaltopicHours = 0;
+                            foreach ($total as $class) {
+                                $totaltopicHours = $totaltopicHours + $class->duration;
+                            }
+
+                            $topicProgress = 0;
+                            if ($totalTopicClases > 0) {
+                                $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
+                            }
                             return response()->json([
                                 'success' => true,
                                 'message' => 'Topic Added Successfully!',
-                                
+
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
                                 'topic_detail' => [
@@ -436,15 +451,15 @@ class SyllabusController extends Controller
                 $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
                 // $classified_classes = AcademicClass::where('topic_id',$topic->id )->where('course_id', $course->id)->get();
 
-                 $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
+                $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+                $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
                 $total = AcademicClass::where('topic_id', $topic->id)->get();
-        
+
                 $totaltopicHours = 0;
                 foreach ($total as $class) {
                     $totaltopicHours = $totaltopicHours + $class->duration;
                 }
-        
+
                 $topicProgress = 0;
                 if ($totalTopicClases > 0) {
                     $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
@@ -453,18 +468,18 @@ class SyllabusController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Topic updated successfully',
-                    
+
                     // 'classified_classes' => $classified_classes,
                     'unclassified_classes' => $academic_classes_count,
-                     'topic_detail' => [
+                    'topic_detail' => [
 
-                                    'topic' => $classTopic,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
+                        'topic' => $classTopic,
+                        'total_classes' => $totalTopicClases,
+                        'completedTopicClases' => $completedTopicClases,
+                        'total_topic_hours' => $totaltopicHours,
+                        "topic_progress" => $topicProgress,
 
-                                ],
+                    ],
                 ]);
             }
         }
@@ -481,8 +496,8 @@ class SyllabusController extends Controller
         $classTopic->update();
         $academic_classes_count = AcademicClass::where('topic_id', null)->where('course_id', $course->id)->get();
 
-       $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
-        $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status','completed')->count();
+        $totalTopicClases = AcademicClass::where('topic_id', $topic->id)->count();
+        $completedTopicClases = AcademicClass::where('topic_id', $topic->id)->where('status', 'completed')->count();
         $total = AcademicClass::where('topic_id', $topic->id)->get();
 
         $totaltopicHours = 0;
@@ -499,17 +514,17 @@ class SyllabusController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Topic updated successfully',
-            
+
             'unclassified_classes' => $academic_classes_count,
             'topic_detail' => [
 
-                                    'topic' => $classTopic,
-                                    'total_classes' => $totalTopicClases,
-                                    'completedTopicClases' => $completedTopicClases,
-                                    'total_topic_hours' => $totaltopicHours,
-                                    "topic_progress" => $topicProgress,
+                'topic' => $classTopic,
+                'total_classes' => $totalTopicClases,
+                'completedTopicClases' => $completedTopicClases,
+                'total_topic_hours' => $totaltopicHours,
+                "topic_progress" => $topicProgress,
 
-                                ],
+            ],
         ]);
     }
 
@@ -617,7 +632,7 @@ class SyllabusController extends Controller
         ]);
     }
 
- 
+
 
     public function deleteTopic(Request $request, $topic_id)
     {
@@ -650,6 +665,4 @@ class SyllabusController extends Controller
             'unclassified_classes' => $unclassified_classes,
         ]);
     }
-
-   
 }

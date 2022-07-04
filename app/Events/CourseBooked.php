@@ -36,11 +36,11 @@ class CourseBooked
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
     }
 
     public function broadcastAs()
     {
-        return "Course-Booked";
+        return 'course_booked';
     }
 }

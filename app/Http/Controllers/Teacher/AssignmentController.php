@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Events\AcceptAssignment;
+use App\Events\AcceptAssignmentEvent;
 use App\Events\RejectAssignment;
+use App\Events\RejectAssignmentEvent;
 use App\Http\Controllers\Controller;
-
+use App\Jobs\AcceptAssignmentJob;
+use App\Jobs\RejectAssignmentJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\AssignmentFeedback;
@@ -344,9 +347,13 @@ class AssignmentController extends Controller
         $student_message = 'Assignment Accepted Successfully!';
         $teacher = User::find($token_user->id);
         $student = User::find($request->student_id);
+        $assignment = Assignment::findOrFail($assignment_id);
 
-        // event(new AcceptAssignment($teacher, $teacher_message, $feedback));
-        // event(new AcceptAssignment($student, $student_message, $feedback));
+        //Sending emails and notifications
+        // event(new AcceptAssignmentEvent($teacher, $teacher_message, $assignment));
+        // event(new AcceptAssignmentEvent($student, $student_message, $assignment));
+        // dispatch(new AcceptAssignmentJob($teacher, $teacher_message, $assignment));
+        // dispatch(new AcceptAssignmentJob($student, $student_message, $assignment));
 
         return response()->json([
             'status' => true,
@@ -415,9 +422,13 @@ class AssignmentController extends Controller
         $student_message = 'Your Assignment has been Rejected!';
         $teacher = User::find($token_user->id);
         $student = User::find($request->student_id);
+        $assignment = User::find($assignment_id);
 
-        // event(new RejectAssignment($teacher, $teacher_message, $feedback));
-        // event(new RejectAssignment($student, $student_message, $feedback));
+        //sending emails and notifications
+        // event(new RejectAssignmentEvent($teacher, $teacher_message, $feedback));
+        // event(new RejectAssignmentEvent($student, $student_message, $feedback));
+        // dispatch(new RejectAssignmentJob($teacher, $teacher_message, $feedback));
+        // dispatch(new RejectAssignmentJob($student, $student_message, $feedback));
 
         return response()->json([
             'status' => true,

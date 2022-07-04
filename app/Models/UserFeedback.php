@@ -16,12 +16,12 @@ class UserFeedback extends Model
 
     public function sender()
     {
-        return $this->belongsTo(User::class, 'sender_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'sender_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function reciever()
     {
-        return $this->belongsTo(User::class, 'receiver_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'receiver_id', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function teacher()
@@ -36,6 +36,6 @@ class UserFeedback extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'feedback_by', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
+        return $this->belongsTo(User::class, 'feedback_by', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
     }
 }

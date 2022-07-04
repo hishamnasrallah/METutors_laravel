@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewsletterEvent;
 use App\Models\ContactUs;
 use App\Faq;
 use App\FaqTopic;
+use App\Jobs\NewsletterJob;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
 use Validator;
@@ -32,7 +34,7 @@ class FaqController extends Controller
             return response()->json([
                 'status' => 'false',
                 'errors' => $errors,
-            ],400);
+            ], 400);
         }
 
         $contact = new ContactUs();
@@ -129,7 +131,8 @@ class FaqController extends Controller
         ]);
     }
 
-    public function newsletter(Request $request){
+    public function newsletter(Request $request)
+    {
 
         $rules = [
             'email' => 'required|email|unique:newsletters',
@@ -149,6 +152,9 @@ class FaqController extends Controller
         $newsletter = new Newsletter();
         $newsletter->email = $request->email;
         $newsletter->save();
+
+        event(new NewsletterEvent($newsletter->email));
+        dispatch(new NewsletterJob($newsletter->email));
 
         return response()->json([
             'status' => true,

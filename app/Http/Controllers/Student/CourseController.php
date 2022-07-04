@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Student;
 
 use App\Events\CancelCourse;
+use App\Events\RequestTeacherEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\RequestTeacherJob;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
 use App\Models\CanceledClass;
@@ -12,6 +14,7 @@ use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\RefundClass;
 use App\Models\RefundCourse;
+use App\Models\User;
 use App\Subject;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -406,6 +409,22 @@ class CourseController extends Controller
         $course->update();
 
         $course = Course::find($course_id);
+
+        $admin = User::where('role_name', "admin")->first();
+        $teacher = User::findOrFail($course->teacher_id);
+        $student = User::findOrFail($course->student_id);
+
+        $teacher_message = "Student Canceled the Course";
+        $student_message = "Course Cancelled Successfully";
+        $admin_message = "Student Canceled the Course";
+
+        // event(new CancelCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
+        // event(new CancelCourseEvent($course, $course->student_id, $student_message, $user));
+        // event(new CancelCourseEvent($course, $admin->id, $admin_message, $admin));
+        // dispatch(new CancelCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
+        // dispatch(new CancelCourseJob($course, $course->student_id, $student_message, $user));
+        // dispatch(new CancelCourseJob($course, $admin->id, $admin_message, $admin));
+
         return response()->json([
             'status' => true,
             'message' => "Course Cancelled Successfully!",
@@ -434,6 +453,16 @@ class CourseController extends Controller
             $class->status = 'requested';
             $class->update();
         }
+
+        $admin = User::where('role_name', 'admin')->first();
+        $student = User::findOrFail($course->student_id);
+        $student_message = "Requested Successfully sent to Metutors";
+        $admin_message = "New Course !Please Assign Teacher";
+
+        event(new RequestTeacherEvent($student->id, $student, $course, $student_message));
+        event(new RequestTeacherEvent($admin->id, $admin, $course, $admin_message));
+        dispatch(new RequestTeacherJob($student->id, $student, $course, $student_message));
+        dispatch(new RequestTeacherJob($admin->id, $admin, $course, $admin_message));
 
         return response()->json([
             'status' => true,

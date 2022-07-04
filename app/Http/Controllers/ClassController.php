@@ -32,6 +32,16 @@ use Illuminate\Support\Str;
 use JWTAuth;
 use Stevebauman\Location\Facades\Location;
 use Devinweb\LaravelHyperpay\Events\SuccessTransaction;
+use App\Billing\HyperPayBilling;
+use App\Events\ClassStartedEvent;
+use App\Events\CourseBookingEvent;
+use App\Events\NoTeacherEvent;
+use App\Events\RequestCourseEvent;
+use App\Jobs\ClassStartedJob;
+use App\Jobs\CourseBookingJob;
+use App\Jobs\NoTeacherJob;
+use App\Jobs\RequestCourseJob;
+use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
 
 class ClassController extends Controller
 {
@@ -141,7 +151,7 @@ class ClassController extends Controller
         $course->end_date = $request->end_date;
         $course->start_time = $request->start_time;
         $course->end_time = $request->end_time;
-        $course->status = 'pending';
+        $course->status = 'payment_pending';
         $course->save();
 
         //Adding Academic Classes data
@@ -180,7 +190,7 @@ class ClassController extends Controller
         // Adding Course Code
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
 
-        // Adding Course name 
+        // Adding Course name
         if ($course_count == null) {
             $course->course_name = $subject->name . "0001";
         } else {
@@ -196,32 +206,263 @@ class ClassController extends Controller
         }
 
         $classRoom->student_id = $token_user->id;
-        $classRoom->status = 'pending';
+        $classRoom->status = 'payment_pending';
         $classRoom->save();
 
         $user = User::find($token_user->id);
         if ($request->has('teacher_id')) {
             $teacher = User::find($request->teacher_id);
+            // Event notification
+            $teacher_message = 'New Course Created!';
+            $student_message = 'Course Created Successfully!';
+
+            // event(new CourseBookingEvent($course->teacher_id, $teacher, $teacher_message,  $course,));
+            // event(new CourseBookingEvent($course->student_id, $user, $student_message,  $course,));
+            // dispatch(new CourseBookingJob($course->teacher_id, $teacher, $teacher_message, $course,));
+            // dispatch(new CourseBookingJob($course->student_id, $user, $student_message, $course,));
         } else {
             $noTeacher = new NoTeacherCourse();
             $noTeacher->course_id = $course->id;
             $noTeacher->save();
+            $admin = User::where('role_name', 'admin')->first();
+
+            // Event notification
+            // $admin_message = 'New Course Created! Kindly assign teacher!';
+            // $student_message = 'Course Created Successfully!';
+            // event(new NoTeacherEvent($admin->id, $admin, $admin_message,  $course));
+            // event(new NoTeacherEvent($course->student_id, $user, $student_message, $course));
+            // dispatch(new NoTeacherJob($admin->id, $admin, $admin_message, $course));
+            // dispatch(new NoTeacherJob($course->student_id, $user, $student_message,  $course));
+        }
+
+        $trackable_data = [
+            'course_id' => $course->id,
+            'course_code' => $course->course_code
+        ];
+        $user = User::findOrFail($token_user->id);
+        $amount = $request->total_price;
+        $brand = 'VISA'; // MASTER OR MADA
+
+        $id = Str::random('64');
+        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        $payment = json_decode(json_encode($payment));
+        $script_url = $payment->original->script_url;
+        $shopperResultUrl = $payment->original->shopperResultUrl;
+        $redirect_url = $request->redirect_url;
+        // return view('payment_form', compact('script_url', 'shopperResultUrl'));
+        return response()->json([
+            'status' => true,
+            'message' => "Checkout Prepared Successfully!",
+            'script_url' => $script_url,
+            'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
+            'course' => $course
+        ]);
+    }
+
+
+    public function add_classes(Request $request)
+    {
+
+
+        $rules = [
+
+            'course_id' =>  'required',
+            'total_classes' =>  'required',
+            'total_hours' =>  'required',
+            'total_price' =>  'required',
+            // 'start_date' =>  'required',
+            // 'end_date' =>  'required',
+            // 'start_time' =>  'required',
+            // 'end_time' =>  'required',
+            'classes' =>  'required',
+
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
         }
 
 
-        // Event notification
-        $teacher_message = 'New Course Created!';
-        $student_message = 'Course Created Successfully!';
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
 
-        // event(new NewCourse($course, $course->teacher_id, $teacher_message, $teacher));
-        // event(new NewCourse($course, $course->student_id, $student_message, $user));
+        $course = Course::find($request->course_id);
+        $trackable_data = [
+            'course_id' => $course->id,
+            'course_code' => $course->course_code
+        ];
+
+        //Adding hours and price to Courses table
+        $course->total_classes = $course->total_classes + $request->total_classes;
+        $course->total_price = $course->total_price + $request->total_price;
+        $course->total_hours = $course->total_hours + $request->total_hours;
+        $counter = count($course['classes']) + 1;
+
+        $classes = json_decode(json_encode($request->classes));
+        $classes_array = [];
+        foreach ($classes as $reqClass) {
+            // $class = new AcademicClass();
+            // $class->course_id = $course->id;
+            // if ($request->has('teacher_id')) {
+            //     $class->teacher_id = $request->teacher_id;
+            // }
+            // $class->student_id = $token_user->id;
+            // $class->start_date = $session->date;
+            // $class->end_date = $request->end_date;
+            // $class->start_time = $session->start_time;
+            // $class->end_time = $session->end_time;
+            // $class->class_type = $request->class_type;
+            // $class->duration = $session->duration;
+            // $class->day = $session->day;
+            // $class->status = 'pending_payment';
+            // $class->save();
+            $academicClass = new AcademicClass();
+            $academicClass->start_date = $reqClass->date;
+            $academicClass->end_date = $reqClass->date;
+            $academicClass->day = $reqClass->day;
+            $academicClass->start_time = $reqClass->start_time;
+            $academicClass->end_time = $reqClass->end_time;
+            $academicClass->duration = $reqClass->duration;
+            $academicClass->status = 'pending_payment';
+            $academicClass->student_id = $token_user->id;
+            $academicClass->teacher_id = $course->teacher_id;
+            $academicClass->class_type = $course->classes[0]->class_type;
+            $academicClass->course_id = $course->id;
+            $academicClass->class_paradigm = "added";
+            $academicClass->save();
+            array_push($classes_array, $academicClass->id);
+        }
 
 
+        $user = User::findOrFail($token_user->id);
+        $amount = $request->total_price;
+        $brand = 'VISA'; // MASTER OR MADA
+
+        $id = Str::random('64');
+        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        $payment = json_decode(json_encode($payment));
+        $script_url = $payment->original->script_url;
+        $shopperResultUrl = $payment->original->shopperResultUrl;
+        $redirect_url = $request->redirect_url;
+        $course = Course::find($request->course_id);
+        $classes =  AcademicClass::whereIn('id', $classes_array)->get();
+        // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
-            'message' => "Course data added Successfully!",
-            'success' => true,
+            'status' => true,
+            'message' => "Checkout Prepared Successfully!",
+            'script_url' => $script_url,
+            'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id . "&classes=" . json_encode($classes_array),
             'course' => $course,
+            'classes' => $classes,
         ]);
+    }
+
+    public function course_payment_retry(Request $request)
+    {
+
+        $rules = [
+
+            'course_id' =>  'required',
+            // 'total_price' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $course = Course::find($request->course_id);
+        $trackable_data = [
+            'course_id' => $course->id,
+            'course_code' => $course->course_code
+        ];
+
+
+        $user = User::findOrFail($token_user->id);
+        $amount = $course->total_price;
+        $brand = 'VISA'; // MASTER OR MADA
+
+        $id = Str::random('64');
+        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        $payment = json_decode(json_encode($payment));
+        $script_url = $payment->original->script_url;
+        $shopperResultUrl = $payment->original->shopperResultUrl;
+        $redirect_url = $request->redirect_url;
+        // return view('payment_form', compact('script_url', 'shopperResultUrl'));
+        return response()->json([
+            'status' => true,
+            'message' => "Checkout Prepared Successfully!",
+            'script_url' => $script_url,
+            'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
+            'course' => $course
+        ]);
+    }
+
+
+    public function view_class(Request $request, $class_id)
+    {
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $class = AcademicClass::find($class_id);
+
+
+
+        /// Curl Implementation
+        $apiURL = 'https://api.braincert.com/v2/getclassrecording';
+        $postInput = [
+            'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
+            'class_id' =>  $class->class_id,
+        ];
+
+        $client = new Client();
+        $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+
+        $statusCode = $response->getStatusCode();
+        $responseBody = json_decode($response->getBody(), true);
+
+        // return $responseBody;
+
+        if (isset($responseBody['status']) && $responseBody['status'] == "error") {
+
+            return response()->json([
+                'success' => false,
+                'message' => $responseBody['error'],
+            ]);
+        } elseif (isset($responseBody['Recording'])) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $responseBody['Recording'],
+            ], 400);
+        } elseif (isset($responseBody[0]['status']) && $responseBody[0]['status'] == "0") {
+
+            return response()->json([
+                'success' => true,
+                'message' => "Recording is available",
+                'url' => $responseBody[0]['record_path'],
+            ]);
+        }
     }
 
     //*********/ Deleting class session *********
@@ -229,8 +470,6 @@ class ClassController extends Controller
     {
         $rules = [
             'program_id' =>  'required',
-            // 'country_id' =>  'required',
-            // 'grade' =>  'required',
             'subject' =>  'required',
             'gender_preference' =>  'required',
             'language_preference' =>  'required',
@@ -267,6 +506,13 @@ class ClassController extends Controller
         $requestedCourse->student_name = $request->student_name;
         $requestedCourse->email = $request->email;
         $requestedCourse->save();
+
+        $admin = User::where('role_name', 'admin')->first();
+
+        event(new RequestCourseEvent($requestedCourse, $requestedCourse->email, "Course Request Sent Successfully!"));
+        event(new RequestCourseEvent($requestedCourse, $admin->email, "Course Request Sent Successfully!"));
+        dispatch(new RequestCourseJob($requestedCourse, $requestedCourse->email, "Course Request Sent Successfully!"));
+        dispatch(new RequestCourseJob($requestedCourse, $admin->email, "Course Request Sent Successfully!"));
 
         return response()->json([
             'success' => true,
@@ -536,6 +782,19 @@ class ClassController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Teacher not assigned yet!'
+            ], 400);
+        }
+        // return Carbon::parse($class->start_date);
+        if (Carbon::today() < Carbon::parse($class->start_date)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Your class is not scheduled today!'
+            ], 400);
+        }
+        if (Carbon::now() < Carbon::parse($class->start_time)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Please Wait! Class has not started yet.'
             ], 400);
         }
 

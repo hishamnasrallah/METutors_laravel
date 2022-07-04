@@ -39,9 +39,9 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
-        CourseBooked::class => [
-            CourseBookedListener::class,
-        ],
+        // CourseBooked::class => [
+        //     CourseBookedListener::class,
+        // ],
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
@@ -51,18 +51,18 @@ class EventServiceProvider extends ServiceProvider
         NewCourse::class => [
             NewCourseListener::class,
         ],
-        AcceptCourse::class => [
-            AcceptCourseListener::class,
-        ],
-        StudentAcceptCourse::class => [
-            StudentAcceptCourseListener::class,
-        ],
-        RejectCourse::class => [
-            RejectCourseListener::class,
-        ],
-        CancelCourse::class => [
-            CancelCourseListener::class,
-        ],
+        // AcceptCourse::class => [
+        //     AcceptCourseListener::class,
+        // ],
+        // StudentAcceptCourse::class => [
+        //     StudentAcceptCourseListener::class,
+        // ],
+        // RejectCourse::class => [
+        //     RejectCourseListener::class,
+        // ],
+        // CancelCourse::class => [
+        //     CancelCourseListener::class,
+        // ],
         UpdateProfile::class => [
             UpdateProfileListener::class,
         ],

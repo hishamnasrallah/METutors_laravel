@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Validator;
 use DB;
 use GuzzleHttp\Client;
 use JWTAuth;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
 
 class InterviewRequestController extends Controller
 {
@@ -23,7 +28,7 @@ class InterviewRequestController extends Controller
 
     if (isset($id)) {
 
-      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country','user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
+      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
     }
 
     return response()->json([
@@ -36,11 +41,18 @@ class InterviewRequestController extends Controller
   {
 
 
-    $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->get();
+    if (isset($request->status) && $request->status == "approved") {
 
+        $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "approved")->paginate($request->per_page ?? 10);
+      
+    } elseif (isset($request->status) && $request->status == "rejected") {
 
-    //   return $_GET['teacher_name'];
+        $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "rejected")->paginate($request->per_page ?? 10);
+      
+    } else {
 
+        $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->whereIn("status", ['pending', 'scheduled'])->paginate($request->per_page ?? 10);
+    }
 
 
     return response()->json([
@@ -62,7 +74,7 @@ class InterviewRequestController extends Controller
 
       'date_for_interview' => 'required',
       'time_for_interview' => 'required',
-     
+
     ];
 
 
@@ -106,13 +118,13 @@ class InterviewRequestController extends Controller
       $interviewRequest->user_id = $user->id;
       $interviewRequest->date_for_interview = $request->date_for_interview;
       $interviewRequest->time_for_interview = $request->time_for_interview;
-      if($request->addtional_comments){
-         $interviewRequest->addtional_comments = $request->addtional_comments;
+      if ($request->addtional_comments) {
+        $interviewRequest->addtional_comments = $request->addtional_comments;
       }
-     
+
       $interviewRequest->save();
 
-      $interviewRequest=TeacherInterviewRequest::find($interviewRequest->id);
+      $interviewRequest = TeacherInterviewRequest::find($interviewRequest->id);
 
       return response()->json([
         'status' => true,
@@ -201,4 +213,12 @@ class InterviewRequestController extends Controller
       return $responseBody;
     }
   }
+
+  
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+    }
 }

@@ -10,12 +10,14 @@ use App\Events\OrderEvent;
 use App\Models\AcademicClass;
 use App\Models\ClassRoom;
 use App\Models\Course;
+use App\Models\Order;
 use App\Program;
 use App\Subject;
 use Illuminate\Support\Str;
 use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
 use JWTAuth;
 use Devinweb\LaravelHyperpay\Events\SuccessTransaction;
+use GuzzleHttp\Client;
 
 class PaymentController extends Controller
 {
@@ -67,8 +69,9 @@ class PaymentController extends Controller
     public function paymentStatus(Request $request)
     {
         $rules = [
-            'resourcePath' => "required",
+            'resource_path' => "required",
             'id' => "required",
+            'course_id' => "required"
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -83,190 +86,141 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        $resourcePath = $request->get('resourcePath');
+        $resourcePath = $request->get('resource_path');
         $checkout_id = $request->get('id');
         $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
 
         $paymentDetails = json_decode(json_encode($payment_details));
 
+        //If we got success Response From HyperPay
         if ($paymentDetails->original->transaction_status == 'success') {
-
-            $rules = [
-                'field_of_study' =>  'required',
-
-                'language_id' =>  'required',
-                // 'book_type' =>  'required',
-                'book_info' =>  'required',
-                'total_classes' =>  'required',
-                'total_hours' =>  'required',
-                'total_price' =>  'required',
-                'subject_id' =>  'required',
-                'weekdays' =>  'required',
-
-                'teacher_id' =>  'required',
-                'start_date' =>  'required',
-                'end_date' =>  'required',
-                'start_time' =>  'required',
-                'end_time' =>  'required',
-                'class_type' =>  'required',
-                'classes' =>  'required',
-
-            ];
-
-            $validator = Validator::make($request->all(), $rules);
-
-            if ($validator->fails()) {
-                $messages = $validator->messages();
-                $errors = $messages->all();
-
-                return response()->json([
-                    'status' => 'false',
-                    'errors' => $errors,
-                ], 400);
-            }
-
-            if ($request->program_id == 3) {
-                $request->validate([
-                    'country_id' =>  'required',
-                ]);
-            }
-
-            //*********** Saving records to Courses table ***********
-            $course = new Course();
-            if ($request->program_id == 3) {
-                $course->program_id = $request->program_id;
-                $course->country_id = $request->country_id;
-            } else {
-                $course->program_id = $request->program_id;
-            }
-            if ($request->book_info == 2) {
-                $request->validate([
-                    'files' =>  'required',
-                ]);
-                $course->book_info = $request->book_info;
-                if ($request->hasFile('files')) {
-                    //************* book files **********\\
-                    $images = array();
-                    $files = $request->file('files');
-                    foreach ($files as $file) {
-                        $imageName = date('YmdHis') . random_int(10, 100) . '.' . $file->getClientOriginalExtension();
-                        $file->move(public_path('assets/images/class_files'), $imageName);
-                        $images[] = $imageName;
-                    }
-                    $course->files = implode("|", $images);
-                    //************* book files ends **********\\
-                }
-            }
-            if ($request->book_info == 3) {
-                $request->validate([
-                    'book_name' =>  'required',
-                    'book_edition' =>  'required',
-                    'book_author' =>  'required',
-                ]);
-                $course->book_info = $request->book_info;
-                $course->book_name = $request->book_name;
-                $course->book_edition = $request->book_edition;
-                $course->book_author = $request->book_author;
-            } else {
-                $course->book_info = $request->book_info;
-            }
-
-            $token_1 = JWTAuth::getToken();
-            $token_user = JWTAuth::toUser($token_1);
-
-            $course->field_of_study = $request->field_of_study;
-
-            $course->language_id = $request->language_id;
-            // $course->book_type = $request->book_type;
-            $course->total_price = $request->total_price;
-            $course->total_hours = $request->total_hours;
-            $course->total_classes = $request->total_classes;
-            $course->subject_id = $request->subject_id;
-            $course->teacher_id = $request->teacher_id;
-            $course->student_id = $token_user->id;
-            $course->weekdays = $request->weekdays;
-            $course->start_date = $request->start_date;
-            $course->end_date = $request->end_date;
-            $course->start_time = $request->start_time;
-            $course->end_time = $request->end_time;
-            $course->status = 'pending';
-            $course->save();
-
-            $classes = $request->classes;
-            $classes = json_decode($classes);
-            foreach ($classes as $session) {
-                $class = new AcademicClass();
-                $class->course_id = $course->id;
-                $class->teacher_id = $request->teacher_id;
-                $class->student_id = $token_user->id;
-                $class->start_date = $session->date;
-                $class->end_date = $request->end_date;
-                $class->start_time = $session->start_time;
-                $class->end_time = $session->end_time;
-                $class->class_type = $request->class_type;
-                $class->duration = $session->duration;
-                $class->day = $session->day;
-                $class->status = 'pending';
-                $class->save();
-            }
-            $program = Program::find($request->program_id);
-            $subject = Subject::find($request->subject_id);
-            $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->latest()->first();
-            if ($course_count != null) {
-                $course_count = substr($course_count->course_code, 7) + 1;
-            } else {
-                $course_count = 1;
-            }
-
-
-
-            $course = Course::with('subject', 'language', 'field', 'teacher', 'program')->find($course->id);
-            $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
-
-            if ($course_count == null) {
-                $course->course_name = $subject->name . "0001";
-            } else {
-                $course->course_name = $subject->name . "000" . $course_count;
-            }
-
-
+            $course = Course::findOrFail($request->course_id);
+            $course->status = "pending";
             $course->update();
 
-            $classRoom = new ClassRoom();
-            $classRoom->course_id = $course->id;
-            $classRoom->teacher_id = $request->teacher_id;
-            $classRoom->student_id = $token_user->id;
-            $classRoom->status = 'pending';
-            $classRoom->save();
-
-            $user = User::find($token_user->id);
-            $teacher = User::find($request->teacher_id);
-
-            // Event notification
-            $teacher_message = 'New Course Created!';
-            $student_message = 'Course Created Successfully!';
-
-            // event(new NewCourse($course, $course->teacher_id, $teacher_message, $teacher));
-            // event(new NewCourse($course, $course->student_id, $student_message, $user));
-
+            return response()->json([
+                'status' => true,
+                'message' => "Payment details!",
+                'payment_details' => $payment_details,
+                'course' => $course,
+            ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Payment details!",
+                'message' => $paymentDetails->original->message,
                 'payment_details' => $payment_details,
-            ], 422);
+            ], 400);
+        }
+    }
+
+
+    // After Form Submition based on success status create course
+    public function classPaymentStatus(Request $request)
+    {
+        $rules = [
+            'resource_path' => "required",
+            'id' => "required",
+            'course_id' => "required",
+            'classes' => "required",
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
         }
 
-        $course = Course::findOrFail($course->id);
-        event(new OrderEvent($course->id, $course->student_id, $paymentDetails->original->merchantTransactionId));
-        // return view('payment_status', compact('payment_details'));
 
-        return response()->json([
-            'status' => true,
-            'message' => "Payment details!",
-            'payment_details' => $payment_details,
-            'course' => $course,
-        ]);
+        $resourcePath = $request->get('resource_path');
+        $checkout_id = $request->get('id');
+        $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
+
+        $paymentDetails = json_decode(json_encode($payment_details));
+
+        // If we got success Response From HyperPay
+        if ($paymentDetails->original->transaction_status == 'success') {
+
+            $course = Course::findOrFail($request->course_id);
+            $Classes = $request->classes;
+            $requestedClasses = AcademicClass::whereIn('id', $Classes)->get();
+
+            $classes = [];
+            foreach ($requestedClasses as $class) {
+                $apiURL = 'https://api.braincert.com/v2/schedule';
+                $postInput = [
+                    'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
+                    'title' =>  "title",
+                    'timezone' => 90,
+                    'start_time' => $class->start_time,
+                    'end_time' => $class->end_time,
+                    'date' => $class->start_date,
+                    'currency' => "USD",
+                    'ispaid' => null,
+                    'is_recurring' => 0,
+                    'repeat' => 0,
+                    'weekdays' => $course->weekdays,
+                    'end_date' => $class->start_date,
+                    'seat_attendees' => null,
+                    'record' => 0,
+                    'isRecordingLayout ' => 1,
+                    'isVideo  ' => 1,
+                    'isBoard ' => 1,
+                    'isLang ' => null,
+                    'isRegion ' => null,
+                    'isCorporate ' => null,
+                    'isScreenshare ' => 1,
+                    'isPrivateChat  ' => 0,
+                    'description ' => null,
+                    'keyword ' => null,
+                    'format ' => "json",
+                ];
+
+                $client = new Client();
+                $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+
+                $statusCode = $response->getStatusCode();
+                $academic_class = AcademicClass::findOrFail($class->id);
+                $responseBody = json_decode($response->getBody(), true);
+                if ($responseBody['status'] == "ok") {
+
+                    $academic_class->title = "class";
+                    $academic_class->lesson_name = "lesson";
+                    $academic_class->class_id = $responseBody['class_id'];
+                    $academic_class->status = "scheduled";
+                    $course->status = "active";
+                    $course->update();
+                    $academic_class->save();
+                } else {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $responseBody['error'],
+
+                    ], 400);
+                }
+            }
+            // return $classes;
+
+            $classes = AcademicClass::whereIn('id', $Classes)->get();
+            return response()->json([
+                'status' => true,
+                'message' => "Payment details!",
+                'payment_details' => $payment_details,
+                'course' => $course,
+                'classes' => $classes,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => $paymentDetails->original->message,
+                'payment_details' => $payment_details,
+            ], 400);
+        }
     }
 
     public function payment_details(Request $request)
@@ -306,18 +260,13 @@ class PaymentController extends Controller
         return $responseData;
     }
 
-    public function debit_request(Request $request)
+    public function refund($payment_id)
     {
-        $url = "https://test.oppwa.com/v1/payments";
+        $url = "https://test.oppwa.com/v1/payments/$payment_id";
         $data = "entityId=8ac7a4ca80b2d4470180b3d5cdf604c6" .
-            "&amount=52.00" .
+            "&amount=10.00" .
             "&currency=USD" .
-            "&paymentBrand=GIROPAY" .
-            "&paymentType=DB" .
-            "&bankAccount.bic=TESTDETT421" .
-            "&bankAccount.iban=DE14940593100000012346" .
-            "&bankAccount.country=DE" .
-            "&shopperResultUrl=https://gate2play.docs.oppwa.com/tutorials/server-to-server";
+            "&paymentType=RF";
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -326,6 +275,180 @@ class PaymentController extends Controller
         ));
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $responseData = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return curl_error($ch);
+        }
+        curl_close($ch);
+        // return $responseData;
+
+        return response()->json([
+            'status' => true,
+            'message' => "Refunded Successfully!",
+            'refund_details' => json_decode($responseData),
+            // 'course' => $course,
+        ]);
+    }
+
+    public function refund2(Request $request)
+    {
+
+        $rules = [
+            'amount' => "required|numeric",
+            'payment_brand' => "required|string",
+            'card_number' => "required|numeric",
+            'card_expiry_month' => "required|numeric",
+            'card_expiry_year' => "required|numeric",
+            'card_holder' => "required|string",
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $url = "https://test.oppwa.com/v1/payments";
+        $data = "entityId=8ac7a4ca80b2d4470180b3d5cdf604c6" .
+            "&amount=$request->amount" .
+            "&currency=USD" .
+            "&paymentBrand=$request->payment_brand" .
+            "&paymentType=CD" .
+            "&card.number=$request->card_number" .
+            "&card.expiryMonth=$request->card_expiry_month" .
+            "&card.expiryYear=$request->card_expiry_year" .
+            "&card.holder=$request->card_holder";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $responseData = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return curl_error($ch);
+        }
+        curl_close($ch);
+        // return $responseData;
+        return response()->json([
+            'status' => true,
+            'message' => "Refunded Successfully!",
+            'refund_details' => json_decode($responseData),
+            // 'course' => $course,
+        ]);
+    }
+
+
+    // ***********************************Testing Functions*******************
+
+    public function checkout(Request $request)
+    {
+        // $rules = [
+        //     'amount' => "required",
+        // ];
+
+        // $validator = Validator::make($request->all(), $rules);
+
+        // if ($validator->fails()) {
+        //     $messages = $validator->messages();
+        //     $errors = $messages->all();
+
+        //     return response()->json([
+        //         'status' => 'false',
+        //         'errors' => $errors,
+        //     ], 400);
+        // }
+
+        // $token_1 = JWTAuth::getToken();
+        // $token_user = JWTAuth::toUser($token_1);
+
+        $trackable_data = [
+            'product_id' => 'bc842310-371f-49d1-b479-ad4b387f6630',
+            'product_type' => 't-shirt'
+        ];
+        $user = User::findOrFail(1149);
+        $amount = 10;
+        $brand = 'VISA'; // MASTER OR MADA
+
+        $id = Str::random('64');
+        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        $payment = json_decode(json_encode($payment));
+        $script_url = $payment->original->script_url;
+        $shopperResultUrl = $payment->original->shopperResultUrl;
+        return view('payment_form', compact('script_url', 'shopperResultUrl'));
+    }
+
+    public function payment_status(Request $request)
+    {
+        // $rules = [
+        //     'resourcePath' => "required",
+        //     'id' => "required",
+        //     // 'course_id' => "required"
+        // ];
+
+        // $validator = Validator::make($request->all(), $rules);
+
+        // if ($validator->fails()) {
+        //     $messages = $validator->messages();
+        //     $errors = $messages->all();
+
+        //     return response()->json([
+        //         'status' => 'false',
+        //         'errors' => $errors,
+        //     ], 400);
+        // }
+
+        $resourcePath = $request->get('resourcePath');
+        $checkout_id = $request->get('id');
+        $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
+
+        return $paymentDetails = json_decode(json_encode($payment_details));
+
+        //If we got success Response From HyperPay
+        if ($paymentDetails->original->transaction_status == 'success') {
+            // $course = Course::findOrFail($request->course_id);
+            // $course->status = "pending";
+            // $course->update();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Payment details!",
+                'payment_details' => $payment_details,
+                // 'course' => $course,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => $paymentDetails->original->message,
+                'payment_details' => $payment_details,
+            ], 400);
+        }
+    }
+
+
+    public function statusPayment()
+    {
+        $url = "https://test.oppwa.com/v1/payments/{id}";
+        $url .= "?entityId=8ac7a4ca80b2d4470180b3d5cdf604c6";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $responseData = curl_exec($ch);

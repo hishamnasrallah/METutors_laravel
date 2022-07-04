@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Events\AddResource;
+use App\Events\AddResourceEvent;
 use App\Events\Resource as EventsResource;
+use App\Events\UpdateResourceEvent;
 use App\Http\Controllers\Controller;
-
+use App\Jobs\AddResourceJob;
+use App\Jobs\UpdateResourceJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\Attendance;
@@ -101,12 +104,16 @@ class ResourcesController extends Controller
 
 
             //************* Resource files ends **********\\
+
+            $file_size = $request->file->getSize();
+            $file_name = $request->file->getClientOriginalName();
         }
 
         $array = array(
             'id' => $image->id ?? '',
             'url' => $image_url ?? '',
-
+            'size' => number_format($file_size / 1048576, 2) . "MB" ?? '',
+            'original_name' => $file_name
         );
 
         return response()->json([
@@ -159,11 +166,16 @@ class ResourcesController extends Controller
         $resource1->files = json_decode($resource1->files);
 
         // Event notification
-        $message = 'Resource Added to ' . $academic_class->title . ' class!';
         $teacher = User::find($token_user->id);
         $student = User::find($academic_class->student_id);
+        $student_message = "Resource has been added!";
+        $teacher_message = "Resource has been added!";
 
-        event(new AddResource($message, $resource1, $teacher));
+        //Emails and notifications
+        // event(new AddResourceEvent($teacher->id, $teacher_message, $resource1, $teacher));
+        // event(new AddResourceEvent($student->id, $student_message, $resource1, $student));
+        // dispatch(new AddResourceJob($teacher->id, $teacher_message, $resource1, $teacher));
+        // dispatch(new AddResourceJob($student->id, $student_message, $resource1, $student));
 
         return response()->json([
             'status' => true,
@@ -209,7 +221,18 @@ class ResourcesController extends Controller
         $resource->update();
 
 
+        // Event notification
+        $academic_class = AcademicClass::where('resource_id', $resource_id)->first();
+        $teacher = User::find($token_user->id);
+        $student = User::find($academic_class->student_id);
+        $student_message = "Resource has been updated!";
+        $teacher_message = "Resource has been updated!";
 
+        //Emails and notifications
+        event(new UpdateResourceEvent($teacher->id, $teacher_message, $resource, $teacher));
+        event(new UpdateResourceEvent($student->id, $student_message, $resource, $student));
+        dispatch(new UpdateResourceJob($teacher->id, $teacher_message, $resource, $teacher));
+        dispatch(new UpdateResourceJob($student->id, $student_message, $resource, $student));
         return response()->json([
             'status' => true,
             'message' => 'Resource updated successfully!',

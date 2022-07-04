@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CourseFeedbackEvent;
+use App\Jobs\CourseFeedbackJob;
 use App\Models\ClassroomFeedback;
 use App\Models\Course;
 use App\Models\User;
@@ -13,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use stdClass;
 
 class FeedbackController extends Controller
 {
@@ -51,10 +54,10 @@ class FeedbackController extends Controller
         $feedbk = UserFeedback::where('course_id', $request->course_id)->where('sender_id', $token_user->id)->get();
         $course = Course::find($request->course_id);
         $decoded_feedbacks = json_decode(json_encode($request->feedbacks));
+        // if user have no feedback on this course by sender 
         if (count($feedbk) == 0) {
 
             foreach ($decoded_feedbacks as $feed) {
-                // print_r($feedback);
                 $feedback = new UserFeedback();
                 if ($token_user->role_name == 'student') {
                     $feedback->receiver_id = $course->teacher_id;
@@ -74,12 +77,39 @@ class FeedbackController extends Controller
                 $user->update();
             }
             $feedbacks = UserFeedback::where('course_id', $request->course_id)->where('sender_id', $token_user->id)->get();
+            $feedback_obj = new stdClass;
+            $feedback_array = [];
+
+            //Making Api Response presentable
+            $feedback_obj->sender_id = $feedbacks[0]->sender_id;
+            $feedback_obj->receiver_id = $feedbacks[0]->receiver_id;
+            $feedback_obj->course_id = $feedbacks[0]->course_id;
+            $feedback_obj->review = $feedbacks[0]->review;
+            foreach ($feedbacks as $feedback) {
+                $obj =  new stdClass;
+                $obj->feedback_id = $feedback->feedback_id;
+                $obj->rating = $feedback->rating;
+                $obj->kudos_points = $feedback->kudos_points;
+                array_push($feedback_array, $obj);
+            }
+            $feedback_obj->feedback = $feedback_array;
+
+            $sender = User::findOrFail($token_user->id);
+            $reciever = User::findOrFail($feedbacks[0]->receiver_id);
+            // notifications and emails
+            // event(new CourseFeedbackEvent($reciever->id, "You have recieved a feedback", $reciever,$feedback));
+            // event(new CourseFeedbackEvent($sender->id, "Feedback sent Successfully", $sender,$feedback));
+            // dispatch(new CourseFeedbackJob($reciever->id, "You have recieved a feedback", $reciever,$feedback));
+            // dispatch(new CourseFeedbackJob($sender->id, "Feedback sent Successfully", $sender,$feedback));
+
             return response()->json([
                 'status' => true,
                 'message' => "Your Feedback has Successfully Submitted",
-                'feedback' => $feedbacks,
+                'feedback' => $feedback_obj,
             ]);
-        } else {
+        }
+        // if user already have feedback on this course by sender 
+        else {
             if ($token_user->role_name == 'student') {
                 $points_id = $course->teacher_id;
             } else {

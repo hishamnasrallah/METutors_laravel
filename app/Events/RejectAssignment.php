@@ -38,6 +38,11 @@ class RejectAssignment
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
+    }
+
+    public function broadcastAs()
+    {
+        return 'assignment_rejected';
     }
 }

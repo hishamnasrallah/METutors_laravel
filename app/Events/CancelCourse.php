@@ -39,11 +39,11 @@ class CancelCourse
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
     }
 
     public function broadcastAs()
     {
-        return 'cancel_course';
+        return 'course_cancelled';
     }
 }

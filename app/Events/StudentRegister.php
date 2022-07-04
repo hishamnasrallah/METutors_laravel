@@ -22,11 +22,11 @@ class StudentRegister
      *
      * @return void
      */
-    public function __construct($username,$userid,$userrole)
+    public function __construct($username, $userid, $userrole)
     {
         $this->username = $username;
-       $this->userid = $userid;
-       $this->userrole = $userrole;
+        $this->userid = $userid;
+        $this->userrole = $userrole;
     }
 
     /**
@@ -36,11 +36,11 @@ class StudentRegister
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
     }
 
     public function broadcastAs()
     {
-        return "Student Registered";
+        return 'student_registered';
     }
 }

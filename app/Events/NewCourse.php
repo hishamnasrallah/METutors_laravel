@@ -41,12 +41,11 @@ class NewCourse
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
     }
-
 
     public function broadcastAs()
     {
-        return "Course-Added";
+        return 'course_added';
     }
 }

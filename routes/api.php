@@ -118,8 +118,12 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     Route::Post('course/request', 'ClassController@request_course');
 
+    Route::get('view-class/{id}', 'ClassController@view_class');
     Route::Post('create-course', 'ClassController@create_course');
     Route::Post('create-class', 'ClassController@create_course');
+    Route::Post('add-classes', 'ClassController@add_classes');
+
+    Route::Post('course/payment-retry', 'ClassController@course_payment_retry');
 
     Route::Post('del-session', 'ClassController@del_session');
     Route::Post('update-session', 'ClassController@update_session');
@@ -316,21 +320,7 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['i
     });
 });
 
-
-
-
-
-
-
-
-
 //**************** Syllabus routes ****************
-
-
-
-
-
-
 
 Route::get('teacher-dashboard', 'DashboardController@teacher_dashboard');
 Route::post('invoice-mail', 'DashboardController@invoice_mail');
@@ -508,6 +498,11 @@ Route::get('admin/subject/{subject_id}/orders', 'AdminController@subject_orders'
 Route::get('admin/courses/refund', 'AdminController@refund_orders');
 Route::get('admin/course/{course_id}/refund/detail', 'AdminController@refund_details');
 Route::post('admin/course/{course_id}/teacher-status', 'AdminController@teacherStatus');
+Route::get('admin/approval-request', 'AdminController@approval_request');
+Route::get('admin/subject/{subject_id}/featured-teacher', 'AdminController@featured_teacher');
+Route::get('admin/featured-teachers', 'AdminController@featured_teachers_list');
+Route::get('admin/course/{course_id}/refund/account-detail', 'AdminController@refund_account_detail');
+Route::post('admin/course/{course_id}/refund', 'AdminController@process_refund');
 
 
 
@@ -558,5 +553,9 @@ Route::get('utc-local', 'ClassController@utc_to_local');
 
 Route::get('payment/prepare-checkout', 'PaymentController@prepareCheckout');
 Route::get('payment/status', 'PaymentController@paymentStatus');
+Route::get('classes-payment/status', 'PaymentController@classPaymentStatus');
+Route::get('payment-status', 'PaymentController@statusPayment');
 Route::get('payment/details', 'PaymentController@payment_details');
-Route::get('payment/debit', 'PaymentController@debit_request');
+Route::Post('payment/{payment_id}/refund', 'PaymentController@refund');
+Route::Post('payment/refund2', 'PaymentController@refund2');
+Route::get('test', 'TestController@test');

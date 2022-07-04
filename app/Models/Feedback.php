@@ -13,7 +13,7 @@ class Feedback extends Model
 
     public function student()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
     }
 
     public function teacher()
@@ -28,6 +28,6 @@ class Feedback extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'feedback_by', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
+        return $this->belongsTo(User::class, 'feedback_by', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile');
     }
 }

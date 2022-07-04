@@ -11,7 +11,7 @@ class CanceledCourse extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'cancelled_by', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'cancelled_by', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function cancelled_by()
@@ -26,7 +26,7 @@ class CanceledCourse extends Model
 
     public function student()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function course()

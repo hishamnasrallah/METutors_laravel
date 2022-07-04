@@ -16,7 +16,7 @@ class ClassRoom extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function classes()
@@ -26,6 +26,11 @@ class ClassRoom extends Model
 
     public function student()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+    }
+
+    public function teacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 }

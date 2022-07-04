@@ -6,16 +6,14 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Auth;
 
-class AcceptCourse implements ShouldQueue
+class AcceptCourse implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    use Queueable;
 
     public $course;
     public $userid;
@@ -41,6 +39,11 @@ class AcceptCourse implements ShouldQueue
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
+    }
+
+    public function broadcastAs()
+    {
+        return 'course-accepted';
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AssignTeacherEvent;
 use App\Events\CancelCourse;
+use App\Events\RefundCourseEvent;
 use App\Models\RequestedCourse;
 use App\Models\AcademicClass;
 use App\Models\CanceledCourse;
@@ -17,6 +19,8 @@ use App\Models\UserFeedback;
 use App\Models\UserTestimonial;
 use App\Subject;
 use App\FieldOfStudy;
+use App\Jobs\AssignTeacherJob;
+use App\Jobs\RefundCourseJob;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\NoTeacherCourse;
@@ -24,6 +28,7 @@ use App\Models\Order;
 use App\Models\RefundCourse;
 use App\Models\RejectedCourse;
 use App\Models\UserAssignment;
+use App\Program;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -32,6 +37,10 @@ use stdClass;
 use App\TeacherInterviewRequest;
 use App\TeacherSubject;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
@@ -446,20 +455,166 @@ class AdminController extends Controller
         ]);
     }
 
-    public function teachers_schedule()
+    public function teachers_schedule(Request $request)
     {
-        $teachers = User::with(['teacher_courses.course', 'teacher_courses.course.attendence', 'teacher_courses' => function ($q) {
-            $q->where('status', 'active');
-            $q->with(['classes' => function ($qu) {
-                $qu->where('status', 'scheduled');
-            }]);
-        }])
-            ->where('role_name', 'teacher')->get();
+        $now = Carbon::now();
+        $weekStartDate = $now->format('Y-m-d');
+        $weekEndDate = $now->addDays(7)->format('Y-m-d');
+
+        // $teachers = User::with(['teacher_courses.course', 'teacher_courses.course.attendence', 'teacher_courses' => function ($q) {
+        //     $q->where('status', 'active');
+        //     $q->with(['classes' => function ($qu) {
+        //         $qu->where('status', 'scheduled');
+        //     }]);
+        // }])
+        //     ->where('role_name', 'teacher')->get();
+        // .course', 'teacher_courses.student', 'teacher_courses.teacher
+
+
+
+
+
+        // $teachers = User::with('teacher_courses')->has('teacher_courses')->get();
+
+        // $counter = 0;
+        // foreach ($teachers as $teacher) {
+        //     $counter++;
+        //     // echo $counter;
+        //     unset($teacher['teacher_courses']);
+        //     $courses = $teacher->teacher_courses->whereIn('status', ['active', 'inprogress']);
+        //     echo count($courses) . ",";
+        //     if (count($courses) == 0) {
+        //         echo "empty";
+        //         unset($teacher);
+        //     } else {
+        //         $tutors = [];
+        //         unset($teacher['teacher_courses']);
+        //         $tutor_courses = [];
+
+        //         foreach ($courses as $course) {
+        //             if ($course->status == 'active' || $course->status == 'inprogress') {
+        //                 array_push($tutor_courses, $course);
+        //                 $course->course->
+        //                 $course->student;
+        //                 $course->teacher;
+        //                 // $teacher->tutor_courses[] = $course;
+        //             }
+        //         }
+        //         $teacher->tutor_courses =  $tutor_courses;
+        //         $teacher->tutor_courses =  $tutor_courses;
+        //         array_push($tutors, $teacher);
+        //     }
+        // }
+
+        $weekDays = [];
+
+        if ($request != '') {
+            $weekStartDate = Carbon::parse($request->start_date)->format('Y-m-d');
+            $weekEndDate = Carbon::parse($weekStartDate)->addDays(7)->format('Y-m-d');
+        }
+
+        //Showing Weekdays
+        for ($i = 0; $i < 7; $i++) {
+            $day = Carbon::parse($weekStartDate)->addDay($i)->format('l');
+            $date = Carbon::parse($weekStartDate)->addDay($i)->format('Y-m-d');
+            //push the current day and plus the mount of $i 
+
+            array_push($weekDays, [
+                $day => $date,
+            ]);
+        }
+        // return $weekDays;
+
+
+
+
+        $teachers = Course::where('teacher_id', '!=', null)->pluck('teacher_id')->unique();
+        $tutors = [];
+
+
+        foreach ($teachers as $teacher) {
+            //Declaration
+            $monday_classes = [];
+            $tuesday_classes = [];
+            $wednesday_classes = [];
+            $thursday_classes = [];
+            $friday_classes = [];
+            $saturday_classes = [];
+            $sunday_classes = [];
+
+            $Teacher = User::findOrFail($teacher);
+
+            $classes = AcademicClass::with('course', 'student')
+                ->where('teacher_id', $teacher)
+                ->where('start_date', '>=', $weekStartDate)
+                ->where('start_date', '<=', $weekEndDate)
+                ->whereIn('status', ['scheduled', 'pending'])
+                ->get();
+
+
+            $completed_class = AcademicClass::where('status', 'completed')->where('teacher_id', $teacher)->count();
+            $pending_classes = AcademicClass::where('status', '!=', 'completed')->where('teacher_id', $teacher)->count();
+            $Teacher->completed_class = $completed_class;
+            $Teacher->pending_classes = $pending_classes;
+            // $Teacher->classes = $classes;
+
+            //getting per day classes
+            foreach ($classes as $class) {
+                switch ($class->day) {
+                    case ('2'):
+                        array_push($monday_classes, $class);
+                        break;
+                    case ('3'):
+                        array_push($tuesday_classes, $class);
+                        break;
+                    case ('4'):
+                        array_push($wednesday_classes, $class);
+                        break;
+                    case ('5'):
+                        array_push($thursday_classes, $class);
+                        break;
+                    case ('6'):
+                        array_push($friday_classes, $class);
+                        break;
+                    case ('7'):
+                        break;
+                        array_push($saturday_classes, $class);
+                    default:
+                        array_push($sunday_classes, $class);
+                }
+            }
+
+            $scheduled_classes = [
+                'monday' => $monday_classes,
+                'tuesday' => $tuesday_classes,
+                'wednesday' => $wednesday_classes,
+                'thursday' => $thursday_classes,
+                'friday' => $friday_classes,
+                'saturday' => $saturday_classes,
+                'sunday' => $sunday_classes,
+            ];
+
+            $Teacher->scheduled_classes = $scheduled_classes;
+            // $Teacher->tuesday = $tuesday_classes;
+            // $Teacher->wednesday = $wednesday_classes;
+            // $Teacher->thursday = $thursday_classes;
+            // $Teacher->friday = $friday_classes;
+            // $Teacher->saturday = $saturday_classes;
+            // $Teacher->sunday = $sunday_classes;
+
+            if (count($classes) > 0) {
+                array_push($tutors, $Teacher);
+            }
+        }
+
+
+
 
         return response()->json([
             'status' => true,
             'message' => "Teachers Classes Schedule",
-            'teachers' => $teachers,
+            'weekdays' => $weekDays,
+            'teachers' => $this->paginate($tutors, $request->per_page ?? 10),
         ]);
     }
 
@@ -492,9 +647,9 @@ class AdminController extends Controller
         ]);
     }
 
-    public function newsletter()
+    public function newsletter(Request $request)
     {
-        $newsletters = Newsletter::Paginate(10);
+        $newsletters = Newsletter::Paginate($request->per_page ?? 10);
 
         return response()->json([
             'status' => true,
@@ -844,7 +999,7 @@ class AdminController extends Controller
                 'reviews_count' => count($user_feedbacks),
                 'overall_stars' => $overall_stars,
                 'overall_feedback' => $overall_feedback,
-                'user_testimonials' => $feedbacks,
+                'user_testimonials' => $this->paginate($feedbacks, $request->per_page ?? 10),
             ]);
         }
     }
@@ -1004,8 +1159,8 @@ class AdminController extends Controller
 
     public function reassign_teacher(Request $request)
     {
-        $token_1 = JWTAuth::getToken();
-        $token_user = JWTAuth::toUser($token_1);
+        // $token_1 = JWTAuth::getToken();
+        // $token_user = JWTAuth::toUser($token_1);
 
         $rules = [
             'course_id' =>  'required|integer',
@@ -1100,6 +1255,14 @@ class AdminController extends Controller
         $course->update();
 
         $course = Course::with('classes')->find($request->course_id);
+        $student = User::findOrFail($course->student_id);
+        $teacher = User::findOrFail($course->teacher_id);
+
+        // //Emails and notifications
+        // event(new AssignTeacherEvent($student->id, $student, $course, "Teacher has been assigned to course"));
+        // event(new AssignTeacherEvent($teacher->id, $teacher, $course, "You have been assigned a new course"));
+        // dispatch(new AssignTeacherJob($student->id, $student, $course, "Teacher has been assigned to course"));
+        // dispatch(new AssignTeacherJob($teacher->id, $teacher, $course, "You have been assigned a new course"));
 
         return response()->json([
             'status' => true,
@@ -1218,7 +1381,11 @@ class AdminController extends Controller
 
 
         $interview = TeacherInterviewRequest::pluck("user_id");
+        // if (isset($request->per_page)) {
         $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->get();
+        // } else {
+        //     $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->paginate(10);
+        // }
 
         $all_teachers = User::whereIn('id', $interview)->count();
         $active_teachers = User::where('status', 'active')->where('admin_approval', 'approved')->whereIn('id', $interview)->count();
@@ -1241,10 +1408,27 @@ class AdminController extends Controller
         //     $message = 'All Suspended teachers!';
         // }
 
+        if ($request->has('search')) {
+            // return "dfs";
+            $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+                ->whereIn('id', $interview)
+                ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })->get();
+        }
+
+
+
+
         return response()->json([
             'status' => true,
             'message' => $message,
-            'teachers' => $teachers,
+            'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
             'all_teachers' => $all_teachers,
             'active_teachers' => $active_teachers,
             'inactive_teachers' => $inactive_teachers,
@@ -1253,21 +1437,37 @@ class AdminController extends Controller
         ]);
     }
 
-    public function rejected_teachers()
+    public function rejected_teachers(Request $request)
     {
-        $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'rejected')->get();
 
+
+        if ($request->has('search')) {
+
+             $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'rejected')->get();
+        }else{
+
+             $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'rejected')->get();
+        }
+       
         return response()->json([
             'status' => true,
             'message' => "Rejected Teachers!",
-            'teachers' => $teachers,
+            'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
         ]);
     }
 
-    public function suspended_teachers()
+    public function suspended_teachers(Request $request)
     {
-        $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'suspended')->get();
+
+        // if (isset($request->per_page)) {
+
+        $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'suspended')->paginate($request->per_page ?? 10);
+        // } else {
+
+        //     $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'suspended')->paginate(10);
+        // }
+
 
         return response()->json([
             'status' => true,
@@ -1281,48 +1481,144 @@ class AdminController extends Controller
     {
 
         $interview = TeacherInterviewRequest::where('status', 'pending')->pluck("user_id");
-        $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
-            ->whereIn('id', $interview)
-            ->get();
 
+         if ($request->has('search')) {
 
+             $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+                ->whereIn('id', $interview)
+                 ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })
+                ->get();
 
-        $rejected_teachers = User::with('teacher_interview_request')
-            ->where('role_name', 'teacher')
-            ->where('status', 'rejected')
-            ->get();
+            $rejected_teachers = User::with('teacher_interview_request')
+                ->where('role_name', 'teacher')
+                ->where('status', 'rejected')
+                 ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })
+                ->get();
+       
+         }else{
+
+             $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+                ->whereIn('id', $interview)
+                ->get();
+
+            $rejected_teachers = User::with('teacher_interview_request')
+                ->where('role_name', 'teacher')
+                ->where('status', 'rejected')
+                ->get();
+       
+         }
+           
 
         return response()->json([
             'status' => true,
             'message' => "Rejected Teachers!",
             'pending_teachers_count' => count($pending_teachers),
-            'pending_teachers' => $pending_teachers,
+            'pending_teachers' => $this->paginate($pending_teachers, $request->per_page ?? 10),
             'rejected_teachers_count' => count($rejected_teachers),
-            'rejected_teachers' => $rejected_teachers,
+            'rejected_teachers' => $this->paginate($rejected_teachers, $request->per_page ?? 10),
 
         ]);
     }
 
     public function current_teachers(Request $request)
     {
-        $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
-            ->where('role_name', 'teacher')
-            ->whereIn('status', ['active', 'inactive'])
-            ->get();
+
+       
+         if ($request->has('search')) {
+
+              $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                ->where('role_name', 'teacher')
+                ->whereIn('status', ['active', 'inactive'])
+                 ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })
+                ->get();
+
+         }else{
+
+              $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                ->where('role_name', 'teacher')
+                ->whereIn('status', ['active', 'inactive'])
+                ->get();
+         }
+
+      
+
+
+      
         $pluckedteachers = $teachers->pluck('id');
 
-        if ($request->has('active')) {
-            $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
-                ->where('role_name', 'teacher')
-                ->where('status', 'active')
-                ->get();
+        if ($request->has('status') && $request->has('status') == "active") {
+
+            if ($request->has('search')) {
+                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                    ->where('role_name', 'teacher')
+                    ->where('status', 'active')
+                    ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })
+                    ->get();
+
+            }else{
+                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                    ->where('role_name', 'teacher')
+                    ->where('status', 'active')
+                    ->get();
+            }
+            
+               
+          
+
             $pluckedteachers = $teachers->pluck('id');
         }
-        if ($request->has('inactive')) {
-            $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
-                ->where('role_name', 'teacher')
-                ->where('status', 'inactive')
-                ->get();
+        if ($request->has('status') && $request->has('status') == "inactive") {
+             if ($request->has('search')) {
+                $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                    ->where('role_name', 'teacher')
+                    ->where('status', 'inactive')
+                     ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })
+                    ->get();
+             }else{
+                $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                    ->where('role_name', 'teacher')
+                    ->where('status', 'inactive')
+                    ->get();
+             }
+
+                
+         
+
             $pluckedteachers = $teachers->pluck('id');
         }
 
@@ -1372,7 +1668,7 @@ class AdminController extends Controller
                 'available' => count($available_teachers),
                 'engaged' => count($engaged_teachers),
                 // 'inactive' => count($inactive_teachers),
-                'teachers' => $teachers,
+                'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
             ]);
         } else {
@@ -1383,7 +1679,7 @@ class AdminController extends Controller
                 'available' => count($available_teachers),
                 'engaged' => count($engaged_teachers),
                 'inactive' => count($inactive_teachers),
-                'teachers' => $teachers,
+                'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
             ]);
         }
@@ -1703,7 +1999,8 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             // 'subjects' => $subjects_array,
-            'subjects' => $final_subjects,
+            'subjects' => $this->paginate($final_subjects, $request->per_page ?? 10),
+            // 'subjects' => $final_subjects,
         ]);
     }
 
@@ -2107,7 +2404,25 @@ class AdminController extends Controller
         }
 
         //total Students
-        $registered_students = User::where('role_name', 'student')->get();
+
+        if ($request->has('search')) {
+
+             $registered_students = User::where('role_name', 'student')
+             ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })->get();
+        }else{
+
+             $registered_students = User::where('role_name', 'student')->get();
+        }
+       
+        
+
         $students_array = [];
 
         foreach ($registered_students as $student) {
@@ -2137,6 +2452,8 @@ class AdminController extends Controller
             }
             $student->total_bookings = count($student_courses);
         }
+
+
         $active_students = $registered_students->where('status', 'active');
         $suspended_students = $registered_students->where('status', 'inactive');
 
@@ -2150,9 +2467,25 @@ class AdminController extends Controller
                     array_push($enrolled_students, $student);
                 }
             }
-            //total active Students
-            $active_students = User::where('role_name', 'student')->where('status', 'active')->get();
+            
+            if ($request->has('search')) {
 
+                 $active_students = User::where('role_name', 'student')->where('status', 'active')
+                 ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })->get();
+            }else{
+
+                 $active_students = User::where('role_name', 'student')->where('status', 'active')->get();
+            }
+           
+
+            
             foreach ($active_students as $student) {
                 //Active Student's average rating
                 $average_rating = 5;
@@ -2184,15 +2517,30 @@ class AdminController extends Controller
                 'Total' => count($active_students),
                 'enrolled' => count($enrolled_students),
                 'unenrolled' => count($active_students) - count($enrolled_students),
-                'active_students' => $active_students,
+                'active_students' => $this->paginate($active_students, $request->per_page ?? 10),
 
             ]);
         }
 
         if (isset($request->status) && $request->status == "inactive") {
 
-            $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')->get();
+           if ($request->has('search')) {
 
+             $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')
+             ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })->get();
+           }else{
+
+             $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')->get();
+           }
+           
+            
             foreach ($inactive_students as $student) {
                 //inActive Student's average rating
                 $average_rating = 5;
@@ -2221,7 +2569,59 @@ class AdminController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Inactive Students ',
-                'inactive_students' => $inactive_students,
+                'inactive_students' => $this->paginate($inactive_students, $request->per_page ?? 10),
+
+            ]);
+        }
+ 
+        if (isset($request->status) && $request->status == "suspended") {
+
+           if ($request->has('search')) {
+
+             $suspended_students = User::where('role_name', 'student')->where('status', 'suspended')
+             ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })->get();
+           }else{
+
+             $suspended_students = User::where('role_name', 'student')->where('status', 'suspended')->get();
+           }
+           
+            
+            foreach ($suspended_students as $student) {
+                //suspended Student's average rating
+                $average_rating = 5;
+                $rating_sum = UserFeedback::where('receiver_id', $student->id)->sum('rating');
+                $total_reviews = UserFeedback::where('receiver_id', $student->id)->count();
+                if ($total_reviews > 0) {
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+                $student->average_rating =  $average_rating;
+
+                //finding student courses
+                $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
+                if (count($student_courses) == 0) {
+                    $student->total_spendings = 0;
+                } else {
+                    foreach ($student_courses as  $student_course) {
+                        if (isset($student_course->course)) {
+                            $prices = $prices + $student_course->course->total_price;
+                        }
+                    }
+                    $student->total_spendings = $prices;
+                }
+                $student->total_bookings = count($student_courses);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'suspended Students ',
+                'suspended_students' => $this->paginate($suspended_students, $request->per_page ?? 10),
 
             ]);
         }
@@ -2233,7 +2633,7 @@ class AdminController extends Controller
             'enrolled' => count($enrolled_students),
             'active' => count($active_students),
             'suspended' => count($suspended_students),
-            'registered_students' => $registered_students,
+            'registered_students' =>  $this->paginate($registered_students, $request->per_page ?? 10),
         ]);
     }
 
@@ -2551,7 +2951,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Student Feedback!',
+            'message' => 'Teacher Feedback to student!',
             'review' => $review,
             'teacher' => $teacher,
             'feedback' => $student_feedback,
@@ -2819,11 +3219,16 @@ class AdminController extends Controller
         }
 
         if ($request->status == 'not-available') {
-            // return  $noTeacherCourses = NoTeacherCourse::unique()->get();
-            $courses = Course::with('program', 'subject', 'teacher', 'student')->where('status', 'pending')->get();
-            $flag = 0;
+            $no_teacherCourse = NoTeacherCourse::pluck('course_id');
 
-            foreach ($courses as $course) {
+            $new_courses = Course::with('program', 'subject', 'teacher', 'student')
+                ->whereIn('id', $no_teacherCourse)
+                ->where('teacher_id', null)
+                ->get();
+
+            $flag = 0;
+            $newly = [];
+            foreach ($new_courses as $course) {
                 $counter = '0 H 0 Min';
                 if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
                     $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
@@ -2838,13 +3243,40 @@ class AdminController extends Controller
                 $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
                 $course->weeks = $weeks;
                 $flag++;
+                array_push($newly, $course);
+            }
+            $completed_courses = Course::with('program', 'subject', 'teacher', 'student')
+                ->whereIn('id', $no_teacherCourse)
+                ->where('teacher_id', '!=', null)
+                ->get();
+
+            $flag = 0;
+            $completed = [];
+            foreach ($completed_courses as $course) {
+                $counter = '0 H 0 Min';
+                if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                    $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
+                    $hours = floor($difference / 3600);
+                    $minutes = floor(($difference / 60) % 60);
+                    $seconds = $difference % 60;
+                    $counter =  $hours . " H " . $minutes . " Min";
+                    $course->timer = $counter;
+                } else {
+                    $course->timer = $counter;
+                }
+                $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+                $course->weeks = $weeks;
+                $flag++;
+                array_push($completed, $course);
             }
 
             return response()->json([
                 'status' => true,
-                'message' => 'Coursees With no Teacher!',
-                'courses_count' => count($courses),
-                'courses' => $courses,
+                'message' => 'Rejected Courses!',
+                'newly_courses_count' => count($new_courses),
+                'completed_courses_count' => count($completed_courses),
+                'newly_requested_courses' => $newly,
+                'completed_courses' => $completed,
             ]);
         }
         if ($request->status == 'declined') {
@@ -2893,7 +3325,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Rejected Courses!',
+                'message' => 'Courses With no Teacher!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $newly,
@@ -3053,13 +3485,11 @@ class AdminController extends Controller
         $requested_courses = RequestedCourse::with('program', 'country', 'language')->where('status', 'pending')->orderBy('id', 'DESC')->get();
         $completed_courses = RequestedCourse::with('program', 'country', 'language')->where('status', '!=', 'pending')->orderBy('id', 'DESC')->get();
 
-    
-
         return response()->json([
             'status' => true,
             'message' => "All Requested Courses",
-            'new_request_count' => $requested_courses->count(),
-            'completed_count' => $completed_courses->count(),
+            'new_request_count' => count($requested_courses),
+            'completed_count' => count($requested_courses),
             'requested_courses' => $requested_courses,
             'completed_courses' => $completed_courses,
         ]);
@@ -3123,13 +3553,15 @@ class AdminController extends Controller
 
     public function refund_details($course_id)
     {
-        $refunds = RefundCourse::with('course',  'canceled_course', 'refunded_classes')->where('course_id', $course_id)->first();
+        $refunds = RefundCourse::with('order', 'course.student',  'canceled_course', 'refunded_classes')->where('course_id', $course_id)->first();
 
-        // foreach($refunds as $refund){
-        //     $refund->remaining_classes = $refund()
-        // }
         $refunds->remaining_classes = $refunds['course']->total_classes -  $refunds->refunded_classes_count;
         $refunds->subtotal = $refunds->total_refunds +  $refunds['refunded_classes']->sum('service_fee');
+        $class = AcademicClass::findOrFail($refunds['refunded_classes'][0]->academic_class_id);
+        $course = Course::findOrFail($class->course_id);
+        $subject = Subject::FindOrFail($course->subject_id);
+        $refunds->refund_amount_per_class = $subject->price_per_hour * $class->duration;
+        // $refunds->refund_amount_per_class = $refunds['refunded_classes']
 
         return response()->json([
             'status' => true,
@@ -3261,5 +3693,216 @@ class AdminController extends Controller
             'teacher_profile' => $teacher_profile,
 
         ]);
+    }
+
+    public function approval_request()
+    {
+        $no_teacherCourse = NoTeacherCourse::pluck('course_id');
+
+        $new_courses = Course::with('program', 'subject', 'student')
+            ->whereIn('id', $no_teacherCourse)
+            ->where('teacher_id', null)
+            ->get();
+
+        $flag = 0;
+        $newly = [];
+        foreach ($new_courses as $course) {
+            $counter = '0 H 0 Min';
+            if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
+                $hours = floor($difference / 3600);
+                $minutes = floor(($difference / 60) % 60);
+                $seconds = $difference % 60;
+                $counter =  $hours . " H " . $minutes . " Min";
+                $course->timer = $counter;
+            } else {
+                $course->timer = $counter;
+            }
+            $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+            $course->weeks = $weeks;
+            $flag++;
+            array_push($newly, $course);
+        }
+        $completed_courses = Course::with('program', 'subject', 'teacher', 'student', 'teacherSpecifications')
+            ->whereIn('id', $no_teacherCourse)
+            ->where('teacher_id', '!=', null)
+            ->get();
+
+        $flag = 0;
+        $completed = [];
+        foreach ($completed_courses as $course) {
+            $counter = '0 H 0 Min';
+            if (Carbon::parse($course->start_date)->format('Y-m-d') > Carbon::now()->format('Y-m-d')) {
+                $difference = (Carbon::now())->diffInSeconds(Carbon::parse($course->start_date));
+                $hours = floor($difference / 3600);
+                $minutes = floor(($difference / 60) % 60);
+                $seconds = $difference % 60;
+                $counter =  $hours . " H " . $minutes . " Min";
+                $course->timer = $counter;
+            } else {
+                $course->timer = $counter;
+            }
+            $weeks = (Carbon::parse($course->end_date))->diffInWeeks(Carbon::parse($course->start_date));
+            $course->weeks = $weeks;
+            $flag++;
+            array_push($completed, $course);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Approval Requests!',
+            'newly_courses_count' => count($new_courses),
+            'completed_courses_count' => count($completed_courses),
+            'newly_requested_courses' => $newly,
+            'completed_courses' => $completed,
+        ]);
+    }
+
+    public function featured_teacher($subject_id)
+    {
+        $featured_teachers = [];
+        $subject = Subject::with('program', 'field', 'available_teachers.teacher')
+            ->with('available_teachers', function ($q) {
+                $q->with('teacher_qualification', 'teacher_subjects.subject');
+            })
+            ->findOrFail($subject_id);
+        $courses = Course::get();
+        foreach ($subject['available_teachers'] as $teacher) {
+            // return $teacher;
+            $courses_count = $courses->where('teacher_id', $teacher->user_id)->count();
+            $teacher_programs = TeacherSubject::where('user_id', $teacher->user_id)->where('status', 'approved')->pluck('program_id')->unique();
+            $programs = Program::whereIn('id', $teacher_programs)->get();
+            $classes = AcademicClass::where('teacher_id', $teacher->user_id)->where('status', 'completed')->count();
+            $teacher->courses_count = $courses_count;
+            $teacher->classes_taught = $classes;
+
+
+            //-------rating--------
+            $average_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $teacher->user_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $teacher->user_id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+
+            $reviews = UserFeedback::where('receiver_id', $teacher->user_id)->get();
+            $reviews_count = $reviews->groupBy('sender_id')->count();
+            //--------------------------
+
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count  = $reviews_count;
+            array_push($featured_teachers, $teacher);
+            $teacher->programs = $programs;
+        }
+        unset($subject['available_teachers']);
+
+        $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(4);
+        $teachers_list = [];
+        foreach ($featured_teachers as $featured_teacher) {
+            array_push($teachers_list, $featured_teacher);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Featured Teachers Related to Subject!',
+            'subject' => $subject,
+            'featured_teachers' => $teachers_list,
+        ]);
+    }
+
+    public function featured_teachers_list()
+    {
+        $courses = Course::all();
+        $featured_teachers = [];
+        $teachers = User::where('role_name', 'teacher')->limit(3)->get();
+        foreach ($teachers as $teacher) {
+            // return $teacher;
+            $courses_count = $courses->where('teacher_id', $teacher->id)->count();
+            $teacher_programs = TeacherSubject::where('user_id', 1149)->where('status', 'approved')->pluck('program_id')->unique();
+            $programs = Program::whereIn('id', $teacher_programs)->get();
+            $classes = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->count();
+            $teacher->courses_count = $courses_count;
+            $teacher->classes_taught = $classes;
+
+
+            //-------rating--------
+            $average_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+
+            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+            $reviews_count = $reviews->groupBy('sender_id')->count();
+            //--------------------------
+
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count  = $reviews_count;
+            array_push($featured_teachers, $teacher);
+            $teacher->programs = $programs;
+        }
+        $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(4);
+        $teachers_list = [];
+        foreach ($featured_teachers as $featured_teacher) {
+            array_push($teachers_list, $featured_teacher);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Featured Teachers!',
+            'featured_teachers' => $teachers_list,
+        ]);
+    }
+
+    public function refund_account_detail($course_id)
+    {
+        $refunds = RefundCourse::with('order', 'course')->where('course_id', $course_id)->first();
+        return response()->json([
+            'status' => true,
+            'message' => 'Refund order Account Detail!',
+            'refund' => $refunds,
+        ]);
+    }
+
+    public function process_refund($course_id)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $course = Course::findOrFail($course_id);
+        $course->status = "refunded";
+        $class_rooms = ClassRoom::where('course_id', $course_id)->get();
+        foreach ($class_rooms as $class_room) {
+            $class_room->status = "refunded";
+            $class_room->update();
+        }
+        $course->update();
+        $refunds = RefundCourse::with('order', 'course')->where('course_id', $course_id)->first();
+
+        $admin_message = "Course Refunded Successfully!";
+        $student = User::findOrFail($course->student_id);
+        $teacher = User::findOrFail($course->teacher_id);
+
+        event(new RefundCourseEvent($token_user->id, $token_user, $admin_message, $refunds, $course));
+        event(new RefundCourseEvent($student->id, $student, $admin_message, $refunds, $course));
+        event(new RefundCourseEvent($teacher->id, $teacher, $admin_message, $refunds, $course));
+        dispatch(new RefundCourseJob($token_user->id, $token_user, $admin_message, $refunds, $course));
+        dispatch(new RefundCourseJob($student->id, $student, $admin_message, $refunds, $course));
+        dispatch(new RefundCourseJob($teacher->id, $teacher, $admin_message, $refunds, $course));
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Refunded Successfully!',
+            'refund' => $refunds,
+        ]);
+    }
+
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
     }
 }

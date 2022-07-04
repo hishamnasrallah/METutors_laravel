@@ -1,5 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
+
+use App\Events\CloseTicketEvent;
+use App\Events\OpenTicketEvent;
+use App\Jobs\CloseTicketJob;
+use App\Jobs\OpenTicketJob;
 use App\Models\TicketCategory;
 use App\Models\TicketPriorities;
 use App\Models\Ticket;
@@ -14,6 +20,12 @@ use Illuminate\Support\Facades\Validator;
 use Hash;
 use Illuminate\Support\Str;
 use JWTAuth;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
+
 class TicketsController extends Controller
 {
     // public function __construct()
@@ -28,21 +40,23 @@ class TicketsController extends Controller
 
 
 
-    public function ticket_priorities(){
+    public function ticket_priorities()
+    {
 
-        $ticket_priorities=TicketPriorities::all();
+        $ticket_priorities = TicketPriorities::all();
 
-         return response()->json([
+        return response()->json([
             'success' => 'true',
             'ticket_priorities' => $ticket_priorities
         ]);
     }
 
-    public function ticket_categories(){
+    public function ticket_categories()
+    {
 
-        $ticket_categories=TicketCategory::all();
+        $ticket_categories = TicketCategory::all();
 
-         return response()->json([
+        return response()->json([
             'success' => 'true',
             'ticket_categories' => $ticket_categories
         ]);
@@ -60,30 +74,61 @@ class TicketsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'access denied',
-            ],401);
+            ], 401);
+        }
+        if ($request->has('search')) {
+
+             $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')
+             ->where(function ($query) use ($request) {
+                    $query->where('subject', 'LIKE', "%$request->search%")
+                        ->orWhere('message', 'LIKE', "%$request->search%")
+                        ->orWhere('ticket_id', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%");
+                })->get();
+        }else{
+
+             $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')->get();
+        }
+       
+        $total_tickets = Ticket::count();
+        $open_tickets = Ticket::where('status', 'open')->count();
+        $closed_tickets = Ticket::where('status', 'closed')->count();
+        $urgent_tickets = Ticket::where('status', 'open')->where('priority', 1)->count();
+
+        if (isset($request->status)) {
+
+            if ($request->has('search')) {
+
+                 $tickets = Ticket::with('category', 'user', 'priority')->where('status', $request->status)->orderBy('created_at', 'desc')
+                  ->where(function ($query) use ($request) {
+                    $query->where('subject', 'LIKE', "%$request->search%")
+                        ->orWhere('message', 'LIKE', "%$request->search%")
+                        ->orWhere('ticket_id', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%");
+                })->get();
+            }else{
+
+                 $tickets = Ticket::with('category', 'user', 'priority')->where('status', $request->status)->orderBy('created_at', 'desc')->get();
+            }
+        }elseif(isset($request->status) && $request->status == 'urgent'){
+
+              if ($request->has('search')) {
+
+                 $tickets = Ticket::with('category', 'user', 'priority')->where('status','open')->where('priority',1)->orderBy('created_at', 'desc')
+                  ->where(function ($query) use ($request) {
+                    $query->where('subject', 'LIKE', "%$request->search%")
+                        ->orWhere('message', 'LIKE', "%$request->search%")
+                        ->orWhere('ticket_id', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%");
+                })->get();
+            }else{
+
+                 $tickets = Ticket::with('category', 'user', 'priority')->where('status','open')->where('priority',1)->orderBy('created_at', 'desc')->get();
+            }
+
         }
 
-        $tickets = Ticket::with('category','user','priority')->orderBy('created_at', 'desc')->get();
-        $total_tickets= Ticket::count();
-        $open_tickets= Ticket::where('status','open')->count();
-        $closed_tickets= Ticket::where('status','closed')->count();
-        $urgent_tickets= Ticket::where('status','open')->where('priority',1)->count();
 
-        if(isset($request->status) && $request->status == 'open'){
-
-             $tickets = Ticket::with('category','user','priority')->where('status','open')->orderBy('created_at', 'desc')->get();
-        }
-
-       if(isset($request->status) && $request->status == 'closed'){
-
-             $tickets = Ticket::with('category','user','priority')->where('status','closed')->orderBy('created_at', 'desc')->get();
-        }
-
-       if(isset($request->status) && $request->status == 'urgent'){
-
-             $tickets = Ticket::with('category','user','priority')->where('status','open')->where('priority',1)->orderBy('created_at', 'desc')->get();
-        }
-        
 
         return response()->json([
             'success' => 'true',
@@ -91,7 +136,7 @@ class TicketsController extends Controller
             'open_tickets' => $open_tickets,
             'closed_tickets' => $closed_tickets,
             'urgent_tickets' => $urgent_tickets,
-            'tickets' => $tickets
+            'tickets' => $this->paginate($tickets, $request->per_page ?? 10),
         ]);
         return view('tickets.index', compact('tickets'));
     }
@@ -137,19 +182,28 @@ class TicketsController extends Controller
         }
         $ticket = new Ticket();
 
-            $ticket->subject = $request->title;
-            $ticket->user_id =  $user->id;
-            $ticket->ticket_id = strtoupper(Str::random(10));
-            $ticket->category_id = $request->category;
-            $ticket->priority = $request->priority;
-            $ticket->message = $request->message;
-            $ticket->status = "Open";
-            $ticket->file = $file;
+        $ticket->subject = $request->title;
+        $ticket->user_id =  $user->id;
+        $ticket->ticket_id = strtoupper(Str::random(10));
+        $ticket->category_id = $request->category;
+        $ticket->priority = $request->priority;
+        $ticket->message = $request->message;
+        $ticket->status = "Open";
+        $ticket->file = $file;
 
         $ticket->save();
 
-        $ticket->category=$ticket->category;
-        $ticket->priority=$ticket->priority;
+        $ticket->category = $ticket->category;
+        $ticket->priority = $ticket->priority;
+
+        $teacher_message = "Ticket opened Successfully!";
+        $admin_message = "New Ticket has been opened!";
+        $admin = User::where('role_name', 'admin')->first();
+
+        // event(new OpenTicketEvent($user->id, $user, $teacher_message, $ticket));
+        // event(new OpenTicketEvent($admin->id, $admin, $admin_message, $ticket));
+        // dispatch(new OpenTicketJob($user->id, $user, $teacher_message, $ticket));
+        // dispatch(new OpenTicketJob($admin->id, $admin, $admin_message, $ticket));
 
         return response()->json([
             'message' => 'success',
@@ -185,7 +239,7 @@ class TicketsController extends Controller
 
         $user = $token_user;
         // return $user->id;
-        $tickets = Ticket::with('category','priority','user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with('category', 'priority', 'user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
 
         // return json_encode($tickets);
         return response()->json([
@@ -203,32 +257,32 @@ class TicketsController extends Controller
     public function show($ticket_id)
     {
 
-        $ticket = Ticket::with('category','user','priority')->where('ticket_id', $ticket_id)->firstOrFail();
+        $ticket = Ticket::with('category', 'user', 'priority')->where('ticket_id', $ticket_id)->firstOrFail();
         $ticket->user = $ticket->user;
-            unset($ticket->user->industry);
-            unset($ticket->user->no_of_hires);
-            unset($ticket->user->company_logo);
-            unset($ticket->user->email_verified_at);
-            unset($ticket->user->company_phone);
-            unset($ticket->user->country);
-            unset($ticket->user->city);
-            unset($ticket->user->address);
-            unset($ticket->user->zipcode);
-            unset($ticket->user->website_link);
-            unset($ticket->user->linkedin_profile_link);
-            unset($ticket->user->profile_bio);
-            unset($ticket->user->language);
-            unset($ticket->user->availability);
-            unset($ticket->user->expertise);
-            unset($ticket->user->expertise_level);
-            unset($ticket->user->acceptTerms);
-            unset($ticket->user->vat);
-            unset($ticket->user->profile_completed);
-            unset($ticket->user->stripe_id);
-            unset($ticket->user->card_brand);
-            unset($ticket->user->trial_ends_at);
-            unset($ticket->user->pm_type);
-            unset($ticket->user->pm_last_four);
+        unset($ticket->user->industry);
+        unset($ticket->user->no_of_hires);
+        unset($ticket->user->company_logo);
+        unset($ticket->user->email_verified_at);
+        unset($ticket->user->company_phone);
+        unset($ticket->user->country);
+        unset($ticket->user->city);
+        unset($ticket->user->address);
+        unset($ticket->user->zipcode);
+        unset($ticket->user->website_link);
+        unset($ticket->user->linkedin_profile_link);
+        unset($ticket->user->profile_bio);
+        unset($ticket->user->language);
+        unset($ticket->user->availability);
+        unset($ticket->user->expertise);
+        unset($ticket->user->expertise_level);
+        unset($ticket->user->acceptTerms);
+        unset($ticket->user->vat);
+        unset($ticket->user->profile_completed);
+        unset($ticket->user->stripe_id);
+        unset($ticket->user->card_brand);
+        unset($ticket->user->trial_ends_at);
+        unset($ticket->user->pm_type);
+        unset($ticket->user->pm_last_four);
         $ticket->comments = $ticket->comments;
         foreach ($ticket->comments as $comment) {
             $comment->user = $comment->user;
@@ -265,31 +319,24 @@ class TicketsController extends Controller
     }
     public function change_status(Request $request)
     {
-
-
-         $rules = [
+        $rules = [
 
             'status' => 'required',
             'ticket_id' => 'required',
         ];
 
-        $validator=Validator::make($request->all(),$rules);
+        $validator = Validator::make($request->all(), $rules);
 
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-
+            ], 400);
         }
-
-
-
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -300,25 +347,43 @@ class TicketsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'access denied',
-            ],401);
+            ], 401);
         }
 
         if (strtolower($request->status) == 'closed' || strtolower($request->status) == 'inprogress') {
-
-        }else{
-             return response()->json([
+        } else {
+            return response()->json([
                 'success' => false,
                 'message' => 'status can only be changed to closed or inprogress',
-            ],401);
+            ], 401);
         }
         $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();
         $ticket->status = $request->status;
         $ticket->save();
         $ticketOwner = $ticket->user;
+
+        $teacher_message = "Ticket has marked as $request->status!";
+        $admin_message = "Ticket has marked as $request->status!";
+        $admin = User::where('role_name', 'admin')->first();
+
+        event(new CloseTicketEvent($user->id, $user, $teacher_message, $ticket));
+        event(new CloseTicketEvent($admin->id, $admin, $admin_message, $ticket));
+        dispatch(new CloseTicketJob($user->id, $user, $teacher_message, $ticket));
+        dispatch(new CloseTicketJob($admin->id, $admin, $admin_message, $ticket));
+
         return response()->json([
             'message' => 'success',
             'status' => 'Status changed successfully',
         ]);
         return redirect()->back()->with("status", "The ticket has been closed.");
+    }
+
+
+    
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AcademicClass extends Model
 {
-    // protected $fillable = ['academic_class_id'];   
+    // protected $fillable = ['academic_class_id'];
     use HasFactory;
 
     public function classSessions()
@@ -18,7 +18,7 @@ class AcademicClass extends Model
 
     public function student()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function teacher()

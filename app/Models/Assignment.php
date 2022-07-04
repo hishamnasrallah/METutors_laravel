@@ -26,6 +26,6 @@ class Assignment extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(User::class, 'created_by', 'id')->select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'created_by', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 }

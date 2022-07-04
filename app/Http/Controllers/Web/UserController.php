@@ -2,7 +2,13 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Events\PrefrenceSettingEvent;
+use App\Events\ProfileSettingEvent;
+use App\Events\SecuritySettingEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\PrefrenceSettingJob;
+use App\Jobs\ProfileSettingJob;
+use App\Jobs\SecuritySettingJob;
 use App\Models\AcademicClass;
 use App\Models\Badge;
 use App\Models\BecomeInstructor;
@@ -54,17 +60,17 @@ class UserController extends Controller
         // ]);
 
 
-          $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
-            ->where('status', 'active')->where('id','!=',1212 )
+            ->where('status', 'active')->where('id', '!=', 1212)
             ->get();
 
 
         $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
-            ->where('status', 'active')->where('id',1212 )
+            ->where('status', 'active')->where('id', 1212)
             ->get();
 
 
@@ -880,9 +886,7 @@ class UserController extends Controller
         if ($validator->fails()) {
             $messages = $validator->messages();
             $errors = $messages->all();
-
             return response()->json([
-
                 'status' => false,
                 'errors' => $errors,
             ], 400);
@@ -897,6 +901,11 @@ class UserController extends Controller
         if ($check) {
             $user->password = Hash::make($request->new_password);
             $user->update();
+
+            // //Email and notifiaction
+            // event(new SecuritySettingEvent($user->id, $user, "Security settings updated successfully!"));
+            // dispatch(new SecuritySettingJob($user->id, $user, "Security settings updated successfully!"));
+
             return response()->json([
                 'status' => true,
                 'message' => "Security Settings updated",
@@ -951,6 +960,12 @@ class UserController extends Controller
         }
 
         $prefrence->save();
+
+        //Email and notifiaction
+        event(new PrefrenceSettingEvent($token_user->id,  $token_user, "Prefrences updated successfully!"));
+        dispatch(new PrefrenceSettingJob($token_user->id, $token_user, "Prefrences updated successfully!"));
+
+
 
         return response()->json([
             'status' => true,
@@ -1376,6 +1391,11 @@ class UserController extends Controller
 
         $user = User::find($token_user->id);
         $user->update($request->all());
+
+
+        //Email and notifiaction
+        event(new ProfileSettingEvent($user->id, $user, "Security settings updated successfully!"));
+        dispatch(new ProfileSettingJob($user->id, $user, "Security settings updated successfully!"));
 
         return response()->json([
             'success' => true,

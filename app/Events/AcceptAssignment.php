@@ -14,7 +14,7 @@ class AcceptAssignment
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    
+
     public $userid;
     public $message;
     public $user;
@@ -38,6 +38,11 @@ class AcceptAssignment
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
+    }
+
+    public function broadcastAs()
+    {
+        return 'assignment_accepted';
     }
 }

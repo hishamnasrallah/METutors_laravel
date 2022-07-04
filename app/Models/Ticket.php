@@ -26,6 +26,6 @@ class Ticket extends Model
     }
      public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id')->select(['id','first_name','last_name','last_name','email','verified','avatar']);
+        return $this->belongsTo(User::class, 'user_id', 'id')->select(['id','id_number','first_name','last_name','last_name','email','verified','avatar']);
     }
 }

@@ -4,7 +4,13 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Country;
+use App\Events\ClassRescheduleEvent;
+use App\Events\MakeupClassEvent;
+use App\Events\SelectTeacherEvent;
 use App\FieldOfStudy;
+use App\Jobs\ClassRescheduleJob;
+use App\Jobs\MakeupClassJob;
+use App\Jobs\SelectTeacherJob;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
 use App\Models\ClassRoom;
@@ -1132,6 +1138,16 @@ class ClassController extends Controller
                 $reschedule_class->save();
                 $class->update();
 
+                $student = User::findOrFail($token_user->id);
+                $teacher = User::findOrFail($academic_class->teacher_id);
+                $student_message = "Class Rescheduled Successfully!";
+                $teacher_message = "Student Rescheduled a class!";
+
+                // event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
+                // event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
+                // dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message));
+                // dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message));
+
                 return response()->json([
                     'status' => true,
                     'message' => "Class Rescheduled Successfully!",
@@ -1268,7 +1284,7 @@ class ClassController extends Controller
             $academicClass->class_type = $course->classes[0]->class_type;
             $academicClass->course_id = $course_id;
             $academicClass->class_paradigm = "added";
-            // $academicClass->save();
+            $academicClass->save();
 
             /// Curl Implementation
 
@@ -1461,8 +1477,6 @@ class ClassController extends Controller
         }
 
         $academic_class = AcademicClass::find($class_id);
-        // return $academic_class->teacher_id;
-        // return AcademicClass::where('teacher_id', $academic_class->teacher_id)->where('start_date', $request->start_date)->get();
         $availabilities = TeacherAvailability::where('user_id', $academic_class->teacher_id)->where('day', $day)->get();
 
         $request_time_from =  Carbon::parse($request->start_time)->format("G:i");
@@ -1557,6 +1571,16 @@ class ClassController extends Controller
             ], 400);
         }
 
+        $student = User::findOrFail($token_user->id);
+        $teacher = User::findOrFail($academic_class->teacher_id);
+        $teacher_message = "Makeup class has been added!";
+        $student_message = "Makeup class Added Successfully!";
+
+        // Emails and Notifications
+        // event(new MakeupClassEvent($student->id, $student, $student_message, $academic_class));
+        // event(new MakeupClassEvent($teacher->id, $teacher, $teacher_message, $academic_class));
+        // dispatch(new MakeupClassJob($student->id, $student, $student_message, $academic_class));
+        // dispatch(new MakeupClassJob($teacher->id, $teacher, $teacher_message, $academic_class));
 
         return response()->json([
             'status' => true,
@@ -1632,6 +1656,14 @@ class ClassController extends Controller
             $academic_class->teacher_id = $request->teacher_id;
             $academic_class->status = 'pending';
         }
+
+        $student = User::findOrFail($course->student_id);
+        $teacher = User::findOrFail($course->teacher_id);
+
+        // event(new SelectTeacherEvent($student->id, $student, $course, "Request Completed! Wait for Teacher Approval!"));
+        // event(new SelectTeacherEvent($teacher->id, $teacher, $course, "New Course Requested!"));
+        // dispatch(new SelectTeacherJob($student->id, $student, $course, "Request Completed! Wait for Teacher Approval!"));
+        // dispatch(new SelectTeacherJob($teacher->id, $teacher, $course, "New Course Requested!"));
 
         return response()->json([
             'status' => true,

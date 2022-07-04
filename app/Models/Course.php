@@ -8,6 +8,7 @@ use App\FieldOfStudy;
 use App\Language;
 use App\Program;
 use App\Subject;
+use App\TeachingSpecification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use JWTAuth;
@@ -48,7 +49,7 @@ class Course extends Model
 
     public function student()
     {
-        return $this->belongsTo(User::class, 'student_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'student_id', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function fields()
@@ -132,5 +133,10 @@ class Course extends Model
     {
         $completed_classes = AcademicClass::where('status', 'completed')->get();
         return $completed_classes;
+    }
+
+    public function teacherSpecifications()
+    {
+        return $this->belongsTo(TeachingSpecification::class, 'teacher_id', 'user_id');
     }
 }

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Events\SubmitAssignmentEvent;
 use App\Http\Controllers\Controller;
-
+use App\Jobs\SubmittAssignmentJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\Attendance;
@@ -36,7 +37,7 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-         $corse = Course::find($course_id);
+        $corse = Course::find($course_id);
 
         $course = Course::with('participants', 'participants.user',  'assignments')
             ->with(['assignments.assignees.user' => function ($q) {
@@ -142,10 +143,12 @@ class AssignmentController extends Controller
         }
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
+        $assignment = Assignment::findOrFail($assignment_id);
+        $course = Course::findOrFail($assignment->course_id);
 
         $userAssignment = UserAssignment::where('assignment_id', $assignment_id)->where('user_id', $token_user->id)->latest()->first();
 
-        if ($userAssignment->status == 'rejected') {
+        if ($userAssignment && $userAssignment->status == 'rejected') {
             $user_assignment = new UserAssignment();
             $user_assignment->user_id = $userAssignment->user_id;
             $user_assignment->assignment_id = $userAssignment->assignment_id;
@@ -156,12 +159,25 @@ class AssignmentController extends Controller
             $user_assignment->status = 'resubmitted';
             $user_assignment->save();
 
+            // Event notification
+            $teacher_message = 'User ReSubmitted Assignment!';
+            $student_message = 'Assignment ReSubmitted Successfully!';
+            $student = User::find($token_user->id);
+            $teacher = User::find($course->teacher_id);
+            //Sending emails and notifications
+            event(new SubmitAssignmentEvent($teacher->id, $teacher, $teacher_message, $assignment));
+            event(new SubmitAssignmentEvent($student->id, $student, $student_message, $assignment));
+            dispatch(new SubmittAssignmentJob($teacher->id, $teacher, $teacher_message, $assignment));
+            dispatch(new SubmittAssignmentJob($student->id, $student, $student_message, $assignment));
+
+
             return response()->json([
                 'status' => true,
                 'message' => 'Assignment ReSubmitted SuccessFully',
                 'assignment' =>  $user_assignment,
             ]);
         } else {
+
             $userAssignment->description = $request->description;
         }
         if ($request->has('file')) {
@@ -172,6 +188,19 @@ class AssignmentController extends Controller
         $userAssignment->update();
 
         $userAssignment->user_assignment_status = 'submitted';
+
+        // Event notification
+        $teacher_message = 'User Submitted Assignment!';
+        $student_message = 'Assignment Submitted Successfully!';
+        $student = User::find($token_user->id);
+        $teacher = User::find($course->teacher_id);
+        $assignment = Assignment::findOrFail($assignment_id);
+
+        // Sending emails and notifications
+        event(new SubmitAssignmentEvent($teacher->id, $teacher, $teacher_message, $assignment));
+        event(new SubmitAssignmentEvent($student->id, $student, $student_message, $assignment));
+        dispatch(new SubmittAssignmentJob($teacher->id, $teacher, $teacher_message, $assignment));
+        dispatch(new SubmittAssignmentJob($student->id, $student, $student_message, $assignment));
 
         return response()->json([
             'status' => true,

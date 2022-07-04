@@ -13,7 +13,7 @@ return [
 
     'currency' => env('CURRENCY', 'USD'),
 
-    'redirect_url' => '/brainsp3/metutor_brain/public/payment/status',
+    'redirect_url' => '/public/payment-status',
 
     'model' => env('PAYMENT_MODEL', class_exists(App\Models\User::class) ? App\Models\User::class : App\User::class),
     /**

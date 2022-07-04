@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Country;
+use App\Events\ClassRescheduleEvent;
 use App\FieldOfStudy;
+use App\Jobs\ClassRescheduleJob;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
 use App\Models\ClassRoom;
@@ -599,7 +601,7 @@ class ClassController extends Controller
 
                 $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                 $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
 
                 return response()->json([
@@ -624,7 +626,7 @@ class ClassController extends Controller
 
                     $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                      $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
 
                     return response()->json([
@@ -648,7 +650,7 @@ class ClassController extends Controller
 
                     $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                     $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     return response()->json([
@@ -676,7 +678,7 @@ class ClassController extends Controller
 
                 $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                 $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
 
                 return response()->json([
@@ -1052,6 +1054,17 @@ class ClassController extends Controller
                 $reschedule_class->day = $academic_class->day;
                 $reschedule_class->save();
                 $class->update();
+
+                $student = User::findOrFail($token_user->id);
+                $teacher = User::findOrFail($academic_class->teacher_id);
+                $teacher_message = "Class Rescheduled Successfully!";
+                $student_message = "Teacher Rescheduled a class!";
+
+                // event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
+                // event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
+                // dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message));
+                // dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message));
+
 
                 return response()->json([
                     'status' => true,

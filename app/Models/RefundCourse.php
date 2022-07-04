@@ -33,4 +33,9 @@ class RefundCourse extends Model
     {
         return $this->belongsTo(CanceledCourse::class, 'course_id', 'course_id');
     }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'course_id', 'course_id');
+    }
 }
