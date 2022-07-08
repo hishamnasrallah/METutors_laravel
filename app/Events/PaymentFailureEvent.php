@@ -10,28 +10,18 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CancelCourseEvent implements ShouldBroadcast
+class PaymentFailureEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $course;
-    public $userid;
-    public $custom_message;
-    public $user;
-
-
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($course, $userid, $custom_message, $user)
+    public function __construct()
     {
-        $this->course = $course;
-        $this->userid = $userid;
-        $this->custom_message = $custom_message;
-        $this->user = $user;
+        //
     }
 
     /**
@@ -41,11 +31,6 @@ class CancelCourseEvent implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return ['MeTutors'];
-    }
-
-    public function broadcastAs()
-    {
-        return 'course_cancelled';
+        return new PrivateChannel('channel-name');
     }
 }

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Events\AcceptAssignment;
 use App\Events\AcceptAssignmentEvent;
+use App\Events\AddAssignmentEvent;
 use App\Events\RejectAssignment;
 use App\Events\RejectAssignmentEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\AcceptAssignmentJob;
+use App\Jobs\AddAssignmentJob;
 use App\Jobs\RejectAssignmentJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
@@ -94,6 +96,19 @@ class AssignmentController extends Controller
 
         $assignment = Assignment::with('assignees', 'assignees.user')->find($assignment->id);
 
+        $course = Course::findOrFail($request->course_id);
+        $student = User::findOrFail($course->student_id);
+        $teacher_message = "Successfully Added Assignment!";
+        $student_message = "You have a new Assignment!";
+
+
+        //Sending Emails and notifications to Student and teacher
+        event(new AddAssignmentEvent($assignment, $course->teacher_id, $teacher_message, $teacher));
+        event(new AddAssignmentEvent($assignment, $course->student_id, $student_message, $student));
+        dispatch(new AddAssignmentJob($assignment, $course->teacher_id, $teacher_message, $teacher));
+        dispatch(new AddAssignmentJob($assignment, $course->student_id, $student_message, $student));
+
+
         return response()->json([
             'status' => true,
             'message' => 'Course Assignment added Successfully!',
@@ -109,10 +124,13 @@ class AssignmentController extends Controller
 
         $corse = Course::find($course_id);
 
-        $course = Course::with('participants', 'participants.user',  'assignments')
-            ->with(['assignments.assignees.user' => function ($q) {
-                $q->latest();
-            }])
+        $course = Course::with('participants', 'participants.user',  'assignments', 'assignments.assignees.user')
+            // ->with(['assignments.assignees.user' => function ($q) {
+            //     $q->latest();
+            // }])
+            // ->with(['assignments.assignees', function ($qe) {
+            //     $qe->latest()->groupBy('user_id');
+            // }])
             ->find($course_id);
 
         $total_assinments = 0;
@@ -147,6 +165,7 @@ class AssignmentController extends Controller
                     ->with('assignments', function ($query) {
                         $query->where('status', 'active');
                     })
+
                     ->where('id', $course_id)->get();
             }
             if ($request->status == 'completed') {
@@ -161,20 +180,22 @@ class AssignmentController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Course Assignment Dashboard!',
-                'course' => $course,
                 'total_assignments' => $total_assinments,
                 'active_assignments' => $active_assignments,
                 'completed_assignments' => $completed_assignments,
+                'course' => $course,
+
 
             ]);
         }
         return response()->json([
             'status' => true,
             'message' => 'Course Assignment Dashboard!',
-            'course' => $course,
             'total_assignments' => $total_assinments,
             'active_assignments' => $active_assignments,
             'completed_assignments' => $completed_assignments,
+            'course' => $course,
+
 
         ]);
     }

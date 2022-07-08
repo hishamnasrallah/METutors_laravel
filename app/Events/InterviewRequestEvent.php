@@ -10,18 +10,22 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class InterviewRequestEvent
+class InterviewRequestEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $userid, $user, $custom_message, $interview_request;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($userid, $user, $custom_message, $interview_request)
     {
-        //
+        $this->userid = $userid;
+        $this->user = $user;
+        $this->custom_message = $custom_message;
+        $this->interview_request = $interview_request;
     }
 
     /**
@@ -31,6 +35,11 @@ class InterviewRequestEvent
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('channel-name');
+        return ['MeTutors'];
+    }
+
+    public function broadcastAs()
+    {
+        return 'interview-request';
     }
 }

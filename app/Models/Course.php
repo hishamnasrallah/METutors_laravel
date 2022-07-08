@@ -74,7 +74,7 @@ class Course extends Model
 
     public function assignees()
     {
-        return $this->hasMany(UserAssignment::class)->unique('user_id');
+        return $this->hasMany(UserAssignment::class);
     }
 
     public function resnponse_recieved()

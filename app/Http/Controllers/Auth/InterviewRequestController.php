@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\InterviewRequestEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\InterviewRequestJob;
 use App\Models\Verification;
 use App\User;
 use App\TeacherInterviewRequest;
@@ -44,11 +46,11 @@ class InterviewRequestController extends Controller
     if (isset($request->status) && $request->status == "approved") {
 
         $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "approved")->paginate($request->per_page ?? 10);
-      
+
     } elseif (isset($request->status) && $request->status == "rejected") {
 
         $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "rejected")->paginate($request->per_page ?? 10);
-      
+
     } else {
 
         $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->whereIn("status", ['pending', 'scheduled'])->paginate($request->per_page ?? 10);
@@ -63,10 +65,8 @@ class InterviewRequestController extends Controller
   public function interview_request(Request $request)
   {
 
-
     $token_1 = JWTAuth::getToken();
     $token_user = JWTAuth::toUser($token_1);
-
 
     $user = $token_user;
 
@@ -76,8 +76,6 @@ class InterviewRequestController extends Controller
       'time_for_interview' => 'required',
 
     ];
-
-
 
     $validator = Validator::make($request->all(), $rules);
 
@@ -125,6 +123,15 @@ class InterviewRequestController extends Controller
       $interviewRequest->save();
 
       $interviewRequest = TeacherInterviewRequest::find($interviewRequest->id);
+      $admin = User::where('role_name', 'admin')->first();
+      $admin_message = "New Request for interview has been Submitted!";
+      $teacher_message = "Your Request has been submitted! we will contact you soon!";
+
+      //Emails and Notifications
+      // event(new InterviewRequestEvent($user->id, $user, $teacher_message, $interviewRequest));
+      // event(new InterviewRequestEvent($admin->id, $admin, $admin_message, $interviewRequest));
+      // dispatch(new InterviewRequestJob($user->id, $user, $teacher_message, $interviewRequest));
+      // dispatch(new InterviewRequestJob($admin->id, $admin, $admin_message, $interviewRequest));
 
       return response()->json([
         'status' => true,
@@ -214,11 +221,12 @@ class InterviewRequestController extends Controller
     }
   }
 
-  
-    public function paginate($items, $perPage, $page = null, $options = [])
-    {
-        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
-        $items = $items instanceof Collection ? $items : Collection::make($items);
-        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
-    }
+
+
+  public function paginate($items, $perPage, $page = null, $options = [])
+  {
+      $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+      $items = $items instanceof Collection ? $items : Collection::make($items);
+      return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+  }
 }

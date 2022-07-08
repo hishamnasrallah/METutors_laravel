@@ -65,31 +65,65 @@ class TicketsController extends Controller
     public function index(Request $request)
     {
 
-        $token_1 = JWTAuth::getToken();
-        $token_user = JWTAuth::toUser($token_1);
+        // $token_1 = JWTAuth::getToken();
+        // $token_user = JWTAuth::toUser($token_1);
 
 
-        $user = $token_user;
-        if ($user->role_name != 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'access denied',
-            ], 401);
+        // $user = $token_user;
+        // if ($user->role_name != 'admin') {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'access denied',
+        //     ], 401);
+        // }
+        //**************** Filters Start ****************
+        //Priority Filter
+        if ($request->has('priority')) {
+            $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')
+                ->orWhereHas('priority', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', "%$request->priority%");
+                })
+                ->orWhereHas('category', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', "%$request->priority%");
+                });
         }
+        //Category Filter
+        if ($request->has('category')) {
+            $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')
+                ->orWhereHas('category', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', "%$request->priority%")
+                        ->orWhere('id', $request->search);
+                })
+                ->orWhereHas('priority', function ($q) use ($request) {
+                    $q->where('name', 'LIKE', "%$request->priority%")
+                        ->orWhere('id', $request->search);
+                });
+        }
+        //Search Bar
         if ($request->has('search')) {
 
-             $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')
-             ->where(function ($query) use ($request) {
+            $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')
+                ->where(function ($query) use ($request) {
                     $query->where('subject', 'LIKE', "%$request->search%")
                         ->orWhere('message', 'LIKE', "%$request->search%")
                         ->orWhere('ticket_id', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%");
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhereHas('priority', function ($q) use ($request) {
+                            $q->where('name', 'LIKE', "%$request->search%")
+                                ->orWhere('id', $request->search);
+                        })
+                        ->orWhereHas('category', function ($q) use ($request) {
+                            $q->where('name', 'LIKE', "%$request->search%")
+                                ->orWhere('id', $request->search);
+                        });
                 })->get();
-        }else{
+        } else {
 
-             $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')->get();
+            $tickets = Ticket::with('category', 'user', 'priority')->orderBy('created_at', 'desc')->get();
         }
-       
+        //**************** Filters Ends ****************
+
+
         $total_tickets = Ticket::count();
         $open_tickets = Ticket::where('status', 'open')->count();
         $closed_tickets = Ticket::where('status', 'closed')->count();
@@ -99,33 +133,32 @@ class TicketsController extends Controller
 
             if ($request->has('search')) {
 
-                 $tickets = Ticket::with('category', 'user', 'priority')->where('status', $request->status)->orderBy('created_at', 'desc')
-                  ->where(function ($query) use ($request) {
-                    $query->where('subject', 'LIKE', "%$request->search%")
-                        ->orWhere('message', 'LIKE', "%$request->search%")
-                        ->orWhere('ticket_id', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%");
-                })->get();
-            }else{
+                $tickets = Ticket::with('category', 'user', 'priority')->where('status', $request->status)->orderBy('created_at', 'desc')
+                    ->where(function ($query) use ($request) {
+                        $query->where('subject', 'LIKE', "%$request->search%")
+                            ->orWhere('message', 'LIKE', "%$request->search%")
+                            ->orWhere('ticket_id', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%");
+                    })->get();
+            } else {
 
-                 $tickets = Ticket::with('category', 'user', 'priority')->where('status', $request->status)->orderBy('created_at', 'desc')->get();
+                $tickets = Ticket::with('category', 'user', 'priority')->where('status', $request->status)->orderBy('created_at', 'desc')->get();
             }
-        }elseif(isset($request->status) && $request->status == 'urgent'){
+        } elseif (isset($request->status) && $request->status == 'urgent') {
 
-              if ($request->has('search')) {
+            if ($request->has('search')) {
 
-                 $tickets = Ticket::with('category', 'user', 'priority')->where('status','open')->where('priority',1)->orderBy('created_at', 'desc')
-                  ->where(function ($query) use ($request) {
-                    $query->where('subject', 'LIKE', "%$request->search%")
-                        ->orWhere('message', 'LIKE', "%$request->search%")
-                        ->orWhere('ticket_id', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%");
-                })->get();
-            }else{
+                $tickets = Ticket::with('category', 'user', 'priority')->where('status', 'open')->where('priority', 1)->orderBy('created_at', 'desc')
+                    ->where(function ($query) use ($request) {
+                        $query->where('subject', 'LIKE', "%$request->search%")
+                            ->orWhere('message', 'LIKE', "%$request->search%")
+                            ->orWhere('ticket_id', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%");
+                    })->get();
+            } else {
 
-                 $tickets = Ticket::with('category', 'user', 'priority')->where('status','open')->where('priority',1)->orderBy('created_at', 'desc')->get();
+                $tickets = Ticket::with('category', 'user', 'priority')->where('status', 'open')->where('priority', 1)->orderBy('created_at', 'desc')->get();
             }
-
         }
 
 
@@ -379,11 +412,11 @@ class TicketsController extends Controller
     }
 
 
-    
+
     public function paginate($items, $perPage, $page = null, $options = [])
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
-        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

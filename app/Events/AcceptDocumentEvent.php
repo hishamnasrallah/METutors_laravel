@@ -10,28 +10,22 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CancelCourseEvent implements ShouldBroadcast
+class AcceptDocumentEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $course;
-    public $userid;
-    public $custom_message;
-    public $user;
-
-
-
+    public $userid, $user, $user_meta, $custom_message;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($course, $userid, $custom_message, $user)
+    public function __construct($userid, $user, $user_meta, $custom_message)
     {
-        $this->course = $course;
-        $this->userid = $userid;
-        $this->custom_message = $custom_message;
+        $this->userid =$userid;
         $this->user = $user;
+        $this->user_meta = $user_meta;
+        $this->custom_message = $custom_message;
     }
 
     /**
@@ -46,6 +40,6 @@ class CancelCourseEvent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'course_cancelled';
+        return 'accept-documents';
     }
 }

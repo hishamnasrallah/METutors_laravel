@@ -91,10 +91,15 @@
             alert('successfully subscribed MeTutors!');
         });
 
+
+
+
+
+
         //Test BroadCast Without Listener
-        channel.bind('test-broadcast', function(members) {
-            alert('This is Test Queed Broadcast!');
-        });
+        // channel.bind('test-broadcast', function(members) {
+        //     alert('This is Test Queed Broadcast!');
+        // });
 
         //Binding Course Accepted Event
         channel.bind('course-accepted', function(data) {

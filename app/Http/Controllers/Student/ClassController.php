@@ -900,7 +900,7 @@ class ClassController extends Controller
             ->where('course_id', $course->id)
             ->count();
 
-        $past_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
+        $past_classes = AcademicClass::select('id', 'class_id', 'teacher_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
             ->with('course', 'teacher', 'course.subject', 'course.student')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
@@ -908,9 +908,9 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->whereHas('attendence', function ($query) use ($user_id) {
-                $query->where(['user_id' => $user_id]);
-            })
+            // ->whereHas('attendence', function ($query) use ($user_id) {
+            //     $query->where(['user_id' => $user_id]);
+            // })
             ->where('start_date', '<', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)

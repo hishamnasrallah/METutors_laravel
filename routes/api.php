@@ -218,7 +218,7 @@ Route::resource('program-country', 'ProgramCountryController');
 Route::resource('fieldofstudy', 'FieldOfStudyController');
 Route::resource('subject', 'SubjectController');
 
-
+Route::get('admin/program-countries', 'ProgramCountryController@program_countries');
 
 Route::get('timezones', 'GeneralController@timezones');
 Route::get('programs', 'GeneralController@programs');
@@ -554,7 +554,7 @@ Route::get('utc-local', 'ClassController@utc_to_local');
 Route::get('payment/prepare-checkout', 'PaymentController@prepareCheckout');
 Route::get('payment/status', 'PaymentController@paymentStatus');
 Route::get('classes-payment/status', 'PaymentController@classPaymentStatus');
-Route::get('payment-status', 'PaymentController@statusPayment');
+Route::get('payment/{payment_id}/status', 'PaymentController@statusPayment');
 Route::get('payment/details', 'PaymentController@payment_details');
 Route::Post('payment/{payment_id}/refund', 'PaymentController@refund');
 Route::Post('payment/refund2', 'PaymentController@refund2');

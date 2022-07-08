@@ -6,7 +6,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Billing\HyperPayBilling;
+use App\Events\CompletePaymentEvent;
 use App\Events\OrderEvent;
+use App\Jobs\CompletePaymentJob;
 use App\Models\AcademicClass;
 use App\Models\ClassRoom;
 use App\Models\Course;
@@ -92,11 +94,31 @@ class PaymentController extends Controller
 
         $paymentDetails = json_decode(json_encode($payment_details));
 
+        $course = Course::findOrFail($request->course_id);
+        $admin_message = "Course paymente completed!";
+        $student = User::findOrFail($course->student_id);
+        $teacher = User::findOrFail($course->teacher_id);
+        $admin = User::where('role_name', 'admin')->first();
+
         //If we got success Response From HyperPay
         if ($paymentDetails->original->transaction_status == 'success') {
-            $course = Course::findOrFail($request->course_id);
             $course->status = "pending";
             $course->update();
+
+            $order = new Order();
+            $order->user_id = $course->student_id;
+            $order->course_id = $course->id;
+            $order->transaction_id = $paymentDetails->original->id;
+            // $order->transaction_id = $paymentDetails->original->transaction_id;
+            $order->payment_status = 'success';
+            $order->save();
+
+            event(new CompletePaymentEvent($admin->id, $admin, $admin_message, $course));
+            event(new CompletePaymentEvent($student->id, $student, $admin_message, $course));
+            event(new CompletePaymentEvent($teacher->id, $teacher, $admin_message, $course));
+            dispatch(new CompletePaymentJob($admin->id, $admin, $admin_message, $course));
+            dispatch(new CompletePaymentJob($student->id, $student, $admin_message, $course));
+            dispatch(new CompletePaymentJob($teacher->id, $teacher, $admin_message, $course));
 
             return response()->json([
                 'status' => true,
@@ -105,6 +127,14 @@ class PaymentController extends Controller
                 'course' => $course,
             ]);
         } else {
+            $admin_message = "Course payment Failed!";
+            event(new CompletePaymentEvent($admin->id, $admin, $admin_message, $course));
+            event(new CompletePaymentEvent($student->id, $student, $admin_message, $course));
+            event(new CompletePaymentEvent($teacher->id, $teacher, $admin_message, $course));
+            dispatch(new CompletePaymentJob($admin->id, $admin, $admin_message, $course));
+            dispatch(new CompletePaymentJob($student->id, $student, $admin_message, $course));
+            dispatch(new CompletePaymentJob($teacher->id, $teacher, $admin_message, $course));
+
             return response()->json([
                 'status' => false,
                 'message' => $paymentDetails->original->message,
@@ -247,7 +277,7 @@ class PaymentController extends Controller
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+            'OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
         ));
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
@@ -355,25 +385,6 @@ class PaymentController extends Controller
 
     public function checkout(Request $request)
     {
-        // $rules = [
-        //     'amount' => "required",
-        // ];
-
-        // $validator = Validator::make($request->all(), $rules);
-
-        // if ($validator->fails()) {
-        //     $messages = $validator->messages();
-        //     $errors = $messages->all();
-
-        //     return response()->json([
-        //         'status' => 'false',
-        //         'errors' => $errors,
-        //     ], 400);
-        // }
-
-        // $token_1 = JWTAuth::getToken();
-        // $token_user = JWTAuth::toUser($token_1);
-
         $trackable_data = [
             'product_id' => 'bc842310-371f-49d1-b479-ad4b387f6630',
             'product_type' => 't-shirt'
@@ -392,24 +403,6 @@ class PaymentController extends Controller
 
     public function payment_status(Request $request)
     {
-        // $rules = [
-        //     'resourcePath' => "required",
-        //     'id' => "required",
-        //     // 'course_id' => "required"
-        // ];
-
-        // $validator = Validator::make($request->all(), $rules);
-
-        // if ($validator->fails()) {
-        //     $messages = $validator->messages();
-        //     $errors = $messages->all();
-
-        //     return response()->json([
-        //         'status' => 'false',
-        //         'errors' => $errors,
-        //     ], 400);
-        // }
-
         $resourcePath = $request->get('resourcePath');
         $checkout_id = $request->get('id');
         $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
@@ -438,9 +431,10 @@ class PaymentController extends Controller
     }
 
 
-    public function statusPayment()
+    public function statusPayment($payment_id)
     {
-        $url = "https://test.oppwa.com/v1/payments/{id}";
+        // $url = "https://test.oppwa.com/v1/payments/8ac7a4a181d328fb0181d32b149e04b5";
+        $url = "https://test.oppwa.com/v1/payments/$payment_id";
         $url .= "?entityId=8ac7a4ca80b2d4470180b3d5cdf604c6";
 
         $ch = curl_init();
@@ -456,6 +450,11 @@ class PaymentController extends Controller
             return curl_error($ch);
         }
         curl_close($ch);
-        return $responseData;
+        return response()->json([
+            'status' => true,
+            'message' => "Payment details!",
+            'payment_details' => json_decode($responseData),
+            // 'course' => $course,
+        ]);
     }
 }

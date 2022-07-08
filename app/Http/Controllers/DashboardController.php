@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use stdClass;
 
 class DashboardController extends Controller
 {
@@ -68,10 +69,32 @@ class DashboardController extends Controller
                     $class->update();
                 }
             }
-            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->whereBetween('created_at', [$endDate, $current_date])->where('receiver_id', $user_id)->get();
+            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
+                ->whereBetween('created_at', [$endDate, $current_date])
+                ->where('receiver_id', $user_id)
+                // ->groupBy('')
+                ->get();
 
             $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->count();
             $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status', '!=', 'completed')->count();
+
+            $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
+            //converted to all feedbacks per course 
+            $points_array = [];
+            foreach ($feedbacks as $feedback) {
+                // converted to a single user feedback
+                foreach ($feedback as $user_feedback) {
+                    $points_detail = new stdClass();
+                    $points_detail->sender_name = $user_feedback[0]->sender->first_name;
+                    $points_detail->course_name = $user_feedback[0]->course->course_name;
+                    $points_detail->course_date = $user_feedback[0]->course->created_at->format('d M Y');
+                    $points_detail->kudos_points = $user_feedback->sum('kudos_points');
+                    array_push($points_array, $points_detail);
+                }
+            }
+
+
+
             return response()->json([
                 "status" => true,
                 "message" => "todays classes",
@@ -93,13 +116,33 @@ class DashboardController extends Controller
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'course.subject', 'course.student', 'course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
-            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->where('receiver_id', $user_id)->get();
+            $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
+                ->where('receiver_id', $user_id)
+                // ->where('course_id', '183')
+                ->get();
+
+
 
             $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
                 ->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
             $total_newly_courses = Course::where('teacher_id', $user_id)->where('status', 'pending')->count();
             $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->where('status', '!=', 'completed')->count();
+
+            $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
+            //converted to all feedbacks per course 
+            $points_array = [];
+            foreach ($feedbacks as $feedback) {
+                // converted to a single user feedback
+                foreach ($feedback as $user_feedback) {
+                    $points_detail = new stdClass();
+                    $points_detail->sender_name = $user_feedback[0]->sender->first_name;
+                    $points_detail->course_name = $user_feedback[0]->course->course_name;
+                    $points_detail->course_date = $user_feedback[0]->course->created_at->format('d M Y');
+                    $points_detail->kudos_points = $user_feedback->sum('kudos_points');
+                    array_push($points_array, $points_detail);
+                }
+            }
 
             return response()->json([
                 "status" => true,
@@ -109,7 +152,7 @@ class DashboardController extends Controller
                 "total_courses" => $total_courses,
                 "total_completed_courses" => $total_completed_courses,
                 "kudos_points" => $token_user->kudos_points,
-                "feedbacks" => $feedbacks,
+                "feedbacks" => $points_array,
                 "newly_assigned_courses" => $newly_assigned_courses,
                 "total_newly_courses" => $total_newly_courses,
                 "missed_classes" => $missed_classes,
@@ -244,7 +287,7 @@ class DashboardController extends Controller
         $message = "Profile updated Successfully";
 
         //*********** Sending Rejection Email to Student  ************\\
-    
+
         $user->update();
 
         event(new UpdateProfile($user, $user->id, $message));

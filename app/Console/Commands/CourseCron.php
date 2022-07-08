@@ -47,7 +47,7 @@ class CourseCron extends Command
             $count = $course->classes->where('status', 'completed')->count();
             if ($count == $course->total_classes) {
                 $course->status = 'completed';
-                $course->update();
+                $course->save();
             }
         }
     }

@@ -97,10 +97,10 @@ class FeedbackController extends Controller
             $sender = User::findOrFail($token_user->id);
             $reciever = User::findOrFail($feedbacks[0]->receiver_id);
             // notifications and emails
-            // event(new CourseFeedbackEvent($reciever->id, "You have recieved a feedback", $reciever,$feedback));
-            // event(new CourseFeedbackEvent($sender->id, "Feedback sent Successfully", $sender,$feedback));
-            // dispatch(new CourseFeedbackJob($reciever->id, "You have recieved a feedback", $reciever,$feedback));
-            // dispatch(new CourseFeedbackJob($sender->id, "Feedback sent Successfully", $sender,$feedback));
+            event(new CourseFeedbackEvent($reciever->id, "You have recieved a feedback", $reciever, $feedback));
+            event(new CourseFeedbackEvent($sender->id, "Feedback sent Successfully", $sender, $feedback));
+            dispatch(new CourseFeedbackJob($reciever->id, "You have recieved a feedback", $reciever, $feedback));
+            dispatch(new CourseFeedbackJob($sender->id, "Feedback sent Successfully", $sender, $feedback));
 
             return response()->json([
                 'status' => true,

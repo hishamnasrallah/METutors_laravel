@@ -9,5 +9,6 @@
         <p>End date : {{ $course->end_date }}</p>
         <p>Start time : {{ $course->start_time }}</p>
         <p>End time : {{ $course->end_time }}</p>
+        {{-- <p>Transaction_id : {{ $course->transacrtion_id }}</p> --}}
     </td>
 @endsection

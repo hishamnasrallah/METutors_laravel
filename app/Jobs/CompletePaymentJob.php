@@ -11,29 +11,24 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class CancelCourseJob implements ShouldQueue
+class CompletePaymentJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $course;
-    public $userid;
-    public $custom_message;
-    public $user;
-
-
+    public $userid, $user, $custom_message, $course;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($course, $userid, $custom_message, $user)
+    public function __construct($userid, $user, $custom_message, $course)
     {
-
-        $this->course = $course;
+        $this->connection = 'database';
         $this->userid = $userid;
-        $this->custom_message = $custom_message;
         $this->user = $user;
+        $this->custom_message = $custom_message;
+        $this->course = $course;
     }
 
     /**
@@ -43,21 +38,22 @@ class CancelCourseJob implements ShouldQueue
      */
     public function handle()
     {
-        //*********** Sending Cancalation Email to Student  ************\\
+        //*********** Sending Email to Student  ************\\
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'course' => $this->course);
 
-        Mail::send('email.course', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Canceled');
+        Mail::send('email.course_payment', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('Course Payment!');
             $message->from('metutorsmail@gmail.com', 'MeTutor');
         });
-        // //********* Sending Cancalation Email ends **********//
+        // //******** Email ends **********//
 
+        //******** Notification ************
         $notification = new Notification();
-        $notification->type = "App\Events\CancelCourse";
+        $notification->type = "App\Events\CompletePaymentEvent";
         $notification->notifiable_type = "App\Models\Course";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;

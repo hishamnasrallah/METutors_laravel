@@ -41,6 +41,8 @@ use App\Jobs\ClassStartedJob;
 use App\Jobs\CourseBookingJob;
 use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
+use App\TeacherAvailability;
+use App\TeachingSpecification;
 use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
 
 class ClassController extends Controller
@@ -88,9 +90,6 @@ class ClassController extends Controller
             ]);
         }
 
-
-        //*********** Saving records to Database ***********
-
         // Adding Course Data
         $course = new Course();
         if ($request->program_id == 3) {
@@ -134,6 +133,110 @@ class ClassController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
+
+        //**************** Availabilities and checkues for course booking ****************
+        $start_date = Carbon::parse($request->start_date);
+        $end_date = Carbon::parse($request->end_date);
+
+        // $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+
+        // if ($end_date > $teacher_specification->availability_end_date) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => "Teacher Availability date Exceeded!",
+        //     ], 400);
+        // }
+        // $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+        // $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+
+        // 
+        // //If Request has teacher id
+        // if ($request->has('teacher_id')) {
+        //     //Checking teacher Availability
+        //     $days = explode(",", $request->weekdays);
+
+        //     $teacher_availabilities = TeacherAvailability::whereIn('day', $days)
+        //         ->where('user_id', $request->teacher_id)
+        //         ->get();
+
+        //     $db_days = $teacher_availabilities->pluck('day')->unique();
+        //     //if Db days are not equal to requested weekdays
+        //     if (count($db_days) != count($days)) {
+        //         return response()->json([
+        //             'status' => false,
+        //             'message' => "Teacher is not available at this day!",
+        //         ], 400);
+        //     }
+        //     //If teacher has no availability at requested days.
+        //     if (count($teacher_availabilities) == 0) {
+        //         return response()->json([
+        //             'status' => false,
+        //             'message' => "Teacher is not available at this day!",
+        //         ], 400);
+        //     }
+
+        //     //Checking availability time
+        //     foreach (json_decode($request->classes) as $requested_class) {
+        //         $start_time = $requested_class->start_time;
+        //         $end_time = $requested_class->end_time;
+        //         $check_time = TeacherAvailability::where('day', $requested_class->day)
+        //             ->where('user_id', $request->teacher_id)->where(function ($q) use ($start_time, $end_time) {
+        //                 $q->whereBetween('time_from', [$start_time, $end_time])
+        //                     ->where('time_to', "<=",  $end_time);
+        //             })->get();
+        //         if (count($check_time) == 0) {
+        //             return response()->json([
+        //                 'status' => false,
+        //                 'message' => "Teacher not available on this time!",
+        //             ], 400);
+        //         }
+        //     }
+
+
+        //     //getting db courses on requested start_date and end_date
+        //     $teacher_courses = Course::with('classes')->where('teacher_id', $request->teacher_id)
+        //         ->where(function ($q) use ($start_date, $end_date) {
+        //             $q->whereBetween('start_date', [$start_date, $end_date])
+        //                 ->orWhereBetween('end_date', [$start_date, $end_date]);
+        //         })->get();
+
+        //     //Adding all classes of coursses in classes array
+        //     $classes = [];
+        //     $classes_id = [];
+        //     foreach ($teacher_courses as $db_course) {
+        //         foreach ($db_course['classes'] as $class) {
+        //             array_push($classes, $class->start_date); #pushing classes start dates
+        //             array_push($classes_id, $class->id); #pushing classes id's
+        //         }
+        //     }
+
+        //     //Requested classes loop
+        //     foreach (json_decode($request->classes) as $req_class) {
+        //         // finding the requested class in array
+        //         if (in_array($req_class->date, $classes)) {
+        //             // echo "classes found in db";
+        //             $start_time = $req_class->start_time;
+        //             $end_time = $req_class->end_time;
+        //             $db_classes = AcademicClass::wherein('id', $classes_id)
+        //                 ->where('status', '!=', "completed")
+        //                 ->where(function ($q) use ($start_time, $end_time) {
+        //                     $q->whereBetween('start_time', [$start_time, $end_time])
+        //                         ->orWhereBetween('end_time', [$start_time, $end_time]);
+        //                 })
+        //                 ->get();
+        //             // if database has the classes on the requested tume of class
+        //             if (count($db_classes) != 0) {
+        //                 return response()->json([
+        //                     'status' => false,
+        //                     'message' => "Teacher Already have classes at that time!",
+        //                 ], 400);
+        //             }
+        //         }
+        //     }
+        // }
+
+        //**************** Availabilities and checkues for course booking ends ****************
+
         $course->field_of_study = $request->field_of_study;
 
         $course->language_id = $request->language_id;
@@ -142,6 +245,7 @@ class ClassController extends Controller
         $course->total_hours = $request->total_hours;
         $course->total_classes = $request->total_classes;
         $course->subject_id = $request->subject_id;
+        //if request has teacher id
         if ($request->has('teacher_id')) {
             $course->teacher_id = $request->teacher_id;
         }
@@ -216,10 +320,10 @@ class ClassController extends Controller
             $teacher_message = 'New Course Created!';
             $student_message = 'Course Created Successfully!';
 
-            // event(new CourseBookingEvent($course->teacher_id, $teacher, $teacher_message,  $course,));
-            // event(new CourseBookingEvent($course->student_id, $user, $student_message,  $course,));
-            // dispatch(new CourseBookingJob($course->teacher_id, $teacher, $teacher_message, $course,));
-            // dispatch(new CourseBookingJob($course->student_id, $user, $student_message, $course,));
+            event(new CourseBookingEvent($course->teacher_id, $teacher, $teacher_message,  $course));
+            event(new CourseBookingEvent($course->student_id, $user, $student_message,  $course));
+            dispatch(new CourseBookingJob($course->teacher_id, $teacher, $teacher_message, $course));
+            dispatch(new CourseBookingJob($course->student_id, $user, $student_message, $course));
         } else {
             $noTeacher = new NoTeacherCourse();
             $noTeacher->course_id = $course->id;
@@ -227,12 +331,12 @@ class ClassController extends Controller
             $admin = User::where('role_name', 'admin')->first();
 
             // Event notification
-            // $admin_message = 'New Course Created! Kindly assign teacher!';
-            // $student_message = 'Course Created Successfully!';
-            // event(new NoTeacherEvent($admin->id, $admin, $admin_message,  $course));
-            // event(new NoTeacherEvent($course->student_id, $user, $student_message, $course));
-            // dispatch(new NoTeacherJob($admin->id, $admin, $admin_message, $course));
-            // dispatch(new NoTeacherJob($course->student_id, $user, $student_message,  $course));
+            $admin_message = 'New Course Created! Kindly assign teacher!';
+            $student_message = 'Course Created Successfully!';
+            event(new NoTeacherEvent($admin->id, $admin, $admin_message,  $course));
+            event(new NoTeacherEvent($course->student_id, $user, $student_message, $course));
+            dispatch(new NoTeacherJob($admin->id, $admin, $admin_message, $course));
+            dispatch(new NoTeacherJob($course->student_id, $user, $student_message,  $course));
         }
 
         $trackable_data = [
@@ -509,10 +613,10 @@ class ClassController extends Controller
 
         $admin = User::where('role_name', 'admin')->first();
 
-        event(new RequestCourseEvent($requestedCourse, $requestedCourse->email, "Course Request Sent Successfully!"));
-        event(new RequestCourseEvent($requestedCourse, $admin->email, "Course Request Sent Successfully!"));
-        dispatch(new RequestCourseJob($requestedCourse, $requestedCourse->email, "Course Request Sent Successfully!"));
-        dispatch(new RequestCourseJob($requestedCourse, $admin->email, "Course Request Sent Successfully!"));
+        // event(new RequestCourseEvent($requestedCourse, $requestedCourse->email, "Course Request Sent Successfully!"));
+        // event(new RequestCourseEvent($requestedCourse, $admin->email, "Course Request Sent Successfully!"));
+        // dispatch(new RequestCourseJob($requestedCourse, $requestedCourse->email, "Course Request Sent Successfully!"));
+        // dispatch(new RequestCourseJob($requestedCourse, $admin->email, "Course Request Sent Successfully!"));
 
         return response()->json([
             'success' => true,
@@ -1164,10 +1268,10 @@ class ClassController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student', 'attendence')
-            ->whereHas('attendence', function ($query) use ($user_id) {
+            ->with('course', 'course.subject', 'course.student')
+            ->with(['attendence' => function ($query) use ($user_id) {
                 $query->where(['user_id' => $user_id]);
-            })
+            }])
             ->where('start_date', '<', $current_date)
             ->with('course')
             ->where($userrole, $user_id)
@@ -1192,15 +1296,16 @@ class ClassController extends Controller
         return response()->json([
             'status' => true,
             'todays_date' =>  $todays_date,
-            'course' =>  $course,
-            'todays_classes' => $todays_classes,
-            'upcoming_classes' => $upcoming_classes,
-            'past_classes' => $past_classes,
             'total_pastClasses' => $total_pastClasses,
             'total_upcomingClasses' => $total_upcomingClasses,
             'remaining_classes' => $remaining_classes,
             'completed_classes' => $completed_classes,
             'progress' => $inProgress,
+            'course' =>  $course,
+            'todays_classes' => $todays_classes,
+            'upcoming_classes' => $upcoming_classes,
+            'past_classes' => $past_classes,
+
         ]);
     }
 

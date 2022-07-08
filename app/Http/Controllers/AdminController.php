@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Events\AssignTeacherEvent;
+use App\Events\BlockUserEvent;
 use App\Events\CancelCourse;
 use App\Events\RefundCourseEvent;
+use App\Events\TeacherStatusEvent;
+use App\Events\UnBlockUserEvent;
 use App\Models\RequestedCourse;
 use App\Models\AcademicClass;
 use App\Models\CanceledCourse;
@@ -20,7 +23,10 @@ use App\Models\UserTestimonial;
 use App\Subject;
 use App\FieldOfStudy;
 use App\Jobs\AssignTeacherJob;
+use App\Jobs\BlockUserJob;
 use App\Jobs\RefundCourseJob;
+use App\Jobs\TeacherStatusJob;
+use App\Jobs\UnBlockUserJob;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\NoTeacherCourse;
@@ -152,9 +158,17 @@ class AdminController extends Controller
         $user->status = 'inactive';
         $user->update();
 
+        $admin = User::where('role_name', 'admin')->first();
+        $user_data = $user;
+        event(new BlockUserEvent($user->id, $user, $user_data, "You have been blocked!"));
+        event(new BlockUserEvent($admin->id, $admin, $user_data, "User Blocked Successfully!"));
+        dispatch(new BlockUserJob($user->id, $user, $user_data, "You have been blocked!"));
+        dispatch(new BlockUserJob($admin->id, $admin, $user_data, "User Blocked Successfully!"));
+
         return response()->json([
             'status' => true,
             'message' => "User Blocked Successfully",
+            'user' => $user,
         ]);
     }
 
@@ -168,9 +182,17 @@ class AdminController extends Controller
         $user->status = 'active';
         $user->update();
 
+        $admin = User::where('role_name', 'admin')->first();
+        $user_data = $user;
+        event(new UnBlockUserEvent($user->id, $user, $user_data, "You have been Un-blocked!"));
+        event(new UnBlockUserEvent($admin->id, $admin, $user_data, "User Un-Blocked Successfully!"));
+        dispatch(new UnBlockUserJob($user->id, $user, $user_data, "You have been Un-blocked!"));
+        dispatch(new UnBlockUserJob($admin->id, $admin, $user_data, "User Un-Blocked Successfully!"));
+
         return response()->json([
             'status' => true,
             'message' => "User UnBlocked Successfully",
+            'user' => $user,
         ]);
     }
 
@@ -694,9 +716,21 @@ class AdminController extends Controller
         // if he is student
         if ($request->feedback_by == 'student') {
 
+
             $testimonials = UserTestimonial::whereHas('sender', function ($q) {
                 $q->where('role_name', 'student');
             })->with('testimonial', 'sender')->get();
+            //Name FIlter
+            if ($request->has('name')) {
+                $name = $request->name;
+                $testimonials = UserTestimonial::whereHas('sender', function ($q) use ($name) {
+                    $q->where('role_name', 'student')
+                        ->where(function ($qe) use ($name) {
+                            $qe->where('first_name', 'LIKE', "%$name%")
+                                ->orWhere('last_name', 'LIKE', "%$name%");
+                        });
+                })->with('testimonial', 'sender')->get();
+            }
 
 
             //overall average stars for teacher
@@ -837,12 +871,32 @@ class AdminController extends Controller
                     $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
+                        "testimonial_id" => $feedback->testimonial->id,
                         "title" => $feedback->testimonial->name,
                         "value" => $feedback->rating,
                     );
                 }
                 $flag++;
             }
+
+            $feedbacksArray = $feedbacks;
+            $feedbacks = [];
+            if ($request->has('trait')) {
+                $stars = explode(",", $request->stars);
+                foreach ($feedbacksArray as $feedback) {
+                    foreach ($feedback['feedbacks'] as $feed) {
+                        // return $feed;
+                        foreach ($stars as $star) {
+                            if ($feed['testimonial_id'] == $request->trait && $feed['value'] == $star) {
+                                array_push($feedbacks, $feedback);
+                                // break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // return $feedbacksArray;
             return response()->json([
                 'status' => true,
                 'message' => "Student Testimonials",
@@ -1443,12 +1497,26 @@ class AdminController extends Controller
 
         if ($request->has('search')) {
 
-             $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'rejected')->get();
-        }else{
+            $teachers = User::with('teacher_interview_request')
+                ->where('role_name', 'teacher')
+                ->where('status', 'rejected')
+                ->where(function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%")
+                        ->orWhere('id_number', 'LIKE', $request->search)
+                        ->orWhere('status', 'LIKE', "%$request->search%")
+                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                        ->orWhere('nationality', 'LIKE', "%$request->search%");
+                })
+                ->get();
+        } else {
 
-             $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'rejected')->get();
+            $teachers = User::with('teacher_interview_request')
+                ->where('role_name', 'teacher')
+                ->where('status', 'rejected')
+                ->get();
         }
-       
+
         return response()->json([
             'status' => true,
             'message' => "Rejected Teachers!",
@@ -1482,11 +1550,11 @@ class AdminController extends Controller
 
         $interview = TeacherInterviewRequest::where('status', 'pending')->pluck("user_id");
 
-         if ($request->has('search')) {
+        if ($request->has('search')) {
 
-             $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)
-                 ->where(function ($query) use ($request) {
+                ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
                         ->orWhere('last_name', 'LIKE', "%$request->search%")
                         ->orWhere('id_number', 'LIKE', $request->search)
@@ -1499,7 +1567,7 @@ class AdminController extends Controller
             $rejected_teachers = User::with('teacher_interview_request')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')
-                 ->where(function ($query) use ($request) {
+                ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
                         ->orWhere('last_name', 'LIKE', "%$request->search%")
                         ->orWhere('id_number', 'LIKE', $request->search)
@@ -1508,10 +1576,9 @@ class AdminController extends Controller
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
                 })
                 ->get();
-       
-         }else{
+        } else {
 
-             $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)
                 ->get();
 
@@ -1519,9 +1586,8 @@ class AdminController extends Controller
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')
                 ->get();
-       
-         }
-           
+        }
+
 
         return response()->json([
             'status' => true,
@@ -1537,13 +1603,13 @@ class AdminController extends Controller
     public function current_teachers(Request $request)
     {
 
-       
-         if ($request->has('search')) {
 
-              $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+        if ($request->has('search')) {
+
+            $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                 ->where('role_name', 'teacher')
                 ->whereIn('status', ['active', 'inactive'])
-                 ->where(function ($query) use ($request) {
+                ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
                         ->orWhere('last_name', 'LIKE', "%$request->search%")
                         ->orWhere('id_number', 'LIKE', $request->search)
@@ -1552,72 +1618,70 @@ class AdminController extends Controller
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
                 })
                 ->get();
+        } else {
 
-         }else{
-
-              $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+            $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                 ->where('role_name', 'teacher')
                 ->whereIn('status', ['active', 'inactive'])
                 ->get();
-         }
-
-      
+        }
 
 
-      
+
+
+
         $pluckedteachers = $teachers->pluck('id');
 
-        if ($request->has('status') && $request->has('status') == "active") {
+        if ($request->has('status') && $request->status == "active") {
 
             if ($request->has('search')) {
-                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+                $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
                     ->where('status', 'active')
                     ->where(function ($query) use ($request) {
-                    $query->where('first_name', 'LIKE', "%$request->search%")
-                        ->orWhere('last_name', 'LIKE', "%$request->search%")
-                        ->orWhere('id_number', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%")
-                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
-                        ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })
+                        $query->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%")
+                            ->orWhere('id_number', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%")
+                            ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                            ->orWhere('nationality', 'LIKE', "%$request->search%");
+                    })
                     ->get();
-
-            }else{
-                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
+            } else {
+                $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
                     ->where('status', 'active')
                     ->get();
             }
-            
-               
-          
+
+
+
 
             $pluckedteachers = $teachers->pluck('id');
         }
-        if ($request->has('status') && $request->has('status') == "inactive") {
-             if ($request->has('search')) {
+        if ($request->has('status') && $request->status == "inactive") {
+            if ($request->has('search')) {
                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
                     ->where('status', 'inactive')
-                     ->where(function ($query) use ($request) {
-                    $query->where('first_name', 'LIKE', "%$request->search%")
-                        ->orWhere('last_name', 'LIKE', "%$request->search%")
-                        ->orWhere('id_number', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%")
-                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
-                        ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })
+                    ->where(function ($query) use ($request) {
+                        $query->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%")
+                            ->orWhere('id_number', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%")
+                            ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                            ->orWhere('nationality', 'LIKE', "%$request->search%");
+                    })
                     ->get();
-             }else{
+            } else {
                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
                     ->where('status', 'inactive')
                     ->get();
-             }
+            }
 
-                
-         
+
+
 
             $pluckedteachers = $teachers->pluck('id');
         }
@@ -1660,7 +1724,8 @@ class AdminController extends Controller
         }
 
 
-        if ($request->has('active') || $request->has('inactive')) {
+        if ($request->has('status')) {
+            // if ($request->has('active') || $request->has('inactive')) {
             return response()->json([
                 'status' => true,
                 'message' => "Current Teachers",
@@ -1979,9 +2044,37 @@ class AdminController extends Controller
                     $q->where('subject_id', $subject);
                 }])
                 ->find($subject);
+
+            //Seach Query
+            if ($request->has('search')) {
+                $Subject = Subject::with('program', 'field')
+                    ->whereHas('program', function ($q) use ($request) {
+                        // $q->where(function ($qu) use ($request) {
+                        $q->where('name', 'LIKE', "%$request->search%")
+                            ->orWhere('description', 'LIKE', "%$request->search%")
+                            ->orWhere('code', $request->search);
+                        // })->get();
+                    })
+                    ->OrWhereHas('field', function ($q) use ($request) {
+                        // $q->where(function ($qu) use ($request) {
+                        $q->where('name', 'LIKE', "%$request->search%")
+                            ->orWhere('country_id', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%")
+                            ->orWhere('program_id', $request->search);
+                        // })->get();
+                    })
+                    ->withCount(['available_teachers' => function ($q) use ($subject) {
+                        $q->where('subject_id', $subject);
+                    }])
+                    ->find($subject);
+            }
+
             $capacity = 100;
             if ($Subject->available_teachers_count > 0 && $hired_teachers > 0) {
                 $capacity = 100 - (($hired_teachers / $Subject->available_teachers_count) * 100);
+            }
+
+            if ($request->has('search')) {
             }
 
 
@@ -2063,10 +2156,10 @@ class AdminController extends Controller
         $courses = Course::with('student', 'teacher', 'program')
             ->get();
 
-        if ($request->has('running')) {
+        if ($request->has('status') && $request->status == "running") {
             $courses = Course::with('student', 'teacher', 'program')->where('status', 'inprogress')->get();
         }
-        if ($request->has('completed')) {
+        if ($request->has('status') && $request->status == "completed") {
             $courses = Course::with('student', 'teacher', 'program')->where('status', 'completed')->get();
         }
 
@@ -2096,11 +2189,11 @@ class AdminController extends Controller
         $running_courses = $courses->where('status', 'inprogress')->count();
         $cancelled_courses = CanceledCourse::all();
 
-        if ($request->has('running') || $request->has('completed')) {
+        if ($request->has('status')) {
             return response()->json([
                 'status' => true,
                 'message' => "Bookings",
-                'courses' => $courses,
+                'courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
         }
 
@@ -2111,7 +2204,7 @@ class AdminController extends Controller
             'completed_courses' => $completed_courses,
             'running_courses' => $running_courses,
             'cancelled_courses' => count($cancelled_courses),
-            'courses' => $courses,
+            'courses' => $this->paginate($courses, $request->per_page ?? 10),
         ]);
     }
 
@@ -2289,17 +2382,18 @@ class AdminController extends Controller
         $by_students =  $courses->where('cancelled_by', 'student')->count();
         $by_admins =  $courses->where('cancelled_by', 'admin')->count();
 
-        if ($request->cancelled_by == "student") {
+        if ($request->has('cancelled_by') && $request->cancelled_by == "student") {
+
             $courses = CanceledCourse::with('teacher', 'student', 'course')
                 ->where('cancelled_by', 'student')
                 ->get();
         }
-        if ($request->cancelled_by == "teacher") {
+        if ($request->has('cancelled_by') && $request->cancelled_by == "teacher") {
             $courses = CanceledCourse::with('teacher', 'student', 'course')
                 ->where('cancelled_by', 'teacher')
                 ->get();
         }
-        if ($request->cancelled_by == "admin") {
+        if ($request->has('cancelled_by') && $request->cancelled_by == "admin") {
             $courses = CanceledCourse::with('teacher', 'student', 'course')
                 ->where('cancelled_by', 'admin')
                 ->get();
@@ -2327,13 +2421,11 @@ class AdminController extends Controller
         }
 
 
-
-
-        if ($request->has('admin') || $request->has('teacher') || $request->has('student')) {
+        if ($request->has('cancelled_by')) {
             return response()->json([
                 'status' => true,
                 'message' => "Cancelled Courses!",
-                'cancelled_courses' => $courses,
+                'cancelled_courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
         } else {
             return response()->json([
@@ -2343,7 +2435,7 @@ class AdminController extends Controller
                 'by_teachers' => $by_teachers,
                 'by_students' => $by_students,
                 'by_admins' => $by_admins,
-                'cancelled_courses' => $courses,
+                'cancelled_courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
         }
     }
@@ -2383,6 +2475,16 @@ class AdminController extends Controller
             $teacher = User::findOrFail($request->teacher_id);
             $teacher->status = $request->status;
             $teacher->update();
+            $admin_message = "Teacher Status Changed Successfully";
+            $teacher_message = "Your Status Changed have been Successfully";
+            $admin = User::where('role_name', 'admin')->first();
+
+
+
+            event(new TeacherStatusEvent($admin->id, $admin, $admin_message));
+            event(new TeacherStatusEvent($teacher->id, $teacher, $teacher_message));
+            dispatch(new TeacherStatusJob($admin->id, $admin, $admin_message));
+            dispatch(new TeacherStatusJob($teacher->id, $teacher, $teacher_message));
             return response()->json([
                 'status' => true,
                 'message' => 'Status updated successfully! ',
@@ -2407,8 +2509,8 @@ class AdminController extends Controller
 
         if ($request->has('search')) {
 
-             $registered_students = User::where('role_name', 'student')
-             ->where(function ($query) use ($request) {
+            $registered_students = User::where('role_name', 'student')
+                ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
                         ->orWhere('last_name', 'LIKE', "%$request->search%")
                         ->orWhere('id_number', 'LIKE', $request->search)
@@ -2416,12 +2518,12 @@ class AdminController extends Controller
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
                 })->get();
-        }else{
+        } else {
 
-             $registered_students = User::where('role_name', 'student')->get();
+            $registered_students = User::where('role_name', 'student')->get();
         }
-       
-        
+
+
 
         $students_array = [];
 
@@ -2467,25 +2569,25 @@ class AdminController extends Controller
                     array_push($enrolled_students, $student);
                 }
             }
-            
+
             if ($request->has('search')) {
 
-                 $active_students = User::where('role_name', 'student')->where('status', 'active')
-                 ->where(function ($query) use ($request) {
-                    $query->where('first_name', 'LIKE', "%$request->search%")
-                        ->orWhere('last_name', 'LIKE', "%$request->search%")
-                        ->orWhere('id_number', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%")
-                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
-                        ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->get();
-            }else{
+                $active_students = User::where('role_name', 'student')->where('status', 'active')
+                    ->where(function ($query) use ($request) {
+                        $query->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%")
+                            ->orWhere('id_number', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%")
+                            ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                            ->orWhere('nationality', 'LIKE', "%$request->search%");
+                    })->get();
+            } else {
 
-                 $active_students = User::where('role_name', 'student')->where('status', 'active')->get();
+                $active_students = User::where('role_name', 'student')->where('status', 'active')->get();
             }
-           
 
-            
+
+
             foreach ($active_students as $student) {
                 //Active Student's average rating
                 $average_rating = 5;
@@ -2517,30 +2619,30 @@ class AdminController extends Controller
                 'Total' => count($active_students),
                 'enrolled' => count($enrolled_students),
                 'unenrolled' => count($active_students) - count($enrolled_students),
-                'active_students' => $this->paginate($active_students, $request->per_page ?? 10),
+                'students' => $this->paginate($active_students, $request->per_page ?? 10),
 
             ]);
         }
 
         if (isset($request->status) && $request->status == "inactive") {
 
-           if ($request->has('search')) {
+            if ($request->has('search')) {
 
-             $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')
-             ->where(function ($query) use ($request) {
-                    $query->where('first_name', 'LIKE', "%$request->search%")
-                        ->orWhere('last_name', 'LIKE', "%$request->search%")
-                        ->orWhere('id_number', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%")
-                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
-                        ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->get();
-           }else{
+                $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')
+                    ->where(function ($query) use ($request) {
+                        $query->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%")
+                            ->orWhere('id_number', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%")
+                            ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                            ->orWhere('nationality', 'LIKE', "%$request->search%");
+                    })->get();
+            } else {
 
-             $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')->get();
-           }
-           
-            
+                $inactive_students = User::where('role_name', 'student')->where('status', 'inactive')->get();
+            }
+
+
             foreach ($inactive_students as $student) {
                 //inActive Student's average rating
                 $average_rating = 5;
@@ -2569,30 +2671,30 @@ class AdminController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Inactive Students ',
-                'inactive_students' => $this->paginate($inactive_students, $request->per_page ?? 10),
+                'students' => $this->paginate($inactive_students, $request->per_page ?? 10),
 
             ]);
         }
- 
+
         if (isset($request->status) && $request->status == "suspended") {
 
-           if ($request->has('search')) {
+            if ($request->has('search')) {
 
-             $suspended_students = User::where('role_name', 'student')->where('status', 'suspended')
-             ->where(function ($query) use ($request) {
-                    $query->where('first_name', 'LIKE', "%$request->search%")
-                        ->orWhere('last_name', 'LIKE', "%$request->search%")
-                        ->orWhere('id_number', 'LIKE', $request->search)
-                        ->orWhere('status', 'LIKE', "%$request->search%")
-                        ->orWhere('middle_name', 'LIKE', "%$request->search%")
-                        ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->get();
-           }else{
+                $suspended_students = User::where('role_name', 'student')->where('status', 'suspended')
+                    ->where(function ($query) use ($request) {
+                        $query->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%")
+                            ->orWhere('id_number', 'LIKE', $request->search)
+                            ->orWhere('status', 'LIKE', "%$request->search%")
+                            ->orWhere('middle_name', 'LIKE', "%$request->search%")
+                            ->orWhere('nationality', 'LIKE', "%$request->search%");
+                    })->get();
+            } else {
 
-             $suspended_students = User::where('role_name', 'student')->where('status', 'suspended')->get();
-           }
-           
-            
+                $suspended_students = User::where('role_name', 'student')->where('status', 'suspended')->get();
+            }
+
+
             foreach ($suspended_students as $student) {
                 //suspended Student's average rating
                 $average_rating = 5;
@@ -2621,7 +2723,7 @@ class AdminController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'suspended Students ',
-                'suspended_students' => $this->paginate($suspended_students, $request->per_page ?? 10),
+                'students' => $this->paginate($suspended_students, $request->per_page ?? 10),
 
             ]);
         }
@@ -2633,7 +2735,7 @@ class AdminController extends Controller
             'enrolled' => count($enrolled_students),
             'active' => count($active_students),
             'suspended' => count($suspended_students),
-            'registered_students' =>  $this->paginate($registered_students, $request->per_page ?? 10),
+            'students' =>  $this->paginate($registered_students, $request->per_page ?? 10),
         ]);
     }
 
@@ -2972,53 +3074,16 @@ class AdminController extends Controller
 
         if ($request->status == 'running') {
             foreach ($subjects as $subject) {
-                foreach ($subjects as $subject) {
-                    $all_courses = Course::where("subject_id", $subject)->get();
-                    $course_subject = Subject::with('program', 'field')->find($subject);
-                    $courses = Course::where("subject_id", $subject)->where("status", "inprogress")->get();
-
-
-                    if (count($courses) > 0) {
-                        $course_subject->total_booking = $courses->count();
-                        $course_subject->total_amount = $courses->sum('total_price');
-                        $course_subject->status = "active";
-                        $courses_subjects[] = $course_subject;
-                    }
-
-
-                    $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
-                    $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
-                    $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
-                    $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
-                    $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
-                }
-                // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Running Courses!',
-                    'running_courses_count' => $running_courses_count,
-                    'pending_courses_count' => $pending_courses_count,
-                    'completed_courses_count' => $completed_courses_count,
-                    'cancelled_courses_count' => $cancelled_courses_count,
-                    'reassigned_courses_count' => $reassigned_courses_count,
-                    'subjects' => $courses_subjects,
-                ]);;
-            }
-        }
-
-        if ($request->status == 'pending') {
-
-            foreach ($subjects as $subject) {
+                // return $subject;
                 $all_courses = Course::where("subject_id", $subject)->get();
-                $course_subject = Subject::with('program', 'field')->find($subject);
-                $course_subject->status = "upcoming";
-                $courses = Course::where("subject_id", $subject)->where("status", "pending")->get();
-
+                $course_subject = Subject::with('program', 'field')->findOrFail($subject);
+                $courses = Course::where("subject_id", $subject)->where("status", "inprogress")->get();
 
 
                 if (count($courses) > 0) {
                     $course_subject->total_booking = $courses->count();
                     $course_subject->total_amount = $courses->sum('total_price');
+                    $course_subject->status = "active";
                     $courses_subjects[] = $course_subject;
                 }
 
@@ -3030,6 +3095,40 @@ class AdminController extends Controller
                 $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
             }
             // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+            return response()->json([
+                'status' => true,
+                'message' => 'Running Courses!',
+                'running_courses_count' => $running_courses_count,
+                'pending_courses_count' => $pending_courses_count,
+                'completed_courses_count' => $completed_courses_count,
+                'cancelled_courses_count' => $cancelled_courses_count,
+                'reassigned_courses_count' => $reassigned_courses_count,
+                'subjects' => $this->paginate($courses_subjects, $request->per_page ?? 10),
+            ]);
+        }
+
+        if ($request->status == 'pending') {
+
+            foreach ($subjects as $subject) {
+                $all_courses = Course::where("subject_id", $subject)->get();
+                $course_subject = Subject::with('program', 'field')->findOrFail($subject);
+                // $course_subject->status = "upcoming";
+                $course_subject->status = "pending";
+                $courses = Course::where("subject_id", $subject)->where("status", "pending")->get();
+
+                if (count($courses) > 0) {
+                    $course_subject->total_booking = $courses->count();
+                    $course_subject->total_amount = $courses->sum('total_price');
+                    $courses_subjects[] = $course_subject;
+                }
+
+                $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+                $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Pending Courses!',
@@ -3038,53 +3137,50 @@ class AdminController extends Controller
                 'completed_courses_count' => $completed_courses_count,
                 'cancelled_courses_count' => $cancelled_courses_count,
                 'reassigned_courses_count' => $reassigned_courses_count,
-                'subjects' => $courses_subjects,
+                'subjects' => $this->paginate($courses_subjects, $request->per_page ?? 10),
             ]);
         }
 
         if ($request->status == 'cancelled') {
             foreach ($subjects as $subject) {
-                foreach ($subjects as $subject) {
-                    $all_courses = Course::where("subject_id", $subject)->get();
+                $all_courses = Course::where("subject_id", $subject)->get();
 
-                    $course_subject = Subject::with('program', 'field')->find($subject);
-                    $courses = Course::where("subject_id", $subject)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->get();
+                $course_subject = Subject::with('program', 'field')->find($subject);
+                $courses = Course::where("subject_id", $subject)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->get();
 
-                    if (count($courses) > 0) {
-                        $course_subject->total_booking = $courses->count();
-                        $course_subject->total_amount = $courses->sum('total_price');
-                        $course_subject->status = "cancelled";
-
-                        $courses_subjects[] = $course_subject;
-                    }
-
-
-
-                    $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
-                    $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
-                    $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
-                    $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
-                    $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
+                if (count($courses) > 0) {
+                    $course_subject->total_booking = $courses->count();
+                    $course_subject->total_amount = $courses->sum('total_price');
+                    $course_subject->status = "cancelled";
+                    $courses_subjects[] = $course_subject;
                 }
-                // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Cancelled Courses!',
-                    'running_courses_count' => $running_courses_count,
-                    'pending_courses_count' => $pending_courses_count,
-                    'completed_courses_count' => $completed_courses_count,
-                    'cancelled_courses_count' => $cancelled_courses_count,
-                    'reassigned_courses_count' => $reassigned_courses_count,
-                    'subjects' => $courses_subjects,
-                ]);;
+
+                $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
+                $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
+                $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
+                $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
+                $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
             }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Cancelled Courses!',
+                'running_courses_count' => $running_courses_count,
+                'pending_courses_count' => $pending_courses_count,
+                'completed_courses_count' => $completed_courses_count,
+                'cancelled_courses_count' => $cancelled_courses_count,
+                'reassigned_courses_count' => $reassigned_courses_count,
+                'subjects' => $this->paginate($courses_subjects, $request->per_page ?? 10),
+            ]);
         }
 
         if ($request->status == 'completed') {
+
             foreach ($subjects as $subject) {
+
                 $all_courses = Course::where("subject_id", $subject)->get();
                 $course_subject = Subject::with('program', 'field')->find($subject);
-                $courses = Course::where("subject_id", $subject)->where("status", "completed")->get();
+                $courses = Course::where("subject_id", $subject)->where('status', 'completed')->get();
 
                 if (count($courses) > 0) {
                     $course_subject->total_booking = $courses->count();
@@ -3093,16 +3189,13 @@ class AdminController extends Controller
                     $courses_subjects[] = $course_subject;
                 }
 
-
-
-
                 $running_courses_count =  $running_courses_count + $all_courses->where('status',  'inprogress')->count();
                 $pending_courses_count = $pending_courses_count + $all_courses->where('status',  'pending')->count();
                 $completed_courses_count = $completed_courses_count + $all_courses->where('status',  'completed')->count();
                 $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
                 $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
             }
-            // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+
             return response()->json([
                 'status' => true,
                 'message' => 'Completed Courses!',
@@ -3111,7 +3204,7 @@ class AdminController extends Controller
                 'completed_courses_count' => $completed_courses_count,
                 'cancelled_courses_count' => $cancelled_courses_count,
                 'reassigned_courses_count' => $reassigned_courses_count,
-                'subjects' => $courses_subjects,
+                'subjects' => $this->paginate($courses_subjects, $request->per_page ?? 10),
             ]);
         }
 
@@ -3136,7 +3229,7 @@ class AdminController extends Controller
                 $cancelled_courses_count = $cancelled_courses_count + $all_courses->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_admin', 'cancelled_by_student'])->count();
                 $reassigned_courses_count =  $reassigned_courses_count + $all_courses->where('status',  'reassigned')->count();
             }
-            // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
+
             return response()->json([
                 'status' => true,
                 'message' => 'Reassigned Courses!',
@@ -3145,7 +3238,7 @@ class AdminController extends Controller
                 'completed_courses_count' => $completed_courses_count,
                 'cancelled_courses_count' => $cancelled_courses_count,
                 'reassigned_courses_count' => $reassigned_courses_count,
-                'subjects' => $courses_subjects,
+                'subjects' => $this->paginate($courses_subjects, $request->per_page ?? 10),
             ]);
         }
     }
@@ -3275,8 +3368,8 @@ class AdminController extends Controller
                 'message' => 'Rejected Courses!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
-                'newly_requested_courses' => $newly,
-                'completed_courses' => $completed,
+                'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
+                'completed_courses' => $this->paginate($completed, $request->per_page ?? 10),
             ]);
         }
         if ($request->status == 'declined') {
@@ -3328,8 +3421,8 @@ class AdminController extends Controller
                 'message' => 'Courses With no Teacher!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
-                'newly_requested_courses' => $newly,
-                'completed_courses' => $completed,
+                'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
+                'completed_courses' => $this->paginate($completed, $request->per_page ?? 10),
             ]);
         }
 
@@ -3377,8 +3470,8 @@ class AdminController extends Controller
                 'message' => 'Cancelled Courses!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
-                'newly_requested_courses' => $newly,
-                'completed_courses' => $completed,
+                'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
+                'completed_courses' => $this->paginate($completed, $request->per_page ?? 10),
             ]);
         }
 
@@ -3404,7 +3497,7 @@ class AdminController extends Controller
                 'status' => true,
                 'message' => 'Running Courses!',
                 'courses_count' => count($courses),
-                'courses' => $courses,
+                'courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
         }
     }
@@ -3490,12 +3583,12 @@ class AdminController extends Controller
             'message' => "All Requested Courses",
             'new_request_count' => count($requested_courses),
             'completed_count' => count($requested_courses),
-            'requested_courses' => $requested_courses,
-            'completed_courses' => $completed_courses,
+            'requested_courses' => $this->paginate($requested_courses, $request->per_page ?? 10),
+            'completed_courses' => $this->paginate($completed_courses, $request->per_page ?? 10),
         ]);
     }
 
-    public function orders()
+    public function orders(Request $request)
     {
         $orders = Order::with('transaction', 'user')->with(['course' => function ($q) {
             $q->withCount('classes');
@@ -3515,11 +3608,11 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "All Orders",
-            'orders' => $orders,
+            'orders' => $this->paginate($orders, $request->per_page ?? 10),
         ]);
     }
 
-    public function refund_orders()
+    public function refund_orders(Request $request)
     {
         $orders = RefundCourse::with('student', 'teacher', 'course', 'canceled_course', 'refunded_classes.academic_class')->get();
 
@@ -3547,7 +3640,7 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "All Orders to refund!",
-            'orders' => $orders,
+            'orders' => $this->paginate($orders, $request->per_page ?? 10),
         ]);
     }
 
@@ -3620,6 +3713,8 @@ class AdminController extends Controller
         $course->teacher_status = $request->status;
         $course->update();
 
+
+
         return response()->json([
             'status' => true,
             'message' => "Status changed successfully!",
@@ -3627,7 +3722,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function subject_orders($subject_id)
+    public function subject_orders($subject_id, Request $request)
     {
         $orders = Order::with('transaction', 'user')->whereHas('course', function ($q) use ($subject_id) {
             $q->where('subject_id', $subject_id)->withCount('classes');
@@ -3647,7 +3742,7 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "Subject Orders",
-            'orders' => $orders,
+            'orders' => $this->paginate($orders, $request->per_page),
         ]);
     }
 
@@ -3695,7 +3790,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function approval_request()
+    public function approval_request(Request $request)
     {
         $no_teacherCourse = NoTeacherCourse::pluck('course_id');
 
@@ -3753,8 +3848,8 @@ class AdminController extends Controller
             'message' => 'Approval Requests!',
             'newly_courses_count' => count($new_courses),
             'completed_courses_count' => count($completed_courses),
-            'newly_requested_courses' => $newly,
-            'completed_courses' => $completed,
+            'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
+            'completed_courses' => $this->paginate($completed, $request->per_page ?? 10),
         ]);
     }
 
@@ -3884,12 +3979,12 @@ class AdminController extends Controller
         $student = User::findOrFail($course->student_id);
         $teacher = User::findOrFail($course->teacher_id);
 
-        event(new RefundCourseEvent($token_user->id, $token_user, $admin_message, $refunds, $course));
-        event(new RefundCourseEvent($student->id, $student, $admin_message, $refunds, $course));
-        event(new RefundCourseEvent($teacher->id, $teacher, $admin_message, $refunds, $course));
-        dispatch(new RefundCourseJob($token_user->id, $token_user, $admin_message, $refunds, $course));
-        dispatch(new RefundCourseJob($student->id, $student, $admin_message, $refunds, $course));
-        dispatch(new RefundCourseJob($teacher->id, $teacher, $admin_message, $refunds, $course));
+        // event(new RefundCourseEvent($token_user->id, $token_user, $admin_message, $refunds, $course));
+        // event(new RefundCourseEvent($student->id, $student, $admin_message, $refunds, $course));
+        // event(new RefundCourseEvent($teacher->id, $teacher, $admin_message, $refunds, $course));
+        // dispatch(new RefundCourseJob($token_user->id, $token_user, $admin_message, $refunds, $course));
+        // dispatch(new RefundCourseJob($student->id, $student, $admin_message, $refunds, $course));
+        // dispatch(new RefundCourseJob($teacher->id, $teacher, $admin_message, $refunds, $course));
 
 
         return response()->json([
@@ -3903,6 +3998,6 @@ class AdminController extends Controller
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
-        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

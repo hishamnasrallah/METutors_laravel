@@ -27,6 +27,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
 
 class SubjectController extends Controller
 {
@@ -49,7 +54,7 @@ class SubjectController extends Controller
        return response()->json([
 
                 'status' => true,
-                'subject' => $subjects,
+                'subject' => $this->paginate($subjects, $request->per_page ?? 10),
                 ]);
     }
 
@@ -75,7 +80,7 @@ class SubjectController extends Controller
          $rules = [
 
             'program_id' => 'required',
-            
+
             'field_id' => 'required',
             'name' => 'required',
             'description' => 'required',
@@ -100,7 +105,7 @@ class SubjectController extends Controller
                 'status' => 'false',
                 'errors' => $errors,
                 ],400) ;
-           
+
         }
 
         $subject=new subject();
@@ -133,10 +138,10 @@ class SubjectController extends Controller
      */
     public function show($id)
     {
-        
+
          $subject = Subject::with('program','country','field')->find($id);
         if (is_null($subject)) {
-            return response()->json('Data not found', 404); 
+            return response()->json('Data not found', 404);
         }
          return response()->json([
             'success' => true,
@@ -167,13 +172,13 @@ class SubjectController extends Controller
     {
           $rules = [
 
-           
+
         ];
 
-         
 
 
-        
+
+
         $validator=Validator::make($request->all(),$rules);
 
         if($validator->fails())
@@ -186,13 +191,13 @@ class SubjectController extends Controller
                 'status' => 'false',
                 'errors' => $errors,
                 ],400) ;
-           
+
         }
 
 
         $subject=Subject::find($id);
         if (is_null($subject)) {
-            return response()->json(['message'=>'Data not found'], 404); 
+            return response()->json(['message'=>'Data not found'], 404);
         }
         $subject->update($request->all());
 
@@ -213,15 +218,23 @@ class SubjectController extends Controller
      */
     public function destroy($id)
     {
-           
+
          $subject = Subject::find($id);
         if (is_null($subject)) {
-            return response()->json('Data not found', 404); 
+            return response()->json('Data not found', 404);
         }
         $subject->delete();
          return response()->json([
             'success' => true,
             'message' => "subject deleted successfully",
         ]);
+    }
+
+
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

@@ -23,12 +23,12 @@ class AcademicClass extends Model
 
     public function teacher()
     {
-        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'teacher_id', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function course()
     {
-        return $this->belongsTo(Course::class)->select('id', 'course_code', 'course_name', 'subject_id', 'created_at', 'student_id', 'program_id');
+        return $this->belongsTo(Course::class)->select('id', 'course_code', 'course_name', 'subject_id', 'created_at', 'student_id',  'teacher_id', 'program_id');
     }
 
     public function subject()

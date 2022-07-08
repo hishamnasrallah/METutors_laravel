@@ -11,29 +11,23 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class CancelCourseJob implements ShouldQueue
+class AcceptDocumentJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public $course;
-    public $userid;
-    public $custom_message;
-    public $user;
-
-
+    public $userid, $user, $user_meta, $custom_message;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($course, $userid, $custom_message, $user)
+    public function __construct($userid, $user, $user_meta, $custom_message)
     {
-
-        $this->course = $course;
+        $this->connection = 'database';
         $this->userid = $userid;
-        $this->custom_message = $custom_message;
         $this->user = $user;
+        $this->user_meta = $user_meta;
+        $this->custom_message = $custom_message;
     }
 
     /**
@@ -43,25 +37,26 @@ class CancelCourseJob implements ShouldQueue
      */
     public function handle()
     {
-        //*********** Sending Cancalation Email to Student  ************\\
+        //*********** Sending Email to Student  ************\\
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'course' => $this->course);
+        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $this->user_meta);
 
-        Mail::send('email.course', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Canceled');
+        Mail::send('email.document', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('Documents Accepted!');
             $message->from('metutorsmail@gmail.com', 'MeTutor');
         });
-        // //********* Sending Cancalation Email ends **********//
+        // //******** Email ends **********//
 
+        //Notification
         $notification = new Notification();
-        $notification->type = "App\Events\CancelCourse";
-        $notification->notifiable_type = "App\Models\Course";
+        $notification->type = "App\Events\AcceptDocumentEvent";
+        $notification->notifiable_type = "App\Models\User";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;
-        $notification->data =  $this->course;
+        $notification->data =  $this->user_meta;
         $notification->save();
     }
 }

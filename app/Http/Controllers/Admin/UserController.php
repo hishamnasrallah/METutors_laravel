@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\AcceptDocumentEvent;
+use App\Events\RejectDocumentEvent;
 use App\Exports\OrganizationsExport;
 use App\Exports\StudentsExport;
 use App\Exports\UsersExport;
 use App\Http\Controllers\Controller;
+use App\Jobs\AcceptDocumentJob;
+use App\Jobs\RejectDocumentJob;
 use App\Models\Badge;
 use App\Models\BecomeInstructor;
 use App\Models\Category;
@@ -26,66 +30,69 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
-    public function approve_document(Request $request,$id)
+    public function approve_document(Request $request, $id)
     {
-        
-       
-      
-      $user_meta=UserMeta::find($id);
-      
-      if($user_meta != null){
-          $user_meta->status='approved';
-          $user_meta->update();
-          
-           
+        $user_meta = UserMeta::find($id);
+
+        if ($user_meta != null) {
+            $user_meta->status = 'approved';
+            $user_meta->update();
+
+            $user = User::findOrFail($user_meta->user_id);
+            $admin = User::where('role_name', 'admin')->first();
+            // Emails and notifications
+            // event(new AcceptDocumentEvent($user->id, $user, $user_meta, "Your documents have been Approved!"));
+            // event(new AcceptDocumentEvent($admin->id, $admin, $user_meta, "Documents have Approved Successfully!"));
+            // dispatch(new AcceptDocumentJob($user->id, $user, $user_meta, "Your documents have been Approved!"));
+            // dispatch(new AcceptDocumentJob($admin->id, $admin, $user_meta, "Documents have Approved Successfully!"));
+
             return response()->json([
-                
+
                 'status' => 'true',
                 'message' => 'document approved successfully',
                 'document' => $user_meta,
-                ]);
-      }else{
-           return response()->json([
-                
+            ]);
+        } else {
+            return response()->json([
+
                 'status' => 'false',
                 'message' => 'document not found',
-               
-                ]);
-          
-      }
-        
-        
-        
+
+            ]);
+        }
     }
-    public function reject_document(Request $request,$id)
+    public function reject_document(Request $request, $id)
     {
-        
-       
-      $user_meta=UserMeta::find($id);
-      
-      if($user_meta != null){
-          $user_meta->status='rejected';
-          $user_meta->update();
-          
-          
+
+
+        $user_meta = UserMeta::find($id);
+
+        if ($user_meta != null) {
+            $user_meta->status = 'rejected';
+            $user_meta->update();
+
+            $user = User::findOrFail($user_meta->user_id);
+            $admin = User::where('role_name', 'admin')->first();
+            // Emails and Notifications
+            event(new RejectDocumentEvent($user->id, $user, $user_meta, "Your documents have been Rejected!"));
+            event(new RejectDocumentEvent($admin->id, $admin, $user_meta, "Documents have Rejected Successfully!"));
+            dispatch(new RejectDocumentJob($user->id, $user, $user_meta, "Your documents have been Rejected!"));
+            dispatch(new RejectDocumentJob($admin->id, $admin, $user_meta, "Documents have Rejected Successfully!"));
+
             return response()->json([
-                
+
                 'status' => 'true',
                 'message' => 'document rejected successfully',
                 'document' => $user_meta,
-                ]);
-      }else{
-           return response()->json([
-                
+            ]);
+        } else {
+            return response()->json([
+
                 'status' => 'false',
                 'message' => 'document not found',
-               
-                ]);
-          
-      }
-        
-        
-        
+
+            ]);
+        }
     }
     public function staffs(Request $request)
     {

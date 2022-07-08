@@ -175,18 +175,8 @@ class TestController extends Controller
 
     public function test()
     {
-        $assignments = Assignment::where('deadline', Carbon::tomorrow()->format('Y-m-d'))->get();
-        foreach ($assignments as $assignment) {
-            $course = Course::findOrFail($assignment->course_id);
-            $student = User::findOrFail($course->student_id);
-            $teacher = User::findOrFail($course->teacher_id);
-            $custom_message = "Today is the last date of assignment! please Submitt if not submitted yet";
-
-            //emails and notifications
-            event(new AssignmentDeadlineEvent($student->id, $student, $custom_message, $assignment));
-            event(new AssignmentDeadlineEvent($teacher->id, $teacher, $custom_message, $assignment));
-            dispatch(new AssignmentDeadlineEvent($student->id, $student, $custom_message, $assignment));
-            dispatch(new AssignmentDeadlineEvent($teacher->id, $teacher, $custom_message, $assignment));
-        }
+        return $classes = AcademicClass::where('start_date', "<=", Carbon::today()->format('Y-m-d'))
+            ->where('status', '!=', 'completed')
+            ->get();
     }
 }

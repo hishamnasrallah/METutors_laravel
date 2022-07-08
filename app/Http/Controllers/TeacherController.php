@@ -12,6 +12,7 @@ use App\Events\RejectCourseEvent;
 use App\Events\StudentAcceptCourse;
 use App\Events\UpdateAssignmentEvent;
 use App\Events\UpdateSyllabusEvent;
+use App\Jobs\AcceptCourseJob;
 use App\Jobs\AddAssignmentJob;
 use App\Jobs\AddSyllabusJob;
 use App\Jobs\CancelCourseJob;
@@ -324,8 +325,10 @@ class TeacherController extends Controller
         $teacher_message = 'Course Accepted Successfully!';
         $student_message = 'Teacher Accepted Your Course!';
 
-        // event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
-        // event(new AcceptCourse($course, $course->student_id, $student_message, $user));
+        event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new AcceptCourse($course, $course->student_id, $student_message, $user));
+        dispatch(new AcceptCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
+        dispatch(new AcceptCourseJob($course, $course->student_id, $student_message, $user));
 
         return response()->json([
             'success' => true,
@@ -390,10 +393,10 @@ class TeacherController extends Controller
         $teacher_message = "Course Rejected Successfully";
         $student_message = "Teacher Rejected your Course";
 
-        // event(new RejectCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
-        // event(new RejectCourseEvent($course, $course->student_id, $student_message, $user));
-        // dispatch(new RejectCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
-        // dispatch(new RejectCourseJob($course, $course->student_id, $student_message, $user));
+        event(new RejectCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new RejectCourseEvent($course, $course->student_id, $student_message, $user));
+        dispatch(new RejectCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
+        dispatch(new RejectCourseJob($course, $course->student_id, $student_message, $user));
 
         $course->status = "declined_by_teacher";
         // $course->teacher_id = null;
@@ -920,10 +923,11 @@ class TeacherController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Course Assignment Dashboard!',
-                'course' => $course,
                 'total_assignments' => $total_assinments,
                 'active_assignments' => $active_assignments,
                 'completed_assignments' => $completed_assignments,
+                'course' => $course,
+
 
             ]);
         }
@@ -932,10 +936,11 @@ class TeacherController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Course Assignment Dashboard!',
-            'course' => $course,
             'total_assignments' => $total_assinments,
             'active_assignments' => $active_assignments,
             'completed_assignments' => $completed_assignments,
+            'course' => $course,
+
 
         ]);
     }
@@ -1003,12 +1008,12 @@ class TeacherController extends Controller
         $student_message = "Teacher Canceled Course";
         $admin_message = "Teacher Canceled a Course";
 
-        // event(new CancelCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
-        // event(new CancelCourseEvent($course, $course->student_id, $student_message, $user));
-        // event(new CancelCourseEvent($course, $admin->id, $admin_message, $admin));
-        // dispatch(new CancelCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
-        // dispatch(new CancelCourseJob($course, $course->student_id, $student_message, $user));
-        // dispatch(new CancelCourseJob($course, $admin->id, $admin_message, $admin));
+        event(new CancelCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
+        event(new CancelCourseEvent($course, $course->student_id, $student_message, $user));
+        event(new CancelCourseEvent($course, $admin->id, $admin_message, $admin));
+        dispatch(new CancelCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
+        dispatch(new CancelCourseJob($course, $course->student_id, $student_message, $user));
+        dispatch(new CancelCourseJob($course, $admin->id, $admin_message, $admin));
 
         // $course->teacher_id = null;
         $course->status = 'cancelled_by_teacher';

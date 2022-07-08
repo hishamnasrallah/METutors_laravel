@@ -47,22 +47,11 @@ class ClassCron extends Command
      */
     public function handle()
     {
-        $classes = AcademicClass::where('start_date', Carbon::today()->format('Y-m-d'))->get();
+        $classes = AcademicClass::where('start_date', "<=", Carbon::today()->format('Y-m-d'))
+            ->where('status', "!=", "completed")
+            ->get();
+
         foreach ($classes as $class) {
-            //Class completion scnerio
-            if (Carbon::parse($class->end_time) >= Carbon::now() && count($class->teacher_attendence) > 0  && count($class->student_attendence) > 0) {
-                $class->status = "completed";
-                $class->update();
-            }
-            if (Carbon::parse($class->end_time) >= Carbon::now() && count($class->student_attendence) == 0 && count($class->teacher_attendence) > 0) {
-                $class->status = "completed";
-                $class->update();
-            }
-            if (Carbon::parse($class->end_time) >= Carbon::now() && count($class->student_attendence) > 0 && count($class->teacher_attendence) == 0) {
-                $class->status = "teacher_absent";
-                $class->update();
-            }
-            //Class completion scnerio ends 
 
             $attendees =  $class->attendees->pluck('student_id');
             $teacher =  $class->attendees->pluck('teacher_id');
