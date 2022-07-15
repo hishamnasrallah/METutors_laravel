@@ -218,47 +218,45 @@ class LoginController extends Controller
 
 
 
-        $username = $this->username();
+            $username = $this->username();
 
-        $value = $request->get($username);
-        
-        $verificationId = $request->username;
+            $value = $request->get($username);
 
-         $verifications = Verification::where('email', $verificationId)
-                ->where('verified_at',null)
+            $verificationId = $request->username;
+
+            $verifications = Verification::where('email', $verificationId)
+                ->where('verified_at', null)
                 ->first();
 
-                if (!empty($verifications)) {
+            if (!empty($verifications)) {
 
 
-                    $value=$verificationId;
-                    $username='email';
-                    
-                       $data = [];
-                     $time = time();
-                    
-                    $data['email'] = $verificationId;
-                    $data['code'] = $this->getNewCode();
-                    $data['user_id'] = !empty($user) ? $user->id : (auth()->check() ? auth()->id() : null);
-                    $data['created_at'] = $time;
-                    $data['expired_at'] = $time + Verification::EXPIRE_TIME;
-                
+                $value = $verificationId;
+                $username = 'email';
 
-                    $data['verified_at'] = null;
+                $data = [];
+                $time = time();
 
-                    $verification = Verification::updateOrCreate([$username => $value], $data);
+                $data['email'] = $verificationId;
+                $data['code'] = $this->getNewCode();
+                $data['user_id'] = !empty($user) ? $user->id : (auth()->check() ? auth()->id() : null);
+                $data['created_at'] = $time;
+                $data['expired_at'] = $time + Verification::EXPIRE_TIME;
 
-                    $verification->sendEmailCode();
-                     
-                     return response()->json([
-                                'status'=>true,
-                                'message'=>'Verification Code Has Been Sent. Please verify your email first!!' ,
-                                
-                                ]);
 
-                }
+                $data['verified_at'] = null;
 
-         
+                $verification = Verification::updateOrCreate([$username => $value], $data);
+
+                $verification->sendEmailCode();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
+                ]);
+            }
+
+
 
 
 
@@ -393,5 +391,4 @@ class LoginController extends Controller
     {
         return rand(10000, 99999);
     }
-
 }

@@ -136,6 +136,12 @@ class ClassController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
+        if ($request->total_hours < 0.5) {
+            return response()->json([
+                'status' => false,
+                'message' => "Course should have atleast 30 minutes duration!",
+            ], 400);
+        }
 
         //**************** Availabilities and checkues for course booking ****************
         $start_date = Carbon::parse($request->start_date);
