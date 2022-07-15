@@ -38,6 +38,9 @@ use Illuminate\Http\Request;
 use JWTAuth;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
@@ -1593,5 +1596,12 @@ class TeacherController extends Controller
             'deleted_assignment' => $assignment,
 
         ]);
+    }
+
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

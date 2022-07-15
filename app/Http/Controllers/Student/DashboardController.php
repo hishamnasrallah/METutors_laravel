@@ -57,13 +57,13 @@ class DashboardController extends Controller
             // $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();
 
 
-            $course_details=[];
-            $completed_courses = Course::with('subject', 'student', 'program', 'classes','feedbacks')->where('status', 'completed')->whereBetween('created_at', [$endDate, $current_date])->where($userrole, $user_id)->get();
+            $course_details = [];
+            $completed_courses = Course::with('subject', 'student', 'program', 'classes', 'feedbacks')->where('status', 'completed')->whereBetween('created_at', [$endDate, $current_date])->where($userrole, $user_id)->get();
             foreach ($completed_courses as $course) {
                 $completed_classes = 0;
                 $remaining_classes = 0;
 
-                $completed_classes = count($course['classes']->where('status','completed'));
+                $completed_classes = count($course['classes']->where('status', 'completed'));
 
                 $total_classes = count($course['classes']);
                 if ($total_classes > 0) {
@@ -72,15 +72,15 @@ class DashboardController extends Controller
                 $total_rating = 0;
                 $total_reviews = count($course['feedbacks']);
 
-                if( $total_reviews > 0){
-                    $total_rating = $course['feedbacks']->sum('rating')/$total_reviews;
+                if ($total_reviews > 0) {
+                    $total_rating = $course['feedbacks']->sum('rating') / $total_reviews;
                 }
 
-                array_push($course_details,[
-                    'course'=>$course,
-                    'percent_completed'=>$percentage,
-                    'total_reviews'=> count($course['feedbacks']),
-                    'total_rating'=> $total_rating,
+                array_push($course_details, [
+                    'course' => $course,
+                    'percent_completed' => $percentage,
+                    'total_reviews' => count($course['feedbacks']),
+                    'total_rating' => $total_rating,
                 ]);
             }
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('teacher', 'course', 'course.subject', 'course.student', 'course.teacher', 'course.program')->where('start_date', $current_date)->where($userrole, $user_id)->get();
@@ -98,7 +98,7 @@ class DashboardController extends Controller
                     $attendence_rate = ($attended_classes / $total_classes) * 100;
                 }
             }
-            if($overall_progress == 0){
+            if ($overall_progress == 0) {
                 $overall_progress = 100;
             }
 
@@ -115,13 +115,13 @@ class DashboardController extends Controller
             ]);
         } else {
 
-            $course_details=[];
-            $completed_courses = Course::with('subject', 'student', 'program', 'classes','feedbacks')->where('status', 'completed')->where($userrole, $user_id)->get();
+            $course_details = [];
+            $completed_courses = Course::with('subject', 'student', 'program', 'classes', 'feedbacks')->where('status', 'completed')->where($userrole, $user_id)->get();
             foreach ($completed_courses as $course) {
                 $completed_classes = 0;
                 $remaining_classes = 0;
 
-                $completed_classes = count($course['classes']->where('status','completed'));
+                $completed_classes = count($course['classes']->where('status', 'completed'));
 
 
                 $total_classes = count($course['classes']);
@@ -131,19 +131,19 @@ class DashboardController extends Controller
                 $total_rating = 0;
                 $total_reviews = count($course['feedbacks']);
 
-                if( $total_reviews > 0){
-                    $total_rating = $course['feedbacks']->sum('rating')/$total_reviews;
+                if ($total_reviews > 0) {
+                    $total_rating = $course['feedbacks']->sum('rating') / $total_reviews;
                 }
 
 
-                array_push($course_details,[
-                    'course'=>$course,
-                    'percent_completed'=>$percentage,
-                    'total_reviews'=> count($course['feedbacks']),
-                    'total_rating'=> $total_rating,
+                array_push($course_details, [
+                    'course' => $course,
+                    'percent_completed' => $percentage,
+                    'total_reviews' => count($course['feedbacks']),
+                    'total_rating' => $total_rating,
                 ]);
             }
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course','teacher','course.subject', 'course.student','course.teacher', 'course.program')->where('start_date', $current_date)->where($userrole, $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'teacher', 'course.subject', 'course.student', 'course.teacher', 'course.program')->where('start_date', $current_date)->where($userrole, $user_id)->get();
             $total_classes = AcademicClass::where($userrole, $user_id)->count();
             $attended_classes = Attendance::where('user_id', $user_id)->count();
             $total_payment = Course::where($userrole, $user_id)->sum('total_price');
@@ -158,7 +158,7 @@ class DashboardController extends Controller
                     $attendence_rate = ($attended_classes / $total_classes) * 100;
                 }
             }
-            if($overall_progress == 0){
+            if ($overall_progress == 0) {
                 $overall_progress = 100;
             }
 

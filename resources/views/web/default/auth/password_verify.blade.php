@@ -15,11 +15,11 @@
                             
                             copy this link    
                             
-                            <p><?php echo 'http://localhost:4200/reset-password/'.$token.'/'.$email ?></p>
+                            <p><?php echo 'https://frontend.eshapsough.com/reset-password/'.$token.'/'.$email ?></p>
                             
                             <p>OR</p>
                             
-                            <a href="<?php echo 'http://localhost:4200/reset-password/'.$token.'/'.$email ?>">{{ trans('auth.click_here') }}</a>
+                            <a href="<?php echo 'https://frontend.eshapsough.com/reset-password/'.$token.'/'.$email ?>">{{ trans('auth.click_here') }}</a>
                             
                            <!--<a href="http://localhost:4200/reset-password">{{ trans('auth.click_here') }}</a>-->
                         </div>

@@ -44,6 +44,9 @@ use App\Jobs\RequestCourseJob;
 use App\TeacherAvailability;
 use App\TeachingSpecification;
 use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 
 class ClassController extends Controller
 {
@@ -1619,5 +1622,12 @@ class ClassController extends Controller
             'UTC time' => $request->utc_time,
             'localtime' => $localtime,
         ]);
+    }
+
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

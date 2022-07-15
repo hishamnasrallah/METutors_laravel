@@ -29,6 +29,9 @@ use Carbon\Carbon;
 use DateTime;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -659,13 +662,13 @@ class ClassController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'programs' => $programs,
-                    'field_of_studies' => $fieldOfStudies,
-                    'countries' => $countries,
+                    'programs' => $programs, 
+                    'field_of_studies' => $fieldOfStudies, 
+                    'countries' =>  $countries, 
                     'lastActivity_course' => [$lastActivity_course],
-                    'active_courses' => $active_courses,
-                    'cancelled_courses' => $cancelled_courses,
-                    'completed_courses' => $completed_courses,
+                    'active_courses' =>  $active_courses, 
+                    'cancelled_courses' =>  $cancelled_courses, 
+                    'completed_courses' => $completed_courses, 
                 ]);
             }
 
@@ -687,13 +690,13 @@ class ClassController extends Controller
 
                     return response()->json([
                         'success' => true,
-                        'programs' => $programs,
-                        'field_of_studies' => $fieldOfStudies,
-                        'countries' => $countries,
+                        'programs' => $programs, 
+                        'field_of_studies' => $fieldOfStudies, 
+                        'countries' =>  $countries, 
                         'lastActivity_course' => [$lastActivity_course],
-                        'active_courses' => $active_courses,
-                        'cancelled_courses' => $cancelled_courses,
-                        'completed_courses' => $completed_courses,
+                        'active_courses' =>  $active_courses, 
+                        'cancelled_courses' =>  $cancelled_courses, 
+                        'completed_courses' => $completed_courses, 
 
                     ]);
                 }
@@ -712,13 +715,13 @@ class ClassController extends Controller
 
                     return response()->json([
                         'success' => true,
-                        'programs' => $programs,
-                        'field_of_studies' => $fieldOfStudies,
-                        'countries' => $countries,
+                        'programs' => $programs, 
+                        'field_of_studies' => $fieldOfStudies, 
+                        'countries' =>  $countries, 
                         'lastActivity_course' => [$lastActivity_course],
-                        'active_courses' => $active_courses,
-                        'cancelled_courses' => $cancelled_courses,
-                        'completed_courses' => $completed_courses,
+                        'active_courses' =>  $active_courses, 
+                        'cancelled_courses' =>  $cancelled_courses, 
+                        'completed_courses' => $completed_courses, 
 
                     ]);
                 }
@@ -741,13 +744,13 @@ class ClassController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'programs' => $programs,
-                    'field_of_studies' => $fieldOfStudies,
-                    'countries' => $countries,
+                    'programs' => $programs, 
+                    'field_of_studies' => $fieldOfStudies, 
+                    'countries' =>  $countries, 
                     'lastActivity_course' => [$lastActivity_course],
-                    'active_courses' => $active_courses,
-                    'cancelled_courses' => $cancelled_courses,
-                    'completed_courses' => $completed_courses,
+                    'active_courses' =>  $active_courses, 
+                    'cancelled_courses' =>  $cancelled_courses, 
+                    'completed_courses' => $completed_courses, 
 
                 ]);
             }
@@ -762,11 +765,11 @@ class ClassController extends Controller
 
             return response()->json([
                 'success' => true,
-                'programs' => $programs,
+                'programs' => $programs, 
                 'lastActivity_course' => [$lastActivity_course],
-                'active_courses' => $active_courses,
-                'cancelled_courses' => $cancelled_courses,
-                'completed_courses' => $completed_courses,
+                'active_courses' =>  $active_courses, 
+                'cancelled_courses' =>  $cancelled_courses, 
+                'completed_courses' => $completed_courses, 
             ]);
         }
     }
@@ -941,9 +944,9 @@ class ClassController extends Controller
             'completed_classes' => $completed_classes,
             'progress' => $inProgress,
             'course' =>  $course,
-            'todays_classes' => $todays_classes,
-            'upcoming_classes' => $upcoming_classes,
-            'previous_classes' => $past_classes,
+            'todays_classes' =>  $todays_classes, 
+            'upcoming_classes' => $upcoming_classes, 
+            'previous_classes' =>   $past_classes, 
         ]);
     }
 
@@ -1670,5 +1673,13 @@ class ClassController extends Controller
             'message' => "Your Request has been submitted! Wait for Teacher Approval!",
             'course' => $course,
         ]);
+    }
+
+    //************* Paginator functtion *************
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

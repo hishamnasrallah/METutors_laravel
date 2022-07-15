@@ -128,9 +128,9 @@ class AssignmentController extends Controller
             // ->with(['assignments.assignees.user' => function ($q) {
             //     $q->latest();
             // }])
-            // ->with(['assignments.assignees', function ($qe) {
-            //     $qe->latest()->groupBy('user_id');
-            // }])
+            ->whereHas('assignments.assignees', function ($qe) {
+                // $qe->latest('user_id');
+            })
             ->find($course_id);
 
         $total_assinments = 0;
