@@ -29,13 +29,13 @@ class SocialiteController extends Controller
      *
      * @return void
      */
-     
-     
-     public function facebook_signup(Request $request)
-     {
-     
+
+
+    public function facebook_signup(Request $request)
+    {
+
         $rules = [
-            
+
             'id' => 'required',
             'name' => 'required',
             'email' => 'required',
@@ -45,143 +45,124 @@ class SocialiteController extends Controller
             'response' => 'required',
             'provider' => 'required',
             'role' => 'required',
-           
+
         ];
-        
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
         }
-        
-        
-         try {
-             
-             
-              if(isset($request->authToken)){
-            
-               $driver = Socialite::driver('facebook');
-         
-                 $socialUser = $driver->userFromToken($request->authToken);
-                 
-                $roles=Role::find($request->role);
-            
-                 $user=User::where('email',$socialUser->email)->first();
-                 
-                 if($user == null){
-                     
-                     $user=new User();
-                     
-                     $user->role_name=$roles->name;
-                     $user->role_id=$request->role;
-                     $user->first_name=$request->firstName;
-                     $user->last_name=$request->lastName;
-                     $user->email=$request->email;
-                     $user->status='active';
-                     $user->password=null;
-                     $user->mobile=null;
-                     $user->verified=1;
-                     $user->save();
-                    
-                  
-                          $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
-                             
-                              if($user->role_name == 'teacher'){
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
-                 
-                
-             }  
-                             
-                             
-                       
-                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                             
-                             
-                                return response()->json([
-                                    'status'=>true,
-                                    'message'=>'User Logged in Successfully!!' ,
-                                    'user'=> $user,
-                                    'token'=>$token
-                                    ]);
-                     
-                     
-                     
-                 }else{
-             
-                          $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
-                             
-                              if($user->role_name == 'teacher'){
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
-                 
-                
-             }  
-                             
-                             
-                       
-                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                             
-                      
-                        return response()->json([
-                            'status'=>true,
-                            'message'=>'User Logged in Successfully!!' ,
-                            'user'=> $user,
-                            'token'=>$token
-                            ]);
-                 }
-                 
-                 
-                 
-                  return response()->json([
-                        
-                        'status' => 'false',
-                        'user' => $socialUser,
-                        ]) ;
-         
-        }else{
-             return response()->json([
-                        
-                        'status' => 'false',
-                        'message' => 'auth token required',
-                        ],400) ;
-            
-        }
-           
-         } catch (Exception $e) {
-             
-             
+
+
+        try {
+
+
+            if (isset($request->authToken)) {
+
+                $driver = Socialite::driver('facebook');
+
+                $socialUser = $driver->userFromToken($request->authToken);
+
+                $roles = Role::find($request->role);
+
+                $user = User::where('email', $socialUser->email)->first();
+
+                if ($user == null) {
+
+                    $user = new User();
+
+                    $user->role_name = $roles->name;
+                    $user->role_id = $request->role;
+                    $user->first_name = $request->firstName;
+                    $user->last_name = $request->lastName;
+                    $user->email = $request->email;
+                    $user->status = 'active';
+                    $user->password = null;
+                    $user->mobile = null;
+                    $user->verified = 1;
+                    $user->save();
+
+
+                    $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
+
+                    if ($user->role_name == 'teacher') {
+
+                        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();
+                    }
+
+
+
+                    $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'User Logged in Successfully!!',
+                        'user' => $user,
+                        'token' => $token
+                    ]);
+                } else {
+
+                    $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
+
+                    if ($user->role_name == 'teacher') {
+
+                        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();
+                    }
+
+
+
+                    $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'User Logged in Successfully!!',
+                        'user' => $user,
+                        'token' => $token
+                    ]);
+                }
+
+
+
+                return response()->json([
+
+                    'status' => 'false',
+                    'user' => $socialUser,
+                ]);
+            } else {
+                return response()->json([
+
+                    'status' => 'false',
+                    'message' => 'auth token required',
+                ], 400);
+            }
+        } catch (Exception $e) {
+
+
             return response()->json([
-                        
-                        'status' => 'false',
-                        'message' => 'auth token invalid',
-                        ],401) ;
+
+                'status' => 'false',
+                'message' => 'auth token invalid',
+            ], 401);
         }
-        
-        
-        
-       
-         
-         
-         
-    
-     }
-     
-      
-      
-     public function google_signup(Request $request)
-     {
-     
+    }
+
+
+
+    public function google_signup(Request $request)
+    {
+
         $rules = [
-            
+
             'id' => 'required',
             'name' => 'required',
             'email' => 'required',
@@ -192,237 +173,211 @@ class SocialiteController extends Controller
             'response' => 'required',
             'provider' => 'required',
             'role' => 'required',
-           
+
         ];
 
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
         }
-        
-        
-         try {
-             
-             
-              if(isset($request->response['access_token'])){
-            
-               $driver = Socialite::driver('google');
-         
-                 $socialUser = $driver->userFromToken($request->response['access_token']);
-                 
-                $roles=Role::find($request->role);
-            
-                 $user=User::where('email',$socialUser->email)->first();
-                 
-                 if($user == null){
-                     
-                     $user=new User();
-                     
-                     $user->role_name=$roles->name;
-                     $user->role_id=$request->role;
-                     $user->first_name=$request->firstName;
-                     $user->last_name=$request->lastName;
-                     $user->email=$request->email;
-                     $user->status='active';
-                     $user->password=null;
-                     $user->mobile=null;
-                     $user->verified=1;
-                     $user->save();
-                    
-                  
-                            
-                             $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
-                             
-                              if($user->role_name == 'teacher'){
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
-                 
-                
-             }  
-                             
-                             
-                       
-                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                             
-                                return response()->json([
-                                    'status'=>true,
-                                    'message'=>'User Logged in Successfully!!' ,
-                                    'user'=> $user,
-                                    'token'=>$token
-                                    ]);
-                     
-                     
-                     
-                 }else{
-             
-                       $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar')->where('email',$request->email)->first();
-                             
-                              if($user->role_name == 'teacher'){
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->email)->first();
-                 
-                
-             }  
-                             
-                             
-                       
-                     $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                             
-                     
-                            $token = $token = JWTAuth::customClaims(['user' => $user ])->fromUser($user);
-                      
-                        return response()->json([
-                            'status'=>true,
-                            'message'=>'User Logged in Successfully!!' ,
-                            'user'=> $user,
-                            'token'=>$token
-                            ]);
-                 }
-                 
-                 
-                 
-                  return response()->json([
-                        
-                        'status' => 'false',
-                        'user' => $socialUser,
-                        ]) ;
-         
-        }else{
-             return response()->json([
-                        
-                        'status' => 'false',
-                        'message' => 'access token required',
-                        ],400) ;
-            
-        }
-        
-             
-             
-         } catch (Exception $e) {
-             
-             
+
+
+        try {
+
+
+            if (isset($request->response['access_token'])) {
+
+                $driver = Socialite::driver('google');
+
+                $socialUser = $driver->userFromToken($request->response['access_token']);
+
+                $roles = Role::find($request->role);
+
+                $user = User::where('email', $socialUser->email)->first();
+
+                if ($user == null) {
+
+                    $user = new User();
+
+                    $user->role_name = $roles->name;
+                    $user->role_id = $request->role;
+                    $user->first_name = $request->firstName;
+                    $user->last_name = $request->lastName;
+                    $user->email = $request->email;
+                    $user->status = 'active';
+                    $user->password = null;
+                    $user->mobile = null;
+                    $user->verified = 1;
+                    $user->save();
+
+
+
+                    $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
+
+                    if ($user->role_name == 'teacher') {
+
+                        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();
+                    }
+
+
+
+                    $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'User Logged in Successfully!!',
+                        'user' => $user,
+                        'token' => $token
+                    ]);
+                } else {
+
+                    $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
+
+                    if ($user->role_name == 'teacher') {
+
+                        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();
+                    }
+
+
+
+                    $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+
+                    $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'User Logged in Successfully!!',
+                        'user' => $user,
+                        'token' => $token
+                    ]);
+                }
+
+
+
+                return response()->json([
+
+                    'status' => 'false',
+                    'user' => $socialUser,
+                ]);
+            } else {
+                return response()->json([
+
+                    'status' => 'false',
+                    'message' => 'access token required',
+                ], 400);
+            }
+        } catch (Exception $e) {
+
+
             return response()->json([
-                        
-                        'status' => 'false',
-                        'message' => 'access token invalid',
-                        ],401) ;
+
+                'status' => 'false',
+                'message' => 'access token invalid',
+            ], 401);
         }
-        
-        
-        
-       
-         
-         
-         
-    
-     }
-     
-      
-     
-     
-     public function check_googleId(Request $request)
-     {
-         
-         
-           $rules = [
-            
+    }
+
+
+
+
+    public function check_googleId(Request $request)
+    {
+
+
+        $rules = [
+
             'google_id' => 'required',
         ];
 
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-         
-         
-         $user=User::where('google_id',$request->google_id)->first();
-         
-         if($user != null){
-             
-              return response()->json([
-                
+
+
+        $user = User::where('google_id', $request->google_id)->first();
+
+        if ($user != null) {
+
+            return response()->json([
+
                 'status' => true,
                 'message' => 'User exists already',
-                ],400);
-             
-         }else{
-             
-             
-             return response()->json([
-                
+            ], 400);
+        } else {
+
+
+            return response()->json([
+
                 'status' => false,
                 'message' => 'User does not exist',
-                ],404) ;
-             
-         }
-     }
-     
-      
-     public function check_facebookId(Request $request){
-         
-         
-           $rules = [
-            
+            ], 404);
+        }
+    }
+
+
+    public function check_facebookId(Request $request)
+    {
+
+
+        $rules = [
+
             'facebook_id' => 'required',
         ];
 
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-         
-         $user=User::where('facebook_id',$request->facebook_id)->first();
-         
-         if($user != null){
-             
-              return response()->json([
-                
+
+        $user = User::where('facebook_id', $request->facebook_id)->first();
+
+        if ($user != null) {
+
+            return response()->json([
+
                 'status' => true,
                 'message' => 'User exists already',
-                ]);
-             
-         }else{
-             
-             return response()->json([
-                
+            ]);
+        } else {
+
+            return response()->json([
+
                 'status' => false,
                 'message' => 'User does not exist',
-                ],404) ;
-             
-         }
-     }
-     
-     
-     
+            ], 404);
+        }
+    }
+
+
+
     public function redirectToGoogle()
     {
         return Socialite::driver('google')->redirect();
@@ -495,7 +450,7 @@ class SocialiteController extends Controller
 
             $user = User::where('facebook_id', $request->id)->first();
 
-            if (empty($user)) { 
+            if (empty($user)) {
                 $user = User::create([
                     'first_name' => $request->name,
                     'email' => $request->email,

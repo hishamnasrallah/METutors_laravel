@@ -9,7 +9,7 @@ class Ticket extends Model
 {
 
 
-      protected $fillable = [
+    protected $fillable = [
         'user_id', 'category_id', 'ticket_id', 'subject', 'priority', 'message', 'status', 'file'
     ];
     public function priority()
@@ -24,8 +24,8 @@ class Ticket extends Model
     {
         return $this->hasMany(Comment::class);
     }
-     public function user()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id')->select(['id','id_number','first_name','last_name','last_name','email','verified','avatar']);
+        return $this->belongsTo(User::class, 'user_id', 'id')->select(['id', 'id_number', 'first_name', 'last_name', 'last_name', 'email', 'role_name', 'verified', 'avatar']);
     }
 }

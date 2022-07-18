@@ -81,6 +81,7 @@ class DashboardController extends Controller
             $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
             //converted to all feedbacks per course 
             $points_array = [];
+            $sum_feedback = 0;
             foreach ($feedbacks as $feedback) {
                 // converted to a single user feedback
                 foreach ($feedback as $user_feedback) {
@@ -89,6 +90,7 @@ class DashboardController extends Controller
                     $points_detail->course_name = $user_feedback[0]->course->course_name;
                     $points_detail->course_date = $user_feedback[0]->course->created_at->format('d M Y');
                     $points_detail->kudos_points = $user_feedback->sum('kudos_points');
+                    $sum_feedback = $sum_feedback + $user_feedback->sum('kudos_points');
                     array_push($points_array, $points_detail);
                 }
             }
@@ -102,7 +104,7 @@ class DashboardController extends Controller
                 "todays_classes" => $todays_classes,
                 "total_courses" => $total_courses,
                 "total_completed_courses" => $total_completed_courses,
-                "kudos_points" => $token_user->kudos_points,
+                "kudos_points" => $sum_feedback,
                 "feedbacks" => $feedbacks,
                 "newly_assigned_courses" => $newly_assigned_courses,
                 "total_newly_courses" => $total_newly_courses,
@@ -132,6 +134,8 @@ class DashboardController extends Controller
             $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
             //converted to all feedbacks per course 
             $points_array = [];
+            $sum_feedback = 0;
+
             foreach ($feedbacks as $feedback) {
                 // converted to a single user feedback
                 foreach ($feedback as $user_feedback) {
@@ -140,6 +144,7 @@ class DashboardController extends Controller
                     $points_detail->course_name = $user_feedback[0]->course->course_name;
                     $points_detail->course_date = $user_feedback[0]->course->created_at->format('d M Y');
                     $points_detail->kudos_points = $user_feedback->sum('kudos_points');
+                    $sum_feedback = $sum_feedback + $user_feedback->sum('kudos_points');
                     array_push($points_array, $points_detail);
                 }
             }
@@ -151,7 +156,7 @@ class DashboardController extends Controller
                 "todays_classes" => $todays_classes,
                 "total_courses" => $total_courses,
                 "total_completed_courses" => $total_completed_courses,
-                "kudos_points" => $token_user->kudos_points,
+                "kudos_points" => $sum_feedback,
                 "feedbacks" => $points_array,
                 "newly_assigned_courses" => $newly_assigned_courses,
                 "total_newly_courses" => $total_newly_courses,

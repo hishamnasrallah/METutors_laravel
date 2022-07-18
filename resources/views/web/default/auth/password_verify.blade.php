@@ -12,16 +12,16 @@
                             <div class="alert alert-success" role="alert">
                                 {{ trans('auth.verification_link_has_been_sent_to_your_email') }}
                             </div>
-                            
-                            copy this link    
-                            
-                            <p><?php echo 'https://frontend.eshapsough.com/reset-password/'.$token.'/'.$email ?></p>
-                            
+
+                            copy this link
+
+                            <p><?php echo 'https://frontend.eshapsough.com/reset-password/' . $token . '/' . $email; ?></p>
+
                             <p>OR</p>
-                            
-                            <a href="<?php echo 'https://frontend.eshapsough.com/reset-password/'.$token.'/'.$email ?>">{{ trans('auth.click_here') }}</a>
-                            
-                           <!--<a href="http://localhost:4200/reset-password">{{ trans('auth.click_here') }}</a>-->
+
+                            <a href="<?php echo 'https://frontend.eshapsough.com/reset-password/' . $token . '/' . $email; ?>">{{ trans('auth.click_here') }}</a>
+
+                            {{-- <!--<a href="http://localhost:4200/reset-password">{{ trans('auth.click_here') }}</a>--> --}}
                         </div>
                     </div>
                 </div>

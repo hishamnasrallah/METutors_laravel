@@ -38,10 +38,10 @@ class AddAssignmentJob implements ShouldQueue
     {
         //*********** Sending Email to User  ************\\
         $user_email = $this->user->email;
-        $courseMessage = $this->course_message;
+        $custom_message = $this->course_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'courseMessage' =>  $courseMessage, 'assignment' => $this->assignment);
+        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'assignment' => $this->assignment);
 
         Mail::send('email.add_assignment', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Assignment Added');

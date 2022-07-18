@@ -84,7 +84,7 @@ class AssignmentController extends Controller
         $assignment->created_by = $teacher->id;
         $assignment->save();
 
-        $assignees = $request->assignee;
+        $assignees = json_decode($request->assignee);
         foreach ($assignees as $assignee) {
             $user_assignment = new UserAssignment();
             $user_assignment->user_id =  $assignee;
@@ -128,33 +128,36 @@ class AssignmentController extends Controller
             // ->with(['assignments.assignees.user' => function ($q) {
             //     $q->latest();
             // }])
-            ->whereHas('assignments.assignees', function ($qe) {
-                // $qe->latest('user_id');
-            })
+            // ->whereHas('assignments.assignees', function ($qe) {
+            //     // $qe->latest('user_id');
+            // })
             ->find($course_id);
 
         $total_assinments = 0;
         $completed_assignments = 0;
         $active_assignments = 0;
-        foreach ($course['assignments'] as $assignment) {
+        if (count($course['assignments']) > 0) {
+            foreach ($course['assignments'] as $assignment) {
 
-            if ($assignment->status == 'active') {
-                $active_assignments = $active_assignments + 1;
-            }
-            if ($assignment->status == 'completed') {
-                $completed_assignments = $completed_assignments + 1;
-            }
-            $total_assinments++;
+                if ($assignment->status == 'active') {
+                    $active_assignments = $active_assignments + 1;
+                }
+                if ($assignment->status == 'completed') {
+                    $completed_assignments = $completed_assignments + 1;
+                }
+                $total_assinments++;
 
-            $users = [];
-            $assignees = $assignment->assignees;
-            foreach ($assignees as $assignee) {
-                $user = $assignees->whereIn('user_id', $users)->first();
-                if ($user == null) {
-                    $assignment->assignees = $user;
+                $users = [];
+                $assignees = $assignment->assignees;
+                foreach ($assignees as $assignee) {
+                    $user = $assignees->whereIn('user_id', $users)->first();
+                    if ($user == null) {
+                        $assignment->assignees = $user;
+                    }
                 }
             }
         }
+
 
 
         if (count($request->all()) >= 1) {

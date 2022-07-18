@@ -35,31 +35,22 @@ class ForgotPasswordController extends Controller
     public function forgot(Request $request)
     {
 
-
-
-          $rules = [
+        $rules = [
             'email' => 'required|email|exists:users',
-
         ];
 
+        $validator = Validator::make($request->all(), $rules);
 
-        $validator=Validator::make($request->all(),$rules);
-
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-
+            ], 400);
         }
-
-
-
 
         $token = \Illuminate\Support\Str::random(60);
         DB::table('password_resets')->insert([
@@ -89,40 +80,31 @@ class ForgotPasswordController extends Controller
 
         return response()->json([
 
-                'status' => 'true',
-                'message' => 'Password recovery link sent to your email address. Please check your email',
+            'status' => 'true',
+            'message' => 'Password recovery link sent to your email address. Please check your email',
 
-                ]);
+        ]);
         return back()->with(['toast' => $toastData]);
     }
     public function resend(Request $request)
     {
-
-
-
-          $rules = [
+        $rules = [
             'email' => 'required|email|exists:users',
 
         ];
 
+        $validator = Validator::make($request->all(), $rules);
 
-        $validator=Validator::make($request->all(),$rules);
-
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-
+            ], 400);
         }
-
-
-
 
         $token = \Illuminate\Support\Str::random(60);
         DB::table('password_resets')->insert([
@@ -152,10 +134,10 @@ class ForgotPasswordController extends Controller
 
         return response()->json([
 
-                'status' => 'true',
-                'message' => 'Password recovery link sent to your email address. Please check your email',
+            'status' => 'true',
+            'message' => 'Password recovery link sent to your email address. Please check your email',
 
-                ]);
+        ]);
         return back()->with(['toast' => $toastData]);
     }
 }

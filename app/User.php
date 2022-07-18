@@ -175,7 +175,10 @@ class User extends Authenticatable implements JWTSubject
         $code = rand(1000, 9999);
         UserCode::updateOrCreate(
             ['user_id' => $this->id],
-            ['code' => $code]
+            [
+                'code' => $code,
+                'otp_attempts' => 0
+            ]
         );
 
         $details  = [
@@ -200,7 +203,10 @@ class User extends Authenticatable implements JWTSubject
         $code = rand(1000, 9999);
         UserCode::updateOrCreate(
             ['user_id' => $this->id],
-            ['code' => $code]
+            [
+                'code' => $code,
+                'otp_attempts' => 0
+            ]
         );
 
         $details  = [

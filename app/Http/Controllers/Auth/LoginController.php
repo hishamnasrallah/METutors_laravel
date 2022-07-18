@@ -17,6 +17,7 @@ use Auth;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Models\Verification;
+use Carbon\Carbon;
 
 class LoginController extends Controller
 {
@@ -103,7 +104,6 @@ class LoginController extends Controller
     {
 
         $rules = [
-
             'otp' => 'required',
         ];
 
@@ -126,32 +126,47 @@ class LoginController extends Controller
         // return 'hello';
         $id = $token_user->id;
 
-        $find = UserCode::where('id', $id)->where('code', $request->otp)->where('updated_at', '>=', now()->subMinutes(2))->first();
+        // return $request;
+        $find = UserCode::where('id', $id)
+            ->where('code', $request->otp)
+            ->where('updated_at', '>=', Carbon::now()->subMinutes(2))
+            ->first();
 
 
         if ($find != null) {
 
-            $find = UserCode::where('id', $id)->where('code', $request->otp)->where('updated_at', '>=', now()->subMinutes(2))->first();
+            $find = UserCode::where('id', $id)->where('code', $request->otp)->where('updated_at', '>=', Carbon::now()->subMinutes(2))->first();
 
             if ($find != null) {
 
                 return response()->json([
-
                     'status' => true,
                     'message' => "OTP Verified",
                 ]);
             } else {
                 return response()->json([
-
                     'status' => 'false',
                     'message' => "OTP Expired",
                 ], 400);
             }
         } else {
 
-            return response()->json([
+            $find = UserCode::where('id', $id)->where('updated_at', '>=', Carbon::now()->subMinutes(2))->first();
+            //Otp Attempts
+            if ($find->otp_attempts >= 3) {
+                $find->update_at = Carbon::now()->addMinutes(2);
+                return response()->json([
+                    'status' => false,
+                    'message' => "OTP Expired",
+                ], 400);
+            } else {
+                $find->otp_attempts = $find->otp_attempts + 1;
+            }
 
-                'status' => 'false',
+            $find->update();
+
+            return response()->json([
+                'status' => false,
                 'message' => "Invalid OTP",
             ], 400);
         }
@@ -242,8 +257,6 @@ class LoginController extends Controller
                 $data['user_id'] = !empty($user) ? $user->id : (auth()->check() ? auth()->id() : null);
                 $data['created_at'] = $time;
                 $data['expired_at'] = $time + Verification::EXPIRE_TIME;
-
-
                 $data['verified_at'] = null;
 
                 $verification = Verification::updateOrCreate([$username => $value], $data);
@@ -255,13 +268,6 @@ class LoginController extends Controller
                     'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
                 ]);
             }
-
-
-
-
-
-
-
 
             return response()->json([
                 'status' => true,
