@@ -150,19 +150,19 @@ class ClassController extends Controller
 
         // return $start_date->diffInHours(Carbon::now());
 
-        if ($start_date < Carbon::now()) {
-            return response()->json([
-                'status' => false,
-                'message' => "Please select another date!",
-            ], 400);
-        } else {
-            if ($start_date->diffInHours(Carbon::now()) < 24) {
-                return response()->json([
-                    'status' => false,
-                    'message' => "Please maintain a 24 hour gap!",
-                ], 400);
-            }
-        }
+        // if ($start_date < Carbon::now()) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => "Please select another date!",
+        //     ], 400);
+        // } else {
+        //     if ($start_date->diffInHours(Carbon::now()) < 24) {
+        //         return response()->json([
+        //             'status' => false,
+        //             'message' => "Please maintain a 24 hour gap!",
+        //         ], 400);
+        //     }
+        // }
 
         // $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
 
