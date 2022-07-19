@@ -660,7 +660,7 @@ class ClassController extends Controller
                 $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
-                $lastActivity_course = LastActivity::with('course', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
+                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
 
 
                 $progress = 0;
@@ -690,7 +690,7 @@ class ClassController extends Controller
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
                     'countries' =>  $countries,
-                    'lastActivity_course' => [$lastActivity_course->course ?? null],
+                    'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                     'active_courses' =>  $active_courses,
                     'cancelled_courses' =>  $cancelled_courses,
                     'completed_courses' => $completed_courses,
@@ -710,7 +710,7 @@ class ClassController extends Controller
                     $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
-                    $lastActivity_course = LastActivity::with('course', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
+                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
 
 
                     $progress = 0;
@@ -739,7 +739,7 @@ class ClassController extends Controller
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
                         'countries' =>  $countries,
-                        'lastActivity_course' => [$lastActivity_course->course ?? null],
+                        'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                         'active_courses' =>  $active_courses,
                         'cancelled_courses' =>  $cancelled_courses,
                         'completed_courses' => $completed_courses,
@@ -758,7 +758,7 @@ class ClassController extends Controller
                     $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
-                    $lastActivity_course = LastActivity::with('course', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
+                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
                     $progress = 0;
@@ -787,7 +787,7 @@ class ClassController extends Controller
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
                         'countries' =>  $countries,
-                        'lastActivity_course' => [$lastActivity_course->course ?? null],
+                        'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                         'active_courses' =>  $active_courses,
                         'cancelled_courses' =>  $cancelled_courses,
                         'completed_courses' => $completed_courses,
@@ -810,7 +810,7 @@ class ClassController extends Controller
                 $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
-                $lastActivity_course = LastActivity::with('course', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
+                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
                 $progress = 0;
@@ -839,7 +839,7 @@ class ClassController extends Controller
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
                     'countries' =>  $countries,
-                    'lastActivity_course' => [$lastActivity_course->course ?? null],
+                    'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                     'active_courses' =>  $active_courses,
                     'cancelled_courses' =>  $cancelled_courses,
                     'completed_courses' => $completed_courses,
@@ -853,11 +853,12 @@ class ClassController extends Controller
             $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
             $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
             $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
-            $lastActivity_course = LastActivity::with('course', 'course.subject', 'course.language', 'course.program', 'course.teacher')
+            $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')
                 ->where('user_id', $token_user->id)
                 ->where('role_name', $token_user->role_name)
                 ->latest('updated_at')
                 ->first();
+
             // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
 
 
@@ -885,7 +886,7 @@ class ClassController extends Controller
             return response()->json([
                 'success' => true,
                 'programs' => $programs,
-                'lastActivity_course' => [$lastActivity_course->course ?? null],
+                'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                 'active_courses' =>  $active_courses,
                 'cancelled_courses' =>  $cancelled_courses,
                 'completed_courses' => $completed_courses,
@@ -979,38 +980,39 @@ class ClassController extends Controller
         $last_activity->update();
 
         //************ If class date and time passed then roll call attendence ************
+
         foreach ($course['classes'] as $class) {
             $classStart = Carbon::parse($class->start_date)->format('Y-m-d');
             if ($classStart <= $current_date) {
                 $current_time = Carbon::now();
                 $endTime = ($class->end_time);
-                if ($current_time > $endTime) {
-                    //for students
-                    foreach ($class->participants as $participant) {
-                        $attendance = Attendance::where('user_id', $participant->student_id)->where('academic_class_id', $class->id)->first();
+                // if ($current_time > $endTime) {
+                //for students
+                foreach ($class->participants as $participant) {
+                    $attendance = Attendance::where('user_id', $participant->student_id)->where('academic_class_id', $class->id)->first();
 
-                        if ($attendance == null) {
-                            $userAttendence = new Attendance();
-                            $userAttendence->academic_class_id = $class->id;
-                            $userAttendence->course_id = $class->course_id;
-                            $userAttendence->user_id = $participant->student_id;
-                            $userAttendence->status = 'absent';
-                            $userAttendence->role_name = 'student';
-                            $userAttendence->save();
-                        }
-                    }
-                    //for teacher
-                    $attendance = Attendance::where('user_id', $class->teacher_id)->where('academic_class_id', $class->id)->first();
                     if ($attendance == null) {
                         $userAttendence = new Attendance();
                         $userAttendence->academic_class_id = $class->id;
                         $userAttendence->course_id = $class->course_id;
-                        $userAttendence->user_id = $class->teacher_id;
+                        $userAttendence->user_id = $participant->student_id;
                         $userAttendence->status = 'absent';
-                        $userAttendence->role_name = 'teacher';
+                        $userAttendence->role_name = 'student';
                         $userAttendence->save();
                     }
                 }
+                //for teacher
+                $attendance = Attendance::where('user_id', $class->teacher_id)->where('academic_class_id', $class->id)->first();
+                if ($attendance == null) {
+                    $userAttendence = new Attendance();
+                    $userAttendence->academic_class_id = $class->id;
+                    $userAttendence->course_id = $class->course_id;
+                    $userAttendence->user_id = $class->teacher_id;
+                    $userAttendence->status = 'absent';
+                    $userAttendence->role_name = 'teacher';
+                    $userAttendence->save();
+                }
+                // }
             }
         }
         // ************************************************

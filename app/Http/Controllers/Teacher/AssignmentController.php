@@ -84,7 +84,7 @@ class AssignmentController extends Controller
         $assignment->created_by = $teacher->id;
         $assignment->save();
 
-        $assignees = json_decode($request->assignee);
+        $assignees = $request->assignee;
         foreach ($assignees as $assignee) {
             $user_assignment = new UserAssignment();
             $user_assignment->user_id =  $assignee;
@@ -125,9 +125,9 @@ class AssignmentController extends Controller
         $corse = Course::find($course_id);
 
         $course = Course::with('participants', 'participants.user',  'assignments', 'assignments.assignees.user')
-            // ->with(['assignments.assignees.user' => function ($q) {
-            //     $q->latest();
-            // }])
+            ->with(['assignments.assignees' => function ($q) {
+                $q->latest();
+            }])
             // ->whereHas('assignments.assignees', function ($qe) {
             //     // $qe->latest('user_id');
             // })

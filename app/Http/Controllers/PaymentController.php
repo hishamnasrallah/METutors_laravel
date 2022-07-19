@@ -108,8 +108,8 @@ class PaymentController extends Controller
             $order = new Order();
             $order->user_id = $course->student_id;
             $order->course_id = $course->id;
-            $order->transaction_id = $paymentDetails->original->id;
-            // $order->transaction_id = $paymentDetails->original->transaction_id;
+            // $order->transaction_id = $paymentDetails->original->id;
+            $order->transaction_id = $paymentDetails->original->transaction_id;
             $order->payment_status = 'success';
             $order->save();
 
@@ -407,7 +407,7 @@ class PaymentController extends Controller
         $checkout_id = $request->get('id');
         $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
 
-        return $paymentDetails = json_decode(json_encode($payment_details));
+        $paymentDetails = json_decode(json_encode($payment_details));
 
         //If we got success Response From HyperPay
         if ($paymentDetails->original->transaction_status == 'success') {

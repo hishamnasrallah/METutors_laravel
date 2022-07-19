@@ -38,7 +38,7 @@ class AddAssignmentJob implements ShouldQueue
     {
         //*********** Sending Email to User  ************\\
         $user_email = $this->user->email;
-        $custom_message = $this->course_message;
+        $custom_message = $this->custom_message;
         $to_email = $user_email;
 
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'assignment' => $this->assignment);

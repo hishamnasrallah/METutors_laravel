@@ -148,7 +148,6 @@ class ClassController extends Controller
         $start_date = Carbon::parse($request->start_date);
         $end_date = Carbon::parse($request->end_date);
 
-        // return $start_date->diffInHours(Carbon::now());
 
         // if ($start_date < Carbon::now()) {
         //     return response()->json([
@@ -164,7 +163,7 @@ class ClassController extends Controller
         //     }
         // }
 
-        // $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+        $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
 
         // if ($end_date > $teacher_specification->availability_end_date) {
         //     return response()->json([
@@ -172,11 +171,13 @@ class ClassController extends Controller
         //         'message' => "Teacher Availability date Exceeded!",
         //     ], 400);
         // }
-        // $availability_start = Carbon::parse($teacher_specification->availability_start_date);
-        // $availability_end = Carbon::parse($teacher_specification->availability_start_date);
 
-        // 
-        // //If Request has teacher id
+
+        $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+        $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+
+
+        //If Request has teacher id
         // if ($request->has('teacher_id')) {
         //     //Checking teacher Availability
         //     $days = explode(",", $request->weekdays);
@@ -250,7 +251,7 @@ class ClassController extends Controller
         //                         ->orWhereBetween('end_time', [$start_time, $end_time]);
         //                 })
         //                 ->get();
-        //             // if database has the classes on the requested tume of class
+        //             // if database has the classes on the requested time of class
         //             if (count($db_classes) != 0) {
         //                 return response()->json([
         //                     'status' => false,
@@ -260,7 +261,6 @@ class ClassController extends Controller
         //         }
         //     }
         // }
-
         //**************** Availabilities and checkues for course booking ends ****************
 
         $course->field_of_study = $request->field_of_study;
@@ -395,8 +395,6 @@ class ClassController extends Controller
 
     public function add_classes(Request $request)
     {
-
-
         $rules = [
 
             'course_id' =>  'required',
@@ -1409,6 +1407,52 @@ class ClassController extends Controller
         $current_date = Carbon::today()->format('Y-m-d');
 
         $course = Course::with('subject', 'language', 'program')->find($course_id);
+        $corse = Course::with('subject', 'language', 'program', 'classes')->find($course_id);
+
+        //************ If class date and time passed then roll call attendence ************
+        // return $corse['classes'];
+        foreach ($corse['classes'] as $class) {
+            $classStart = Carbon::parse($class->start_date)->format('Y-m-d');
+            if ($classStart <= $current_date) {
+                // echo "passed,";
+                $current_time = Carbon::now();
+                $endTime = Carbon::parse($class->end_time);
+                // if ($current_time > $endTime) {
+                //for students
+                // return $class->participants;
+                foreach ($class->participants as $participant) {
+                    $attendance = Attendance::where('user_id', $participant->student_id)
+                        ->where('academic_class_id', $class->id)
+                        ->first();
+
+                    if ($attendance == null) {
+                        $userAttendence = new Attendance();
+                        $userAttendence->academic_class_id = $class->id;
+                        $userAttendence->course_id = $class->course_id;
+                        $userAttendence->user_id = $participant->student_id;
+                        $userAttendence->status = 'absent';
+                        $userAttendence->role_name = 'student';
+                        $userAttendence->save();
+                    }
+                }
+                //for teacher
+                $attendance = Attendance::where('user_id', $class->teacher_id)
+                    ->where('academic_class_id', $class->id)
+                    ->first();
+
+                if ($attendance == null) {
+                    $userAttendence = new Attendance();
+                    $userAttendence->academic_class_id = $class->id;
+                    $userAttendence->course_id = $class->course_id;
+                    $userAttendence->user_id = $class->teacher_id;
+                    $userAttendence->status = 'absent';
+                    $userAttendence->role_name = 'teacher';
+                    $userAttendence->save();
+                }
+                // }
+            }
+        }
+        // ************************************************
 
         $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
             ->with('course', 'course.subject', 'course.student', 'attendence', 'attendees.user')
@@ -1447,7 +1491,7 @@ class ClassController extends Controller
             ->where('course_id', $course->id)
             ->count();
 
-        $remaining_classes = AcademicClass::where('course_id', $course_id)->where('status', '!=', 'completed')->count();
+        $remaining_classes = AcademicClass::where('course_id', $course_id)->where('start_date', '>', $current_date)->where('status', '!=', 'completed')->count();
         $completed_classes = AcademicClass::where('course_id', $course_id)->where('status', 'completed')->count();
 
         $totalClases = AcademicClass::where('course_id', $course_id)->where($userrole, $user_id)->count();

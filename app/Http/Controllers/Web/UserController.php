@@ -102,7 +102,10 @@ class UserController extends Controller
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
-        // return $request->language_id;
+
+        // return $request->classes;
+        $start_date = Carbon::parse($request->start_date);
+        $end_date = Carbon::parse($request->end_date);
         $filtered_teacher = User::whereHas('spokenLanguages', function ($q) use ($request) {
             $q->where('language', $request->language_id);
         })
@@ -112,8 +115,16 @@ class UserController extends Controller
             ->whereHas('teacherSubject', function ($q) use ($request) {
                 $q->where(['subject_id' => $request->subject_id, 'field_id' => $request->field_id]);
             })
+            ->whereHas('teacher_specification', function ($q) use ($request, $start_date, $end_date) {
+                $q->where('availability_end_date', '<=',  $end_date);
+                // (function ($qe) use ($start_date, $end_date) {
+                //     $qe->whereBetween('availability_start_date', [$start_date, $end_date])->orWhereBetween('availability_end_date', [$start_date, $end_date]);
+                // });
+            })
             ->where('role_name', 'teacher')
             ->get();
+
+
 
         $requestedClasses = json_decode($request->classes);
         $weekdays = [];

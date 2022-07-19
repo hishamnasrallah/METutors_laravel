@@ -266,7 +266,7 @@ class LoginController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
-                ]);
+                ],400);
             }
 
             return response()->json([

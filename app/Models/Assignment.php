@@ -16,7 +16,8 @@ class Assignment extends Model
 
     public function assignees()
     {
-        return $this->hasMany(UserAssignment::class)->latest('updated_at')->groupBy('user_id');
+        return $this->hasMany(UserAssignment::class);
+        // return $this->hasMany(UserAssignment::class)->latest('updated_at')->groupBy('user_id');
     }
 
     public function course()
