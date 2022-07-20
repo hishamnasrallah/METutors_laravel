@@ -152,18 +152,20 @@ class LoginController extends Controller
         } else {
 
             $find = UserCode::where('id', $id)->where('updated_at', '>=', Carbon::now()->subMinutes(2))->first();
-            //Otp Attempts
-            if ($find->otp_attempts >= 3) {
-                $find->update_at = Carbon::now()->addMinutes(2);
-                return response()->json([
-                    'status' => false,
-                    'message' => "OTP Expired",
-                ], 400);
-            } else {
-                $find->otp_attempts = $find->otp_attempts + 1;
-            }
+            if ($find != null) {
+                //Otp Attempts
+                if ($find->otp_attempts >= 3) {
+                    $find->update_at = Carbon::now()->addMinutes(2);
+                    return response()->json([
+                        'status' => false,
+                        'message' => "OTP Expired",
+                    ], 400);
+                } else {
+                    $find->otp_attempts = $find->otp_attempts + 1;
+                }
 
-            $find->update();
+                $find->update();
+            }
 
             return response()->json([
                 'status' => false,
@@ -266,7 +268,7 @@ class LoginController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
-                ],400);
+                ], 400);
             }
 
             return response()->json([

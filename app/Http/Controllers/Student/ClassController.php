@@ -684,6 +684,13 @@ class ClassController extends Controller
                     $course->progress = round($progress);
                 }
 
+                $progress = 0;
+                if ($lastActivity_course != null) {
+                    $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
+                    $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
+                    $lastActivity_course->course->progress = round($progress);
+                }
+
 
                 return response()->json([
                     'success' => true,
@@ -734,6 +741,13 @@ class ClassController extends Controller
                         $course->progress = round($progress);
                     }
 
+                    $progress = 0;
+                    if ($lastActivity_course != null) {
+                        $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
+                        $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
+                        $lastActivity_course->course->progress = round($progress);
+                    }
+
                     return response()->json([
                         'success' => true,
                         'programs' => $programs,
@@ -780,6 +794,13 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+                    }
+
+                    $progress = 0;
+                    if ($lastActivity_course != null) {
+                        $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
+                        $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
+                        $lastActivity_course->course->progress = round($progress);
                     }
 
                     return response()->json([
@@ -834,6 +855,14 @@ class ClassController extends Controller
                     $course->progress = round($progress);
                 }
 
+                $progress = 0;
+                if ($lastActivity_course != null) {
+                    $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
+                    $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
+                    $lastActivity_course->course->progress = round($progress);
+                }
+
+
                 return response()->json([
                     'success' => true,
                     'programs' => $programs,
@@ -882,6 +911,15 @@ class ClassController extends Controller
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
             }
+
+            $progress = 0;
+            if ($lastActivity_course != null) {
+                $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
+                $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
+                $lastActivity_course->course->progress = round($progress);
+            }
+
+
 
             return response()->json([
                 'success' => true,

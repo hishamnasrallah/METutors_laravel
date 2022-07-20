@@ -6,12 +6,160 @@ use App\Models\AcademicClass;
 use App\TeacherAvailability;
 use App\TeachingSpecification;
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
+use stdClass;
 
 class TeacherAvailabilityController extends Controller
 {
     public function getAvailability($teacher_id)
     {
+        // $availabilites = TeacherAvailability::where('user_id', $teacher_id)->get();
+        // $startDate = Carbon::now()->format('Y-m-d');
+        // $start_date = Carbon::now()->format('d/m/Y');
+        // $endDate = Carbon::now()->addDays(30)->format('Y-m-d');
+        // $end_date = Carbon::now()->addDays(30)->format('d/m/Y');
+
+        // $academicClasses = AcademicClass::whereBetween('start_date', [$startDate, $endDate])
+        //     ->where('teacher_id', $teacher_id)
+        //     ->where('status', '!=', 'completed')
+        //     ->get();
+
+        // $weekdays = [];
+        // foreach ($availabilites as  $avilability) {
+        //     if (!in_array($avilability->day, $weekdays)) {
+        //         array_push($weekdays, $avilability->day);
+        //     }
+        // }
+        // if (count($academicClasses) == 0) {
+        //     return response()->json([
+        //         'status' => true,
+        //         'startDate' => $start_date,
+        //         'endDate' => $end_date,
+        //         'weekdays' => $weekdays,
+        //         'availabilites' => $availabilites,
+        //     ]);
+        // }
+
+        // $weekdays = [];
+        // $weekdays_days = [];
+        // foreach ($availabilites as  $avilability) {
+        //     if (!in_array($avilability->day, $weekdays)) {
+        //         array_push($weekdays, $avilability->day);
+        //         //to convert it in days
+        //         if ($avilability->day == 1) {
+        //             array_push($weekdays_days, 'Sun');
+        //         } else if ($avilability->day == 2) {
+        //             array_push($weekdays_days, 'Mon');
+        //         } else if ($avilability->day == 3) {
+        //             array_push($weekdays_days, 'Tue');
+        //         } else if ($avilability->day == 4) {
+        //             array_push($weekdays_days, 'Wed');
+        //         } else if ($avilability->day == 5) {
+        //             array_push($weekdays_days, 'Thu');
+        //         } else if ($avilability->day == 6) {
+        //             array_push($weekdays_days, 'Fri');
+        //         } else {
+        //             array_push($weekdays_days, 'Sat');
+        //         }
+        //     }
+        // }
+
+        // $begin = new DateTime($startDate);
+        // $end   = new DateTime($endDate);
+
+        // // return $weekdays_day;
+        // $finalAvailabilities = [];
+        // $totalAvailability = new stdClass();
+        // $totalAvailabilities = [];
+        // $finalWeekDays = [];
+        // for ($date = $begin; $date <= $end; $date->modify('+1 day')) {
+
+        //     foreach ($weekdays as $day) {
+
+        //         if ($day == 1) {
+        //             $Day =  'Sun';
+        //         } else if ($day == 2) {
+        //             $Day =   'Mon';
+        //         } else if ($day == 3) {
+        //             $Day =   'Tue';
+        //         } else if ($day == 4) {
+        //             $Day =   'Wed';
+        //         } else if ($day == 5) {
+        //             $Day =   'Thu';
+        //         } else if ($day == 6) {
+        //             $Day =   'Fri';
+        //         } else {
+        //             $Day =   'Sat';
+        //         }
+
+        //         // if date is equal to availability weekday
+        //         if ($date->format("D") == $Day) {
+        //             // echo $date->format("Y-m-d D") . ',';
+        //             $weekdayClasses = $academicClasses->where('day', $day);
+        //             $weekAvailabilites = $availabilites->where('day', $day);
+        //             //if weekday classees are greater than 0
+        //             foreach ($weekAvailabilites as $weekAvailability) {
+        //                 $time_from = Carbon::parse($weekAvailability->time_from)->format('G:i');
+        //                 $time_to = Carbon::parse($weekAvailability->time_to)->format('G:i');
+        //                 $counter = 0;
+        //                 //No Classses on weekday
+        //                 if (count($weekdayClasses) == 0) {
+        //                     array_push($totalAvailabilities, [
+        //                         'availabilty_date' => $date->format('Y-m-d'),
+        //                         'time_from' => $weekAvailability->time_from,
+        //                         'time_to' => $weekAvailability->time_to,
+        //                         'day' => $weekAvailability->day,
+        //                     ]);
+        //                 }
+        //                 //If Classes Are Scheduled on Weeekdays
+        //                 foreach ($weekdayClasses as $weekdayClass) {
+
+        //                     $start_time = Carbon::parse($weekdayClass->start_time)->format('G:i');
+        //                     $end_time = Carbon::parse($weekdayClass->end_time)->format('G:i');
+
+        //                     $check_classes = AcademicClass::whereBetween('start_date', [$startDate, $endDate])
+        //                         ->where('teacher_id', $teacher_id)
+        //                         ->where('status', '!=', 'completed')
+        //                         ->where('day', $weekdayClass->day)
+        //                         ->where(function ($q) use ($time_from, $time_to) {
+        //                             $q->whereBetween('start_time', [$time_from, $time_to])->whereBetween('end_time', [$time_from, $time_to]);
+        //                         })->get();
+
+        //                     if (count($check_classes) == 0) {
+
+        //                         array_push($totalAvailabilities, [
+        //                             'availabilty_date' => $date->format('Y-m-d'),
+        //                             'time_from' => $weekAvailability->time_from,
+        //                             'time_to' => $weekAvailability->time_to,
+        //                             'day' => $weekAvailability->day,
+        //                         ]);
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+        // //Finding unique available weekdays
+        // $grand_availabilities = [];
+        // foreach ($totalAvailabilities as $availability) {
+        //     array_push($grand_availabilities, $availability['day']);
+        // }
+        // $grand_availabilities = array_unique($grand_availabilities);
+        // $availability_days = [];
+        // // converting unique days objects to array
+        // foreach ($grand_availabilities as $availability) {
+        //     array_push($availability_days, $availability);
+        // }
+        // return response()->json([
+        //     'status' => true,
+        //     'startDate' => $start_date,
+        //     'endDate' => $end_date,
+        //     'weekdays' => $availability_days,
+        //     'availabilites' => $totalAvailabilities,
+        // ]);
+
+        //Previous Function of Availabiitty starts
         $availabilites = TeacherAvailability::where('user_id', $teacher_id)->get();
         $startDate = Carbon::now()->format('Y-m-d');
         $start_date = Carbon::now()->format('d/m/Y');

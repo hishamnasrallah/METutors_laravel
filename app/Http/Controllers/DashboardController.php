@@ -302,4 +302,44 @@ class DashboardController extends Controller
             'message' => 'Profile Updated Successfully!'
         ]);
     }
+
+    public function kudos_detail()
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        $user_id = $token_user->id;
+
+        $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
+            ->where('receiver_id', $user_id)
+            ->get();
+
+        $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
+        //converted to all feedbacks per course 
+        $points_array = [];
+        $sum_feedback = 0;
+        foreach ($feedbacks as $feedback) {
+            // converted to a single user feedback
+            $sum_stars = 0;
+            foreach ($feedback as $user_feedback) {
+                // return $user_feedback;
+                $points_detail = new stdClass();
+                $points_detail->student_name = $user_feedback[0]->sender->first_name;
+                $points_detail->course_name = $user_feedback[0]->course->course_name;
+                $points_detail->date = $user_feedback[0]->created_at->format('d M Y');
+                $sum_stars =  $user_feedback->sum('rating') / count($user_feedback);
+                $points_detail->stars = $sum_stars;
+                $points_detail->review = $user_feedback[0]->review;
+                $points_detail->kudos_points = $user_feedback->sum('kudos_points');
+                $sum_feedback = $sum_feedback + $user_feedback->sum('kudos_points');
+                array_push($points_array, $points_detail);
+            }
+        }
+
+        return response()->json([
+            "status" => true,
+            "message" => "Teacher Kudos points",
+            "kudos_points" => $sum_feedback,
+            "points_detail" => $points_array,
+        ]);
+    }
 }

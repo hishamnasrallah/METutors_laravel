@@ -323,6 +323,7 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['i
 //**************** Syllabus routes ****************
 
 Route::get('teacher-dashboard', 'DashboardController@teacher_dashboard');
+Route::get('teacher/kudos-points', 'DashboardController@kudos_detail');
 Route::post('invoice-mail', 'DashboardController@invoice_mail');
 Route::get('classes-dashboard', 'DashboardController@classes_dashboard');
 
@@ -342,7 +343,7 @@ Route::get('get-teachers/{name}', 'Web\UserController@search_teacher');
 
 
 Route::get('programs/{id}/subjects', 'ClassController@program_subjects');
-Route::get('teacher/kudos-points', 'ClassController@kudos_points');
+// Route::get('teacher/kudos-points', 'ClassController@kudos_points');
 
 
 Route::get('courses/{id}', 'AdminController@program_subjects');
