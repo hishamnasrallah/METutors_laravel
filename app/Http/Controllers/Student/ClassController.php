@@ -1404,7 +1404,7 @@ class ClassController extends Controller
             ], 400);
         }
 
-
+        //Teacher Day Availability and requested classes Availability
         $availability = TeacherAvailability::where('user_id', $course->teacher_id)->get();
         $requestedClasses = json_decode(json_encode($request->classes));
         foreach ($requestedClasses as $class) {

@@ -32,6 +32,7 @@ use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use stdClass;
 
 class AssignmentController extends Controller
 {
@@ -149,12 +150,19 @@ class AssignmentController extends Controller
 
                 $users = [];
                 $assignees = $assignment->assignees;
+                $all_assignees = [];
                 foreach ($assignees as $assignee) {
                     $user = $assignees->whereIn('user_id', $users)->first();
                     if ($user == null) {
                         $assignment->assignees = $user;
                     }
+                    //Calculating Answes Recieved
+                    if (!in_array($assignee->id, $all_assignees)) {
+                        array_push($all_assignees, $assignee->user->id);
+                    }
                 }
+                $answers = $assignees->where('status', '!=', 'pending')->unique('user_id')->count();
+                $assignment->answer_recieved = $answers . ' out of ' . count(array_unique($all_assignees));
             }
         }
 
@@ -212,6 +220,18 @@ class AssignmentController extends Controller
 
         $assignment = Assignment::with('assignees', 'assignees.user')->find($assignment_id);
 
+        // return $assignees =  $assignment['assignees'];
+        $all_assignees = [];
+        foreach ($assignment['assignees'] as $assignee) {
+            if (!in_array($assignee->id, $all_assignees)) {
+                array_push($all_assignees, $assignee->user->id);
+            }
+        }
+
+        $all_assignees = array_unique($all_assignees);
+        $all_assignees = User::select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')->whereIn('id', $all_assignees)->get();
+        unset($assignment['assignees']);
+        $assignment->assignees = $all_assignees;
         return response()->json([
             'status' => true,
             'message' => 'Assignment details',
@@ -496,6 +516,12 @@ class AssignmentController extends Controller
         }
 
         $assignment = Assignment::find($assignment_id);
+        if ($assignment->status == 'completed') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Assignment has been expired!',
+            ], 400);
+        }
         $assignment->deadline = $request->deadline;
         $assignment->update();
 

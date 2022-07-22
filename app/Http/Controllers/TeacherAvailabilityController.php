@@ -95,7 +95,7 @@ class TeacherAvailabilityController extends Controller
 
         //         // if date is equal to availability weekday
         //         if ($date->format("D") == $Day) {
-        //             // echo $date->format("Y-m-d D") . ',';
+                    // echo $date->format("Y-m-d D") . ',';
         //             $weekdayClasses = $academicClasses->where('day', $day);
         //             $weekAvailabilites = $availabilites->where('day', $day);
         //             //if weekday classees are greater than 0
@@ -111,23 +111,25 @@ class TeacherAvailabilityController extends Controller
         //                         'time_to' => $weekAvailability->time_to,
         //                         'day' => $weekAvailability->day,
         //                     ]);
-        //                 }
-        //                 //If Classes Are Scheduled on Weeekdays
-        //                 foreach ($weekdayClasses as $weekdayClass) {
+        //                 } else {
+        //                     //If Classes Are Scheduled on Weeekdays
+        //                     // foreach ($weekdayClasses as $weekdayClass) {
 
-        //                     $start_time = Carbon::parse($weekdayClass->start_time)->format('G:i');
-        //                     $end_time = Carbon::parse($weekdayClass->end_time)->format('G:i');
+        //                     // $start_time = Carbon::parse($weekdayClass->start_time);
+        //                     // $end_time = Carbon::parse($weekdayClass->end_time);
 
+        //                     // return $time_to;
         //                     $check_classes = AcademicClass::whereBetween('start_date', [$startDate, $endDate])
         //                         ->where('teacher_id', $teacher_id)
         //                         ->where('status', '!=', 'completed')
-        //                         ->where('day', $weekdayClass->day)
-        //                         ->where(function ($q) use ($time_from, $time_to) {
-        //                             $q->whereBetween('start_time', [$time_from, $time_to])->whereBetween('end_time', [$time_from, $time_to]);
-        //                         })->get();
+        //                         ->where('day', $weekAvailability->day)
+        //                         // ->where(function ($q) use ($time_from, $time_to) {
+        //                         ->whereBetween('start_time', [$weekAvailability->time_from, $weekAvailability->time_to])
+        //                         ->whereBetween('end_time', [$weekAvailability->time_from, $weekAvailability->time_to])
+        //                         // })
+        //                         ->get();
 
         //                     if (count($check_classes) == 0) {
-
         //                         array_push($totalAvailabilities, [
         //                             'availabilty_date' => $date->format('Y-m-d'),
         //                             'time_from' => $weekAvailability->time_from,
@@ -135,6 +137,7 @@ class TeacherAvailabilityController extends Controller
         //                             'day' => $weekAvailability->day,
         //                         ]);
         //                     }
+        //                     // }
         //                 }
         //             }
         //         }

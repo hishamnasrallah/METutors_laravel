@@ -271,4 +271,6 @@ class GeneralController extends Controller
         $items = $items instanceof Collection ? $items : Collection::make($items);
         return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
+
+    
 }

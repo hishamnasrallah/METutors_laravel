@@ -108,8 +108,8 @@ class PaymentController extends Controller
             $order = new Order();
             $order->user_id = $course->student_id;
             $order->course_id = $course->id;
-            // $order->transaction_id = $paymentDetails->original->id;
-            $order->transaction_id = $paymentDetails->original->transaction_id;
+            $order->transaction_id = $paymentDetails->original->id;
+            // $order->transaction_id = $paymentDetails->original->transaction_id;
             $order->payment_status = 'success';
             $order->save();
 

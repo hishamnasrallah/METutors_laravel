@@ -215,6 +215,8 @@ Route::get('field-of-studies', 'GeneralController@field_of_studies');
 
 Route::resource('program', 'ProgramController');
 Route::resource('program-country', 'ProgramCountryController');
+Route::get('all-countries', 'ProgramCountryController@countries');
+
 Route::resource('fieldofstudy', 'FieldOfStudyController');
 Route::resource('subject', 'SubjectController');
 
@@ -427,7 +429,9 @@ Route::post('teachers/filter', 'Web\UserController@filterTeacher');
 
 //**************** Student routes ****************
 
+
 Route::get('teacher/{teacher_id}/availability', 'TeacherAvailabilityController@getAvailability'); //get teacher availability
+Route::get('admin/teacher-availability/{teacher_id}/', 'TeacherAvailabilityController@getAvailability'); //Admin get teacher availability
 
 
 

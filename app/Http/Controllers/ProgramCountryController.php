@@ -33,6 +33,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use PragmaRX\Countries\Package\Countries;
+use IlluminateAgnostic\Arr\Support\Arr;
 
 class ProgramCountryController extends Controller
 {
@@ -70,7 +72,6 @@ class ProgramCountryController extends Controller
     public function store(Request $request)
     {
         $rules = [
-
             'name' => 'required',
         ];
 
@@ -88,8 +89,13 @@ class ProgramCountryController extends Controller
             ], 400);
         }
 
+        $countries = Countries::all();
+        $country = $countries->where('name.common', $request->name)->first();
+
+
         $program_country = new ProgramCountry();
-        $program_country->name = $request->name;
+        $program_country->name = $country->name->common;
+        $program_country->flag =  $country->flag['flag-icon'];
         $program_country->save();
 
         return response()->json([
@@ -172,9 +178,10 @@ class ProgramCountryController extends Controller
     }
 
 
-    public function program_countries(Request $request){
+    public function program_countries(Request $request)
+    {
 
-          $program_countries = ProgramCountry::paginate($request->per_page ?? 10);
+        $program_countries = ProgramCountry::paginate($request->per_page ?? 10);
 
         if ($request->has('status')) {
             $program_countries = ProgramCountry::where('status', 1)->paginate($request->per_page ?? 10);
@@ -191,15 +198,32 @@ class ProgramCountryController extends Controller
             'status' => true,
             'program_countries' => $program_countries,
         ]);
-
     }
 
 
 
-      public function paginate($items, $perPage, $page = null, $options = [])
+    public function paginate($items, $perPage, $page = null, $options = [])
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
         return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+    }
+
+    public function countries()
+    {
+        $countries = Countries::all();
+        $Countries = [];
+        foreach ($countries as $country) {
+            array_push($Countries, [
+                'name' => $country->name->common,
+                'flag' => $country->flag['flag-icon'],
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "Country with Flags",
+            'countries' => $Countries,
+        ]);
     }
 }
