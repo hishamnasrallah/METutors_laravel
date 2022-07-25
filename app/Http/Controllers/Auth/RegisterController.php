@@ -231,6 +231,9 @@ class RegisterController extends Controller
 
             $update_user = User::find($user->id);
             $update_user->id_number = $id_number;
+            if ($request->has('return_url')) {
+                $update_user->redirect_url = $request->return_url;
+            }
             $update_user->update();
 
             $admin = User::where('role_name', 'admin')->first();
@@ -244,6 +247,7 @@ class RegisterController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'User Registered Successfully And Verification Code Has Been Sent !!',
+                'return_url' => $request->return_url ?? false,
             ]);
 
             return redirect('/verification');

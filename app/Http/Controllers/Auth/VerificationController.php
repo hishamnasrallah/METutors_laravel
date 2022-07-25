@@ -270,7 +270,7 @@ class VerificationController extends Controller
                      return response()->json([
                         'status'=>true,
                         'message'=>'Email verified Successfully!!' ,
-                        
+                         'return_url' => $request->return_url ?? false,
                         
                         ]);
                 }
@@ -286,7 +286,7 @@ class VerificationController extends Controller
               return response()->json([
                         'status'=>true,
                         'message'=>'Email verified Successfully!!' ,
-                        
+                         'return_url' => $request->return_url ?? false,
                         ]);
         }
     }

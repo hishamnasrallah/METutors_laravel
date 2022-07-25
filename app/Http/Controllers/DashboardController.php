@@ -56,20 +56,22 @@ class DashboardController extends Controller
             $current_date = Carbon::now()->format('Y-m-d');
 
             $total_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->count();
-            return $total_last_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->count();
+            $total_last_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->count();
+            //Total courses Growth
             $courses_growth = 0;
             $greater = 0;
             $greater = $total_courses > $total_last_courses ? $total_courses : $total_last_courses;
-            if ($total_courses > 0) {
+            if ($greater > 0 && $token_user->created_at <= $compareDate) {
                 $courses_growth = (($total_last_courses - $total_courses) / $greater) * 100;
             }
 
             $total_completed_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'completed')->count();
             $total_last_completed_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->where('status', 'completed')->count();
+            //Total completed courses Growth
             $completed_courses_growth = 0;
             $greater = 0;
             $greater = $total_completed_courses > $total_last_completed_courses ? $total_completed_courses : $total_last_completed_courses;
-            if ($total_completed_courses > 0) {
+            if ($greater > 0 && $token_user->created_at <= $compareDate) {
                 $completed_courses_growth = (($total_last_completed_courses - $total_completed_courses) / $greater) * 100;
             }
 
@@ -102,20 +104,23 @@ class DashboardController extends Controller
                 ->where('receiver_id', $user_id)
                 // ->groupBy('')
                 ->get();
+
+            //Feedbacks Growth
             $feedbacks_growth = 0;
             $greater = 0;
             $greater = count($feedbacks) > count($last_feedbacks) ? count($feedbacks) : count($last_feedbacks);
-            if (count($feedbacks) > 0) {
+            if ($greater > 0 && $token_user->created_at <= $compareDate) {
                 $feedbacks_growth = ((count($last_feedbacks) - count($feedbacks)) / $greater) * 100;
             }
 
 
             $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->count();
             $total_last_newly_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->where('status', 'pending')->count();
+            //Newly assigned courses Growth
             $newly_courses_growth = 0;
             $greater = 0;
             $greater = $total_newly_courses > $total_last_newly_courses ? $total_newly_courses : $total_last_newly_courses;
-            if ($total_newly_courses > 0) {
+            if ($greater > 0 && $token_user->created_at <= $compareDate) {
                 $newly_courses_growth = ($total_last_newly_courses / $total_newly_courses) * 100;
             }
 
@@ -146,15 +151,19 @@ class DashboardController extends Controller
                 "message" => "todays classes",
                 "todays_date" => $todays_date,
                 "courses_growth" => round($courses_growth),
+                "courses_last_count" => round($total_last_courses),
                 "total_courses" => $total_courses,
                 "total_completed_courses" => $total_completed_courses,
                 "completed_courses_growth" => round($completed_courses_growth),
+                "completed_courses_last_count" => round($total_last_completed_courses),
                 "kudos_points" => $sum_feedback,
                 "kudos_points_growth" => round($feedbacks_growth),
+                "kudos_points_last_count" => round(count($last_feedbacks)),
                 "feedbacks" => $points_array,
                 "newly_assigned_courses" => $newly_assigned_courses,
                 "total_newly_courses" => $total_newly_courses,
                 "newly_courses_growth" => $newly_courses_growth,
+                "newly_courses_last_count" => round($total_last_newly_courses),
                 "missed_classes" => $missed_classes,
                 "todays_classes" => $todays_classes,
             ]);

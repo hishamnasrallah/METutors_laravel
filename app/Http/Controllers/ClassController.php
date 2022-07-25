@@ -546,7 +546,7 @@ class ClassController extends Controller
             $academicClass->class_paradigm = "added";
             $academicClass->save();
             array_push($classes_array, $academicClass->id);
-            /// Curl Implementation
+            // Braincert Curl Implementation
 
             $apiURL = 'https://api.braincert.com/v2/schedule';
             $postInput = [
@@ -602,13 +602,17 @@ class ClassController extends Controller
 
         $course = Course::with('classes')->find($request->course_id);
 
-
+        //Hyper Pay Implementation
         $user = User::findOrFail($token_user->id);
         $amount = $request->total_price;
         $brand = 'VISA'; // MASTER OR MADA
 
         $id = Str::random('64');
-        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+
+        $payment = LaravelHyperpay::addMerchantTransactionId($id)
+            ->addBilling(new HyperPayBilling())
+            ->checkout($trackable_data, $user, $amount, $brand, $request);
+
         $payment = json_decode(json_encode($payment));
         $script_url = $payment->original->script_url;
         $shopperResultUrl = $payment->original->shopperResultUrl;

@@ -13,11 +13,13 @@ use Twilio\Rest\Client;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use \App\Mail\SendMailOtp;
+use App\Models\UserMeta;
 use Auth;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Models\Verification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 class LoginController extends Controller
 {
@@ -156,6 +158,22 @@ class LoginController extends Controller
                 //Otp Attempts
                 if ($find->otp_attempts >= 3) {
                     $find->update_at = Carbon::now()->addMinutes(2);
+
+
+                    //*********** Sending Email to Admin  ************\\
+                    $admin = User::where('role_name', 'admin')->first();
+                    $user_email = $admin->email;
+                    $custom_message = "Someone is trying to attept login";
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message);
+
+                    Mail::send('email.admin_otp', $data, function ($message) use ($to_email) {
+                        $message->to($to_email)->subject('Login Alert!');
+                        $message->from('metutorsmail@gmail.com', 'MeTutor');
+                    });
+                    // //******** Email ends **********//
+
                     return response()->json([
                         'status' => false,
                         'message' => "OTP Expired",
@@ -207,7 +225,7 @@ class LoginController extends Controller
 
         if ($this->attemptLogin($request)) {
 
-            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->username)->first();
+            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar', 'redirect_url')->where('email', $request->username)->first();
 
             $credentials = array();
             $credentials['email'] = $request->username;
@@ -266,16 +284,39 @@ class LoginController extends Controller
                 $verification->sendEmailCode();
 
                 return response()->json([
-                    'status' => true,
+                    'status' => false,
                     'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
+                    'role' => $user->role->id,
+                    'verified' => $user->verified,
                 ], 400);
+            }
+
+            //Checking User Meta
+            if ($user->role_name == 'teacher') {
+                $user_meta = UserMeta::where('user_id', $user->id)->first();
+                if ($user_meta == null) {
+                    $user->user_meta = 'false';
+                } else {
+                    $user->user_meta = 'true';
+                }
+            }
+            if ($user->role_name == 'student') {
+
+                $user_meta = User::find($user->id);
+                $redirect_url = $user_meta->redirect_url;
+                if ($user_meta->redirect_url != null) {
+                    $user_meta->redirect_url = null;
+                    $user_meta->update();
+                }
             }
 
             return response()->json([
                 'status' => true,
                 'message' => 'User Logged in Successfully!!',
                 'user' => $user,
-                'token' => $token
+                'token' => $token,
+                'return_url' => $redirect_url ?? false,
+
             ]);
         }
 
