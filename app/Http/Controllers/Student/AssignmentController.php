@@ -43,7 +43,7 @@ class AssignmentController extends Controller
             ->with(['assignments.assignees.user' => function ($q) {
                 $q->latest();
             }])
-            ->find($course_id);
+            ->findOrFail($course_id);
 
         $total_assinments = 0;
         $completed_assignments = 0;
@@ -61,6 +61,7 @@ class AssignmentController extends Controller
             $users = [];
             $assignees = $assignment->assignees;
             foreach ($assignees as $assignee) {
+                $assignment->status =  $assignee->status;
                 $user = $assignees->whereIn('user_id', $users)->first();
                 if ($user == null) {
                     $assignment->assignees = $user;
@@ -72,14 +73,40 @@ class AssignmentController extends Controller
         if (count($request->all()) >= 1) {
 
             if ($request->status == 'active') {
-                $assignments = Assignment::with('assignees', 'assignees.user')->whereIn('id', $user_assignments)->whereIn('status', ['active'])->get();
-                $course->assignments = $assignments;
+                $course = Course::with('participants', 'participants.user', 'assignments.assignees.user')
+                    ->with('assignments', function ($query) {
+                        $query->where('status', 'active');
+                    })
+                    ->with(['assignments.assignees' => function ($q) {
+                        $q->latest();
+                    }])
+                    ->findOrFail($course_id);
+
+                foreach ($course->assignments as $assignment) {
+                    $users = [];
+                    $assignees = $assignment->assignees;
+                    $assignment->status =  $assignees[0]->status;
+                }
             }
             if ($request->status == 'completed') {
 
-                $assignments = Assignment::with('assignees', 'assignees.user')->whereIn('id', $user_assignments)->whereIn('status', ['completed'])->get();
-                $course->assignments = $assignments;
+                $course = Course::with('participants', 'participants.user', 'assignments.assignees.user')
+                    ->with('assignments', function ($query) {
+                        $query->where('status', 'completed');
+                    })
+                    ->with(['assignments.assignees' => function ($q) {
+                        $q->latest();
+                    }])
+                    ->findOrFail($course_id);
+
+                foreach ($course->assignments as $assignment) {
+                    $users = [];
+                    $assignees = $assignment->assignees;
+                    $assignment->status =  $assignees[0]->status;
+                }
             }
+
+
 
             return response()->json([
                 'status' => true,

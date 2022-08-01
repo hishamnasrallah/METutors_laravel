@@ -239,7 +239,7 @@ class SocialiteController extends Controller
                     ]);
                 } else {
 
-                    $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
+                    $user = User::select('id', 'first_name', 'last_name','role', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
 
                     if($user->role != $request->role){
 
