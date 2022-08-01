@@ -35,6 +35,7 @@ use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Stevebauman\Location\Facades\Location;
 
 
 use Illuminate\Http\Request;
@@ -173,10 +174,22 @@ class TestController extends Controller
         return redirect()->back();
     }
 
+    public function get_country(Request $request)
+    {
+        $ip = '39.46.57.189';
+        $geo_user = \Location::get($request->ip());
+        return response()->json([
+            'status' => true,
+            'message' => "User details!",
+            'user' => $geo_user,
+        ]);
+    }
+
     public function test()
     {
-        return $classes = AcademicClass::where('start_date', "<=", Carbon::today()->format('Y-m-d'))
-            ->where('status', '!=', 'completed')
-            ->get();
+        $classes = AcademicClass::orderBy('start_time', 'asc')->take(10)->get();
+        return response()->json([
+            'classes' => $classes,
+        ]);
     }
 }

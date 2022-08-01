@@ -12,7 +12,7 @@ use App\Models\Ticket;
 use DB;
 
 use App\User;
-
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 use Symfony\Component\HttpFoundation\Response;
@@ -58,6 +58,9 @@ class CommentsController extends Controller
             'comment' => $request->comment,
             'file' => $file,
         ]);
+
+        $tick->updated_at = Carbon::now();
+        $tick->update();
 
         $teacher_message = "Ticket Comment added";
         $admin_message = "Ticket Comment added";

@@ -24,6 +24,10 @@ class Ticket extends Model
     {
         return $this->hasMany(Comment::class);
     }
+    public function ticket_comments()
+    {
+        return $this->hasMany(Comment::class)->latest();
+    }
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id')->select(['id', 'id_number', 'first_name', 'last_name', 'last_name', 'email', 'role_name', 'verified', 'avatar']);

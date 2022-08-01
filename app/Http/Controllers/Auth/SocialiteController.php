@@ -241,6 +241,16 @@ class SocialiteController extends Controller
 
                     $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
 
+                    if($user->role != $request->role){
+
+                            return response()->json([
+                                'status' => true,
+                                'message' => 'This email is already registered with us for another role.',
+                                
+                            ],400);
+                    
+                    }
+
                     if ($user->role_name == 'teacher') {
 
                         $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();

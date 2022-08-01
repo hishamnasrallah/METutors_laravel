@@ -548,9 +548,14 @@ Route::get('student/class/{academic_class_id}/recording', 'Student\ClassControll
 Route::post('student/course/{course_id}/select-teacher', 'Student\ClassController@teacher_replacement');
 Route::post('student/course/{course_id}/request-admin', 'Student\CourseController@request_admin');
 
+//Student Reschedule
+Route::get('available-slots', 'TeacherAvailabilityController@available_slots');
+Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
+Route::get('student/class/{class_id}', 'Student\ClassController@classDetail');
 
-
-
+Route::group(['middleware' => ['cors']], function () {
+    Route::get('get-country', 'TestController@get_country');
+});
 
 Route::get('local-utc', 'ClassController@local_to_utc');
 Route::get('utc-local', 'ClassController@utc_to_local');

@@ -111,7 +111,12 @@ class DashboardController extends Controller
                     'total_rating' => $total_rating,
                 ]);
             }
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('teacher', 'course', 'course.subject', 'course.student', 'course.teacher', 'course.program')->where('start_date', $current_date)->where($userrole, $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status', 'teacher_id')
+                ->with('teacher', 'course', 'course.subject', 'course.student', 'course.teacher', 'course.program')
+                ->where('start_date', $current_date)->where($userrole, $user_id)
+                ->where('status', '!=', 'pending')
+                ->orderBy('start_time', 'asc')
+                ->get();
             $total_classes = AcademicClass::where($userrole, $user_id)->whereBetween('created_at', [$endDate, $current_date])->count();
             $attended_classes = Attendance::where('user_id', $user_id)->whereBetween('created_at', [$endDate, $current_date])->where('status', 'present')->count();
             //Attendence Growth
@@ -159,9 +164,9 @@ class DashboardController extends Controller
                 }
             }
 
-            if ($last_progress == 0) {
-                $last_progress = 100;
-            }
+            // if ($last_progress == 0) {
+            //     $last_progress = 100;
+            // }
 
             $overall_progress_growth = 0;
             $greater = 0;
@@ -221,7 +226,11 @@ class DashboardController extends Controller
                     'total_rating' => $total_rating,
                 ]);
             }
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'teacher', 'course.subject', 'course.student', 'course.teacher', 'course.program')->where('start_date', $current_date)->where($userrole, $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'teacher', 'course.subject', 'course.student', 'course.teacher', 'course.program')
+                ->where('start_date', $current_date)->where($userrole, $user_id)
+                ->where('status', '!=', 'pending')
+                ->orderBy('start_time', 'asc')
+                ->get();
             $total_classes = AcademicClass::where($userrole, $user_id)->count();
             $attended_classes = Attendance::where('user_id', $user_id)->count();
             $total_payment = Course::where($userrole, $user_id)->sum('total_price');

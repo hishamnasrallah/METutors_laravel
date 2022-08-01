@@ -145,9 +145,9 @@ class CourseController extends Controller
         $completed_classes = $course['classes']->where('staus', 'completed');
         $remaining_classes = $course['classes']->where('staus', '!=', 'completed');
 
-        $my_attendence = Attendance::with('class')->where('user_id', $token_user->id)->where('course_id', $course_id)->get();
+        $my_attendence = Attendance::with('class', 'user')->where('user_id', $token_user->id)->where('course_id', $course_id)->get();
 
-        $students_attendance = Attendance::with('class')->whereIn('user_id', $students)->where('course_id', $course_id)->get();
+        $students_attendance = Attendance::with('class', 'user')->whereIn('user_id', $students)->where('course_id', $course_id)->get();
         return response()->json([
             'status' => true,
             'message' => "Course Attendence!",

@@ -304,6 +304,7 @@ class ClassController extends Controller
             $class->status = 'pending';
             $class->save();
         }
+
         $program = Program::find($request->program_id);
         $subject = Subject::find($request->subject_id);
         $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->latest()->first();
@@ -324,7 +325,17 @@ class ClassController extends Controller
         if ($course_count == null) {
             $course->course_name = $subject->name . "0001";
         } else {
-            $course->course_name = $subject->name . "000" . $course_count;
+            //Course name conditions
+            $number = strlen($course_count);
+            if ($number == 1) {
+                $course->course_name = $subject->name . "-" . "000" . $course_count;
+            } elseif ($number == 2) {
+                $course->course_name = $subject->name . "-" . "00" . $course_count;
+            } elseif ($number == 3) {
+                $course->course_name = $subject->name . "-" . "0" . $course_count;
+            } else {
+                $course->course_name = $subject->name . "-" . $course_count;
+            }
         }
         $course->update();
 
@@ -1551,11 +1562,26 @@ class ClassController extends Controller
                 // echo "passed,";
                 $current_time = Carbon::now();
                 $endTime = Carbon::parse($class->end_time);
-                // if ($current_time > $endTime) {
-                //for students
-                // return $class->participants;
-                foreach ($class->participants as $participant) {
-                    $attendance = Attendance::where('user_id', $participant->student_id)
+                if ($current_time > $endTime) {
+                    //for students
+                    // return $class->participants;
+                    foreach ($class->participants as $participant) {
+                        $attendance = Attendance::where('user_id', $participant->student_id)
+                            ->where('academic_class_id', $class->id)
+                            ->first();
+
+                        if ($attendance == null) {
+                            $userAttendence = new Attendance();
+                            $userAttendence->academic_class_id = $class->id;
+                            $userAttendence->course_id = $class->course_id;
+                            $userAttendence->user_id = $participant->student_id;
+                            $userAttendence->status = 'absent';
+                            $userAttendence->role_name = 'student';
+                            $userAttendence->save();
+                        }
+                    }
+                    //for teacher
+                    $attendance = Attendance::where('user_id', $class->teacher_id)
                         ->where('academic_class_id', $class->id)
                         ->first();
 
@@ -1563,27 +1589,12 @@ class ClassController extends Controller
                         $userAttendence = new Attendance();
                         $userAttendence->academic_class_id = $class->id;
                         $userAttendence->course_id = $class->course_id;
-                        $userAttendence->user_id = $participant->student_id;
+                        $userAttendence->user_id = $class->teacher_id;
                         $userAttendence->status = 'absent';
-                        $userAttendence->role_name = 'student';
+                        $userAttendence->role_name = 'teacher';
                         $userAttendence->save();
                     }
                 }
-                //for teacher
-                $attendance = Attendance::where('user_id', $class->teacher_id)
-                    ->where('academic_class_id', $class->id)
-                    ->first();
-
-                if ($attendance == null) {
-                    $userAttendence = new Attendance();
-                    $userAttendence->academic_class_id = $class->id;
-                    $userAttendence->course_id = $class->course_id;
-                    $userAttendence->user_id = $class->teacher_id;
-                    $userAttendence->status = 'absent';
-                    $userAttendence->role_name = 'teacher';
-                    $userAttendence->save();
-                }
-                // }
             }
         }
         // ************************************************
@@ -1592,6 +1603,12 @@ class ClassController extends Controller
             ->with('course', 'course.subject', 'course.student', 'attendence', 'attendees.user')
             ->where('start_date', $current_date)
             ->with('course')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->get();
@@ -1600,6 +1617,12 @@ class ClassController extends Controller
             ->with('course', 'course.subject', 'course.student', 'attendence', 'attendees.user')
             ->where('start_date', '>', $current_date)
             ->with('course')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->get();
@@ -1613,6 +1636,12 @@ class ClassController extends Controller
             ->with('course', 'course.subject', 'course.student', 'attendees.user')
             ->with(['attendence' => function ($query) use ($user_id) {
                 $query->where(['user_id' => $user_id]);
+            }])
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
             }])
             ->where('start_date', '<', $current_date)
             ->with('course')
@@ -1788,7 +1817,11 @@ class ClassController extends Controller
             $start_time = date("G:i", strtotime($request->start_time));
             $end_time = date("G:i", strtotime($request->end_time));
 
-            $classes = AcademicClass::where('id', '!=', $academic_id)->where('start_date', $request->start_date)->where('teacher_id', $token_user->id)->get();
+            $classes = AcademicClass::where('id', '!=', $academic_id)
+                ->where('start_date', $request->start_date)
+                ->where('teacher_id', $token_user->id)
+                ->where('status', '!=', 'completed')
+                ->get();
 
             foreach ($classes as $class) {
                 $db_startTime = date("G:i", strtotime($class->start_time));
@@ -1815,11 +1848,15 @@ class ClassController extends Controller
                     $reschedule_class->rescheduled_by = $token_user->id;
                     $reschedule_class->academic_class_id = $request->academic_class_id;
                     $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->start_time = $request->start_time;
+                    $reschedule_class->end_time = $request->end_time;
+                    $reschedule_class->day = $request->day;
+                    $reschedule_class->status = 'rescheduled_by_teacher';
                     $reschedule_class->save();
 
                     return response()->json([
                         'status' => true,
-                        'errors' => "Class Rescheduled Successfully!",
+                        'message' => "Class Rescheduled Successfully!",
                     ]);
                 } else {
                     // if class is not scheduled by braincert
@@ -1848,6 +1885,10 @@ class ClassController extends Controller
                     $reschedule_class->rescheduled_by = $token_user->id;
                     $reschedule_class->academic_class_id = $request->academic_class_id;
                     $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->start_time = $request->start_time;
+                    $reschedule_class->end_time = $request->end_time;
+                    $reschedule_class->day = $request->day;
+                    $reschedule_class->status = 'rescheduled_by_teacher';
                     $reschedule_class->save();
 
                     return response()->json([

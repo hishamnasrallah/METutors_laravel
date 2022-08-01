@@ -9,6 +9,9 @@ use Carbon\Carbon;
 use DateTime;
 use Illuminate\Http\Request;
 use stdClass;
+use Illuminate\Support\Facades\Validator;
+
+use function PHPUnit\Framework\isEmpty;
 
 class TeacherAvailabilityController extends Controller
 {
@@ -95,7 +98,7 @@ class TeacherAvailabilityController extends Controller
 
         //         // if date is equal to availability weekday
         //         if ($date->format("D") == $Day) {
-                    // echo $date->format("Y-m-d D") . ',';
+        // echo $date->format("Y-m-d D") . ',';
         //             $weekdayClasses = $academicClasses->where('day', $day);
         //             $weekAvailabilites = $availabilites->where('day', $day);
         //             //if weekday classees are greater than 0
@@ -300,6 +303,80 @@ class TeacherAvailabilityController extends Controller
             'weekdays' => $grand_availabilities,
             // 'availabilites' => $availabilites,
             'availabilites' => $finalAvailabilities,
+        ]);
+    }
+
+    public function available_slots(Request $request)
+    {
+        $rules = [
+            'class_id' => 'required',
+            'date' =>  'required',
+            'day' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+        $class = AcademicClass::findOrFail($request->class_id);
+        $date = Carbon::parse($request->date);
+        $availabilites = TeacherAvailability::where('user_id', $class->teacher_id)->where('day', $request->day)->get();
+
+        if ($availabilites->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => "Teacher is not Available at this day!",
+            ], 400);
+        }
+        // Checking if teacher is booked
+        $classes = AcademicClass::where('id', '!=', $class->id)
+            ->where('teacher_id', $class->teacher_id)
+            ->where('day', $request->day)
+            ->where('start_date', $request->date)
+            ->where('status', '!=', 'completed')
+            ->get();
+
+        if ($classes->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Available time slots!',
+                'availabile_slots' => $availabilites
+            ]);
+        }
+        $final_availabilities = [];
+        foreach ($availabilites as $availability) {
+            $time_from = Carbon::parse($availability->time_from)->format('G:i');
+            $time_to = Carbon::parse($availability->time_to)->format('G:i');
+
+            $counter  = 0;
+            foreach ($classes as $academic_class) {
+                $start_time = Carbon::parse($academic_class->start_time)->format('G:i');
+                $end_time = Carbon::parse($academic_class->end_time)->format('G:i');
+                // return $academic_class;
+                if (($start_time >= $time_from) && ($end_time >= $time_from) && ($start_time <=  $time_to) && ($end_time <=  $time_to)) {
+                } else {
+                    $counter++;
+                    if ($counter == count($classes)) {
+                        array_push($final_availabilities, $availability);
+                    }
+                }
+            }
+        }
+
+
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Available time slots!',
+            'availabile_slots' => $final_availabilities
         ]);
     }
 }

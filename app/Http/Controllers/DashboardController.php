@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use stdClass;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 
 class DashboardController extends Controller
 {
@@ -82,7 +85,9 @@ class DashboardController extends Controller
                 ->where('status', 'pending')
                 ->get();
 
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')
+                ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
+                ->orderBy('start_time', 'asc')->get();
             //checking if class has completed
             $currentTime = Carbon::now()->format('H:i:s');
             foreach ($todays_classes as $class) {
@@ -135,7 +140,8 @@ class DashboardController extends Controller
                 // converted to a single user feedback
                 foreach ($feedback as $user_feedback) {
                     $points_detail = new stdClass();
-                    $points_detail->sender_name = $user_feedback[0]->sender->first_name;
+                    $points_detail->student_name = $user_feedback[0]->sender->first_name . ' ' . $user_feedback[0]->sender->last_name;
+                    $points_detail->avatar = $user_feedback[0]->sender->avatar;
                     $points_detail->course_name = $user_feedback[0]->course->course_name;
                     $points_detail->course_date = $user_feedback[0]->course->created_at->format('d M Y');
                     $points_detail->kudos_points = $user_feedback->sum('kudos_points');
@@ -159,7 +165,7 @@ class DashboardController extends Controller
                 "kudos_points" => $sum_feedback,
                 "kudos_points_growth" => round($feedbacks_growth),
                 "kudos_points_last_count" => round(count($last_feedbacks)),
-                "feedbacks" => $points_array,
+                "feedbacks" =>  $this->paginate($points_array, $request->per_page ?? 10),
                 "newly_assigned_courses" => $newly_assigned_courses,
                 "total_newly_courses" => $total_newly_courses,
                 "newly_courses_growth" => $newly_courses_growth,
@@ -174,7 +180,10 @@ class DashboardController extends Controller
 
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'course.subject', 'course.student', 'course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')
+                ->with('course', 'course.subject', 'course.student', 'course.program')
+                ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
+                ->orderBy('start_time', 'asc')->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->where('receiver_id', $user_id)
                 // ->where('course_id', '183')
@@ -197,7 +206,8 @@ class DashboardController extends Controller
                 // converted to a single user feedback
                 foreach ($feedback as $user_feedback) {
                     $points_detail = new stdClass();
-                    $points_detail->sender_name = $user_feedback[0]->sender->first_name;
+                    $points_detail->student_name = $user_feedback[0]->sender->first_name . ' ' . $user_feedback[0]->sender->last_name;
+                    $points_detail->avatar = $user_feedback[0]->sender->avatar;
                     $points_detail->course_name = $user_feedback[0]->course->course_name;
                     $points_detail->course_date = $user_feedback[0]->course->created_at->format('d M Y');
                     $points_detail->kudos_points = $user_feedback->sum('kudos_points');
@@ -214,7 +224,7 @@ class DashboardController extends Controller
                 "total_courses" => $total_courses,
                 "total_completed_courses" => $total_completed_courses,
                 "kudos_points" => $sum_feedback,
-                "feedbacks" => $points_array,
+                "feedbacks" => $this->paginate($points_array, $request->per_page ?? 10),
                 "newly_assigned_courses" => $newly_assigned_courses,
                 "total_newly_courses" => $total_newly_courses,
                 "missed_classes" => $missed_classes,
@@ -380,7 +390,8 @@ class DashboardController extends Controller
             foreach ($feedback as $user_feedback) {
                 // return $user_feedback;
                 $points_detail = new stdClass();
-                $points_detail->student_name = $user_feedback[0]->sender->first_name;
+                $points_detail->student_name = $user_feedback[0]->sender->first_name . ' ' . $user_feedback[0]->sender->last_name;
+                $points_detail->avatar = $user_feedback[0]->sender->avatar;
                 $points_detail->course_name = $user_feedback[0]->course->course_name;
                 $points_detail->date = $user_feedback[0]->created_at->format('d M Y');
                 $sum_stars =  $user_feedback->sum('rating') / count($user_feedback);
@@ -398,5 +409,12 @@ class DashboardController extends Controller
             "kudos_points" => $sum_feedback,
             "points_detail" => $points_array,
         ]);
+    }
+
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 }

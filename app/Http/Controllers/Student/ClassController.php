@@ -1024,39 +1024,39 @@ class ClassController extends Controller
             if ($classStart <= $current_date) {
                 $current_time = Carbon::now();
                 $endTime = ($class->end_time);
-                // if ($current_time > $endTime) {
-                //for students
-                foreach ($class->participants as $participant) {
-                    $attendance = Attendance::where('user_id', $participant->student_id)->where('academic_class_id', $class->id)->first();
+                if ($current_time > $endTime) {
+                    //for students
+                    foreach ($class->participants as $participant) {
+                        $attendance = Attendance::where('user_id', $participant->student_id)->where('academic_class_id', $class->id)->first();
 
+                        if ($attendance == null) {
+                            $userAttendence = new Attendance();
+                            $userAttendence->academic_class_id = $class->id;
+                            $userAttendence->course_id = $class->course_id;
+                            $userAttendence->user_id = $participant->student_id;
+                            $userAttendence->status = 'absent';
+                            $userAttendence->role_name = 'student';
+                            $userAttendence->save();
+                        }
+                    }
+                    //for teacher
+                    $attendance = Attendance::where('user_id', $class->teacher_id)->where('academic_class_id', $class->id)->first();
                     if ($attendance == null) {
                         $userAttendence = new Attendance();
                         $userAttendence->academic_class_id = $class->id;
                         $userAttendence->course_id = $class->course_id;
-                        $userAttendence->user_id = $participant->student_id;
+                        $userAttendence->user_id = $class->teacher_id;
                         $userAttendence->status = 'absent';
-                        $userAttendence->role_name = 'student';
+                        $userAttendence->role_name = 'teacher';
                         $userAttendence->save();
                     }
                 }
-                //for teacher
-                $attendance = Attendance::where('user_id', $class->teacher_id)->where('academic_class_id', $class->id)->first();
-                if ($attendance == null) {
-                    $userAttendence = new Attendance();
-                    $userAttendence->academic_class_id = $class->id;
-                    $userAttendence->course_id = $class->course_id;
-                    $userAttendence->user_id = $class->teacher_id;
-                    $userAttendence->status = 'absent';
-                    $userAttendence->role_name = 'teacher';
-                    $userAttendence->save();
-                }
-                // }
             }
         }
         // ************************************************
 
-        $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.teacher', 'course.subject', 'course.student')
+        $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status', 'teacher_id')
+            ->with('course', 'course.teacher', 'course.subject', 'course.student', 'teacher')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])
@@ -1067,9 +1067,10 @@ class ClassController extends Controller
             ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
+            ->orderBy('start_time', 'desc')
             ->get();
 
-        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
+        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status', 'teacher_id')
             // ->with('course', 'course.teacher', 'course.subject', 'course.student')
             ->with('student_attendence', function ($q) {
                 $q->where('role_name', 'student');
@@ -1077,6 +1078,7 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
+            ->with('teacher')
             ->where('start_date', '>', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
@@ -1201,7 +1203,7 @@ class ClassController extends Controller
             'academic_class_id' =>  'required',
             'start_time' =>  'required',
             'end_time' =>  'required',
-            'start_date' =>  'required|date|after:today',
+            'start_date' =>  'required', //|date|after:today
             'duration' =>  'required',
         ];
 
@@ -1253,12 +1255,13 @@ class ClassController extends Controller
             $start_time = date("G:i", strtotime($request->start_time));
             $end_time = date("G:i", strtotime($request->end_time));
 
-            $classes = AcademicClass::where('id', '!=', $class->id)
+            $classes = AcademicClass::where('id', '!=', $academic_id)
                 ->where('start_date', $request->start_date)
                 ->where('teacher_id', $class->teacher_id)
+                ->where('status', '!=', 'completed')
                 ->get();
 
-            if ($classes != []) {
+            if ($classes->isNotEmpty()) {
                 foreach ($classes as $class) {
                     $db_startTime = date("G:i", strtotime($class->start_time));
                     $db_endTime = date("G:i", strtotime($class->end_time));
@@ -1271,81 +1274,162 @@ class ClassController extends Controller
                 }
             }
 
-            if ($totalDuration > 48) {
-                //checking teacher availability
-                $availabilities = TeacherAvailability::where('user_id', $class->teacher->id)->where('day', $request->day)->get();
-                $req_startTime = Carbon::parse($request->start_time);
-                $req_endTime = Carbon::parse($request->end_time);
-                foreach ($availabilities as $availability) {
-                    $ava_startTime = Carbon::parse($availability->time_from);
-                    $ava_endTime = Carbon::parse($availability->time_to);
 
-                    if (($req_startTime >= $ava_startTime) && ($req_startTime <= $ava_endTime) || ($req_endTime >= $ava_startTime) && ($req_endTime <= $ava_endTime)) {
+
+            $availabilites = TeacherAvailability::where('user_id', $class->teacher_id)->where('day', $request->day)->get();
+            if ($availabilites->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Teacher is not Available at this day!",
+                ], 400);
+            }
+
+
+            $counter = 0;
+            foreach ($availabilites as $availability) {
+                $time_from = Carbon::parse($availability->time_from)->format('G:i');
+                $time_to = Carbon::parse($availability->time_to)->format('G:i');
+
+                if (($start_time >= $time_from) && ($end_time >= $time_from) && ($start_time <=  $time_to) && ($end_time <=  $time_to)) {
+                    break;
+                } else {
+                    $counter++;
+                    if (count($availabilites) == $counter) {
                         return response()->json([
                             'status' => false,
-                            'errors' => "Teacher not Available at this time!",
+                            'message' => "Teacher is not Available at this time!",
                         ], 400);
                     }
                 }
-                $class->start_time = $request->start_time;
-                $class->end_time = $request->end_time;
-                $class->start_date = $request->start_date;
-                $class->class_type = $request->class_type;
-                $class->duration = $request->duration;
+            }
 
-                $apiURL = 'https://api.braincert.com/v2/updateclass';
-                $postInput = [
-                    'apikey' => 'xKUyaLJHtbvBUtl3otJc',
-                    'id' => $class->class_id,
-                    'start_time' => $request->start_time,
-                    'end_time' => $request->end_time,
-                    'date' => $request->start_date,
-                    'end_date' => $request->start_date,
-                ];
 
-                $client = new Client();
-                $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
-                $responseBody = json_decode($response->getBody(), true);
-                if ($responseBody['status'] == 'error') {
+
+            if ($totalDuration > 48) {
+                $class = AcademicClass::where('id',  $request->academic_class_id)->first();
+                // if class is scheduled by braincert
+                if ($class->class_id != null) {
+                    $class->start_time = $request->start_time;
+                    $class->end_time = $request->end_time;
+                    $class->start_date = $request->start_date;
+                    $class->class_type = 'one-to-one';
+                    $class->duration = $request->duration;
+
+
+                    $apiURL = 'https://api.braincert.com/v2/updateclass';
+                    $postInput = [
+                        'apikey' => 'xKUyaLJHtbvBUtl3otJc',
+                        'id' => $class->class_id,
+                        'start_time' => $request->start_time,
+                        'end_time' => $request->end_time,
+                        'date' => $request->start_date,
+                    ];
+
+                    $client = new Client();
+                    $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+                    $responseBody = json_decode($response->getBody(), true);
+                    if ($responseBody['status'] == "ok") {
+                        $class->class_id = $responseBody['class_id'];
+                        $class->status = 'scheduled';
+                        $class->update();
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $responseBody['error'],
+                        ], 400);
+                    }
+
+                    $reschedule_class = new RescheduleClass();
+                    $reschedule_class->rescheduled_by = $token_user->id;
+                    $reschedule_class->academic_class_id = $request->academic_class_id;
+                    $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->start_time = $request->start_time;
+                    $reschedule_class->end_time = $request->end_time;
+                    $reschedule_class->day = $request->day;
+                    $reschedule_class->status = 'rescheduled_by_teacher';
+                    $reschedule_class->save();
+
                     return response()->json([
-                        'status' => false,
-                        'message' => $responseBody['error'],
-                    ], 400);
+                        'status' => true,
+                        'message' => "Class Rescheduled Successfully!",
+                        'class' => $class,
+                    ]);
                 } else {
-                    $class->class_id = $responseBody['class_id'];
+
+                    // if class is not scheduled by braincert
+                    $class->start_time = $request->start_time;
+                    $class->end_time = $request->end_time;
+                    $class->start_date = $request->start_date;
+                    $class->class_type = 'one-to-one';
+                    $class->day = $request->day;
+                    $class->duration = $request->duration;
+
+                    $apiURL = 'https://api.braincert.com/v2/schedule';
+                    $postInput = [
+                        'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
+                        'title' =>  'class',
+                        'timezone' => 90,
+                        'start_time' => $request->start_time,
+                        'end_time' => $request->end_time,
+                        'date' => $request->start_date,
+                        'currency' => "USD",
+                        'ispaid' => null,
+                        'is_recurring' => 0,
+                        'repeat' => 0,
+                        'weekdays' => null,
+                        'end_date' => $request->start_date,
+                        'seat_attendees' => null,
+                        'record' => 0,
+                        'isRecordingLayout ' => 1,
+                        'isVideo  ' => 1,
+                        'isBoard ' => 1,
+                        'isLang ' => null,
+                        'isRegion ' => null,
+                        'isCorporate ' => null,
+                        'isScreenshare ' => 1,
+                        'isPrivateChat  ' => 0,
+                        'description ' => null,
+                        'keyword ' => null,
+                        'format ' => "json",
+                    ];
+
+                    $client = new Client();
+                    $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+
+                    $statusCode = $response->getStatusCode();
+                    $responseBody = json_decode($response->getBody(), true);
+                    if ($responseBody['status'] == "ok") {
+                        $class->class_id = $responseBody['class_id'];
+                        $class->status = 'scheduled';
+                        $class->update();
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $responseBody['error'],
+                        ], 400);
+                    }
+
+                    $reschedule_class = new RescheduleClass();
+                    $reschedule_class->rescheduled_by = $token_user->id;
+                    $reschedule_class->academic_class_id = $request->academic_class_id;
+                    $reschedule_class->course_id = $class->course_id;
+                    $reschedule_class->start_time = $request->start_time;
+                    $reschedule_class->end_time = $request->end_time;
+                    $reschedule_class->day = $request->day;
+                    $reschedule_class->status = 'rescheduled_by_student';
+                    $reschedule_class->save();
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => "Class Rescheduled Successfully!",
+                        'class' => $class,
+                    ]);
                 }
-
-                $academic_class = AcademicClass::find($request->academic_class_id);
-                $reschedule_class = new RescheduleClass();
-                $reschedule_class->rescheduled_by = $token_user->id;
-                $reschedule_class->academic_class_id =  $academic_class->id;
-                $reschedule_class->course_id = $academic_class->course_id;
-                $reschedule_class->start_date = $academic_class->start_date;
-                $reschedule_class->start_time = $academic_class->start_time;
-                $reschedule_class->end_time = $academic_class->end_time;
-                $reschedule_class->day = $academic_class->day;
-                $reschedule_class->save();
-                $class->update();
-
-                $student = User::findOrFail($token_user->id);
-                $teacher = User::findOrFail($academic_class->teacher_id);
-                $student_message = "Class Rescheduled Successfully!";
-                $teacher_message = "Student Rescheduled a class!";
-
-                // event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
-                // event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
-                // dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message));
-                // dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message));
-
-                return response()->json([
-                    'status' => true,
-                    'message' => "Class Rescheduled Successfully!",
-                    'class' => $class,
-                ]);
             } else {
                 return response()->json([
                     'status' => false,
-                    'errors' => "You dont have time to reschdule the class",
+                    'message' => "You dont have time to reschdule the class",
                 ], 400);
             }
         } else {
@@ -1859,6 +1943,17 @@ class ClassController extends Controller
             'status' => true,
             'message' => "Your Request has been submitted! Wait for Teacher Approval!",
             'course' => $course,
+        ]);
+    }
+
+    //*********/ Specific Class details *********
+    public function classDetail(Request $request, $class_id)
+    {
+        $class = AcademicClass::findOrFail($class_id);
+        return response()->json([
+            'success' => true,
+            'message' => 'Class Detail!',
+            'class' => $class,
         ]);
     }
 

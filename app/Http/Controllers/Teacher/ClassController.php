@@ -821,6 +821,7 @@ class ClassController extends Controller
             ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
+            ->orderBy('start_time', 'desc')
             ->get();
 
         $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
@@ -1055,6 +1056,7 @@ class ClassController extends Controller
                 $reschedule_class->start_time = $academic_class->start_time;
                 $reschedule_class->end_time = $academic_class->end_time;
                 $reschedule_class->day = $academic_class->day;
+                $reschedule_class->status = "rescheduled_by_teacher";
                 $reschedule_class->save();
                 $class->update();
 

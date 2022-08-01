@@ -265,6 +265,7 @@ class TicketsController extends Controller
         $mailer->sendTicketInformation(Auth::user(), $ticket);
         return redirect()->back()->with("status", "A ticket with ID: #$ticket->ticket_id has been opened.");
     }
+
     public function userTickets(Request $request)
     {
         $token_1 = JWTAuth::getToken();
@@ -273,6 +274,16 @@ class TicketsController extends Controller
         $user = $token_user;
         // return $user->id;
         $tickets = Ticket::with('category', 'priority', 'user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+
+        foreach ($tickets as $ticket) {
+            $latest_comment = $ticket->ticket_comments->first();
+            if ($latest_comment) {
+                $ticket->last_reply = $latest_comment->created_at->diffForHumans();
+            } else {
+                $ticket->last_reply = null;
+            }
+            unset($ticket['ticket_comments']);
+        }
 
         // return json_encode($tickets);
         return response()->json([
@@ -344,6 +355,17 @@ class TicketsController extends Controller
             unset($comment->user->pm_type);
             unset($comment->user->pm_last_four);
         }
+
+
+        //Latest reply time
+        $latest_comment = $ticket->ticket_comments->first();
+        if ($latest_comment) {
+            $ticket->last_reply = $latest_comment->created_at->diffForHumans();
+        } else {
+            $ticket->last_reply = null;
+        }
+        unset($ticket['ticket_comments']);
+
         return response()->json([
             'message' => 'success',
             'ticket' => $ticket,
