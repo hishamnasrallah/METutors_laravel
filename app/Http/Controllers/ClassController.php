@@ -574,7 +574,7 @@ class ClassController extends Controller
                 'weekdays' => $reqClass->day,
                 'end_date' => $academicClass->end_date,
                 'seat_attendees' => null,
-                'record' => 0,
+                'record' => 1,
                 'isRecordingLayout ' => 1,
                 'isVideo  ' => 1,
                 'isBoard ' => 1,
@@ -1067,6 +1067,7 @@ class ClassController extends Controller
                 'message' => 'Your class is not scheduled today!'
             ], 400);
         }
+        // If class tije is not met shows error
         if (Carbon::now() < Carbon::parse($class->start_time)) {
             return response()->json([
                 'status' => false,
@@ -1558,8 +1559,9 @@ class ClassController extends Controller
         // return $corse['classes'];
         foreach ($corse['classes'] as $class) {
             $classStart = Carbon::parse($class->start_date)->format('Y-m-d');
-            if ($classStart <= $current_date) {
+            if (Carbon::today() >= Carbon::parse($class->start_date)) {
                 // echo "passed,";
+                
                 $current_time = Carbon::now();
                 $endTime = Carbon::parse($class->end_time);
                 if ($current_time > $endTime) {

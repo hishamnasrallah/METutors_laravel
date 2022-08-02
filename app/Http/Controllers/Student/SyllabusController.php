@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Student;
+
 use App\Http\Controllers\Controller;
 
 use App\Models\AcademicClass;
@@ -25,18 +26,18 @@ use Illuminate\Support\Facades\Validator;
 
 class SyllabusController extends Controller
 {
-   
-   
+
+
     public function syllabusDashboard(Request $request, $course_id)
     {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-         if($token_user->role_name == 'teacher'){
-            $userrole='teacher_id';
-       }elseif($token_user->role_name == 'student') {
-         $userrole='student_id';
-        } 
+        if ($token_user->role_name == 'teacher') {
+            $userrole = 'teacher_id';
+        } elseif ($token_user->role_name == 'student') {
+            $userrole = 'student_id';
+        }
 
         $teacher = User::find($token_user->id);
         $course = Course::with('subject', 'language', 'program', 'student', 'student')->find($course_id);
@@ -64,7 +65,7 @@ class SyllabusController extends Controller
                 'status' => true,
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
-                'course_progress' => $courseProgress,
+                'course_progress' => round($courseProgress),
                 'topics' => $class_topics,
                 'unclassified_classes' => $remaining_classes,
             ]);
@@ -89,7 +90,7 @@ class SyllabusController extends Controller
 
                 array_push($topics_array, [
                     "topic" => $class_topic,
-                    "topic_progress" => $topicProgress,
+                    "topic_progress" => round($topicProgress),
                     "total_classes" => $totalTopicClases,
                     "total_topic_hours" => $totaltopicHours,
                 ]);
@@ -100,12 +101,10 @@ class SyllabusController extends Controller
                 'status' => true,
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
-                'course_progress' => $courseProgress,
+                'course_progress' => round($courseProgress),
                 'topics' => $topics_array,
                 'unclassified_classes' => $remaining_classes,
             ]);
         }
     }
-
-   
 }

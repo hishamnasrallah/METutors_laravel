@@ -35,6 +35,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use PragmaRX\Countries\Package\Countries;
 use IlluminateAgnostic\Arr\Support\Arr;
+use Illuminate\Validation\Rule;
 
 class ProgramCountryController extends Controller
 {
@@ -72,7 +73,7 @@ class ProgramCountryController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'name' => 'required',
+            'name' => 'required|unique:program_countries',
         ];
 
 
@@ -145,11 +146,41 @@ class ProgramCountryController extends Controller
      */
     public function update(Request $request, $id)
     {
+
+
+
         $program_country = ProgramCountry::find($id);
+
+        $rules = [
+            'name' => ['required', 'string', Rule::unique('program_countries')->ignore($program_country->id)],
+        ];
+
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
         if (is_null($program_country)) {
             return response()->json(['message' => 'Data not found'], 404);
         }
-        $program_country->update($request->all());
+
+        $countries = Countries::all();
+        // return $request->name;
+        $country = $countries->where('name.common', $request->name)->first();
+
+        $program_country->name = $country->name->common;
+        $program_country->flag =  $country->flag['flag-icon'];
+        $program_country->update();
+
         return response()->json([
             'success' => true,
             'message' => "Program data updated successfully",

@@ -1130,7 +1130,7 @@ class ClassController extends Controller
             'total_upcomingClasses' => $total_upcomingClasses,
             'remaining_classes' => $remaining_classes,
             'completed_classes' => $completed_classes,
-            'progress' => $inProgress,
+            'progress' => round($inProgress),
             'course' =>  $course,
             'todays_classes' =>  $todays_classes,
             'upcoming_classes' => $upcoming_classes,

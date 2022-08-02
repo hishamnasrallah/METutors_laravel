@@ -283,7 +283,7 @@ class TeacherController extends Controller
                 'weekdays' => null,
                 'end_date' => $class->end_date,
                 'seat_attendees' => null,
-                'record' => 0,
+                'record' => 1,
                 'isRecordingLayout ' => 1,
                 'isVideo  ' => 1,
                 'isBoard ' => 1,
