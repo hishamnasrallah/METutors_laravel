@@ -80,28 +80,28 @@ class VerificationController extends Controller
                 ->first();
                 
                 
-            if (!empty($verification)) {
-                if (!empty($verification->mobile)) {
+            // if (!empty($verification)) {
+            //     if (!empty($verification->mobile)) {
                     
-                    // return 'mobile';
+            //         // return 'mobile';
                     
-                    $verification->sendSMSCode();
-                } else {
+            //         $verification->sendSMSCode();
+            //     } else {
                     
-                    // return 'email';
+            //         // return 'email';
                     
-                    $verification->sendEmailCode();
-                }
+            //         $verification->sendEmailCode();
+            //     }
                 
-                return response()->json([
-                        'status'=>true,
-                        'message'=>'Verification Code Has Been Sent !!' ,
+            //     return response()->json([
+            //             'status'=>true,
+            //             'message'=>'Verification Code Has Been Sent !!' ,
                         
                         
-                        ]);
+            //             ]);
 
-                return redirect('/verification');
-            }else{
+            //     return redirect('/verification');
+            // }else{
                 $value=$verificationId;
                 $username='email';
                 
@@ -128,7 +128,7 @@ class VerificationController extends Controller
                         
                         ]);
              
-            }
+            // }
       
         
         return 'hello';
