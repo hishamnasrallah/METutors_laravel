@@ -3374,7 +3374,10 @@ class AdminController extends Controller
         }
         if ($request->status == 'declined') {
             $rejected_courses = RejectedCourse::pluck('course_id');
-            $new_courses = Course::with('program', 'subject', 'teacher', 'student')->whereIn('id', $rejected_courses)->where('status', 'rejected')->get();
+            $new_courses = Course::with('program', 'subject', 'teacher', 'student')
+                ->whereIn('id', $rejected_courses)
+                // ->where('status', 'rejected')->get();
+                ->whereIn('status', ['declined_by_teacher', 'declined_by_student'])->get();
             $flag = 0;
             $newly = [];
             foreach ($new_courses as $course) {
@@ -3394,7 +3397,11 @@ class AdminController extends Controller
                 $flag++;
                 array_push($newly, $course);
             }
-            $completed_courses = Course::with('program', 'subject', 'teacher', 'student')->whereIn('id', $rejected_courses)->where('status', '!=', 'rejected')->get();
+            $completed_courses = Course::with('program', 'subject', 'teacher', 'student')
+                ->whereIn('id', $rejected_courses)
+                // ->where('status', '!=', 'rejected')
+                ->whereNotIn('status', ['declined_by_teacher', 'declined_by_student'])
+                ->get();
 
             $flag = 0;
             $completed = [];
