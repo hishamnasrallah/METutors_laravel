@@ -2105,7 +2105,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'data updated succesfully',
+                'message' => 'Profile details updated succesfully!',
             ]);
         }
         if ($request->step == 2) {

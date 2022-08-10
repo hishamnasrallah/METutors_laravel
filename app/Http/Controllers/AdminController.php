@@ -1871,7 +1871,7 @@ class AdminController extends Controller
         if ($responseBody['status'] == 'error') {
             return response()->json([
                 'status' => false,
-                'message' => $responseBody['error'],
+                'message' => $responseBody['error'] == 'Class has ended' ? 'Interview has ended' :  $responseBody['error'],
                 'error' => $responseBody['error'],
             ], 400);
         } else {

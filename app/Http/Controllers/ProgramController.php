@@ -32,6 +32,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class ProgramController extends Controller
 {
@@ -83,8 +84,9 @@ class ProgramController extends Controller
     {
         $rules = [
 
-            'name' => 'required',
+            'name' => 'required|unique:programs',
             'description' => 'required',
+            'image' => 'required',
         ];
 
 
@@ -95,7 +97,6 @@ class ProgramController extends Controller
             $errors = $messages->all();
 
             return response()->json([
-
                 'status' => 'false',
                 'errors' => $errors,
             ], 400);
@@ -104,6 +105,11 @@ class ProgramController extends Controller
         $program = new Program();
         $program->name = $request->name;
         $program->description = $request->description;
+        if ($request->hasFile('image')) {
+            $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+            $request->image->move(public_path('uploads/program_images'), $imageName);
+            $program->image = $imageName;
+        }
         $program->save();
 
         $program = Program::find($program->id);
@@ -155,13 +161,37 @@ class ProgramController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $program = Program::find($id);
+        $program = Program::findOrFail($id);
+        $rules = [
+            'name' =>  Rule::unique('programs')->ignore($program->id, 'id'),
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+
         if (is_null($program)) {
             return response()->json(['message' => 'Data not found'], 404);
         }
-        $program->update($request->all());
+        $program->name = $request->name;
+        $program->description = $request->description;
+        if ($request->hasFile('image')) {
+            $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+            $request->image->move(public_path('uploads/program_images'), $imageName);
+            $program->image = $imageName;
+        }
+        $program->update();
 
-        $program = Program::find($program->id);
+        $program = Program::findOrFail($id);
         return response()->json([
             'success' => true,
             'message' => "Program data updated successfully",
@@ -193,7 +223,7 @@ class ProgramController extends Controller
 
 
 
-      public function paginate($items, $perPage, $page = null, $options = [])
+    public function paginate($items, $perPage, $page = null, $options = [])
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);

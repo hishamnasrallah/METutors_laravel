@@ -214,6 +214,7 @@ Route::get('field-of-studies', 'GeneralController@field_of_studies');
 
 
 Route::resource('program', 'ProgramController');
+Route::post('program/{id}', 'ProgramController@update');
 Route::resource('program-country', 'ProgramCountryController');
 Route::get('all-countries', 'ProgramCountryController@countries');
 
