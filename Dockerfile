@@ -14,4 +14,5 @@ RUN echo "</Directory>" >> /etc/apache2/sites-enabled/000-default.conf
 RUN echo "</VirtualHost>" >> /etc/apache2/sites-enabled/000-default.conf
 RUN mv .env.example .env
 RUN composer install
+RUN sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/apache2/php.ini
 ENTRYPOINT ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
