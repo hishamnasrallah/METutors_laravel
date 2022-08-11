@@ -571,6 +571,7 @@ class AdminController extends Controller
                 ->where('start_date', '>=', $weekStartDate)
                 ->where('start_date', '<=', $weekEndDate)
                 ->whereIn('status', ['scheduled', 'pending'])
+                // ->orderBy('start_time')
                 ->get();
 
 
@@ -1520,6 +1521,7 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "Rejected Teachers!",
+            'teachers_count' => count($teachers),
             'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
         ]);
@@ -1530,7 +1532,10 @@ class AdminController extends Controller
 
         // if (isset($request->per_page)) {
 
-        $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'suspended')->paginate($request->per_page ?? 10);
+        $teachers = User::with('teacher_interview_request')
+            ->where('role_name', 'teacher')
+            ->where('status', 'suspended')
+            ->get();
         // } else {
 
         //     $teachers = User::with('teacher_interview_request')->where('role_name', 'teacher')->where('status', 'suspended')->paginate(10);
@@ -1540,7 +1545,8 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "Suspended Teachers!",
-            'teachers' => $teachers,
+            'teachers_count' => count($teachers),
+            'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
         ]);
     }
@@ -2031,11 +2037,18 @@ class AdminController extends Controller
         // }
         //------- Workforce Filters ends -------
 
+        //Unique subjects
+        foreach ($courses_subjects as $subject) {
+            if (!(in_array($subject, $subjects_array))) {
+                array_push($subjects_array, $subject);
+            }
+        }
 
+        // return $subjects_array;
 
-        foreach (array_unique($courses_subjects) as $subject) {
+        foreach (array_unique($subjects_array) as $subject) {
             $hired_teachers = 0;
-            array_push($subjects_array, $subject);
+            // array_push($subjects_array, $subject);
 
             $hired_teachers = $courses->where('subject_id', $subject)->pluck('teacher_id')->unique()->count();
 
@@ -2046,7 +2059,8 @@ class AdminController extends Controller
                 ->find($subject);
 
             //Seach Query
-            if ($request->has('search')) {
+            if ($request->has('search') && $request->search != '') {
+
                 $Subject = Subject::with('program', 'field')
                     ->whereHas('program', function ($q) use ($request) {
                         // $q->where(function ($qu) use ($request) {
@@ -2074,8 +2088,7 @@ class AdminController extends Controller
                 $capacity = 100 - (($hired_teachers / $Subject->available_teachers_count) * 100);
             }
 
-            if ($request->has('search')) {
-            }
+
 
 
             array_push($final_subjects, [
@@ -2091,6 +2104,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
+            'total_subjects' => count($final_subjects),
             // 'subjects' => $subjects_array,
             'subjects' => $this->paginate($final_subjects, $request->per_page ?? 10),
             // 'subjects' => $final_subjects,
@@ -3252,11 +3266,39 @@ class AdminController extends Controller
 
         //rating
         $average_rating = 5;
-        $rating_sum = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
-        $total_reviews = UserFeedback::where('receiver_id', $teacher_id)->count();
-        if ($total_reviews > 0) {
-            $average_rating = $rating_sum / $total_reviews;
+        // $rating_sum = UserFeedback::where('receiver_id', $teacher_id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $teacher_id)->get();
+        $total_reviews = $total_reviews->groupBy(['sender_id', 'course_id']);
+        if ($total_reviews) {
+            // $average_rating = $rating_sum / count($total_reviews);
+
+            $points_array = [];
+            $sum_feedback = 0;
+            $rating_sum = 0;
+            foreach ($total_reviews as $feedback) {
+                // converted to a single user feedback
+                $sum_stars = 0;
+                foreach ($feedback as $user_feedback) {
+                    // return $user_feedback;
+                    $points_detail = new stdClass();
+                    $points_detail->student_name = $user_feedback[0]->sender->first_name . ' ' . $user_feedback[0]->sender->last_name;
+                    $points_detail->avatar = $user_feedback[0]->sender->avatar;
+                    $points_detail->course_name = $user_feedback[0]->course->course_name;
+                    $points_detail->date = $user_feedback[0]->created_at->format('d M Y');
+                    $sum_stars =  $user_feedback->sum('rating') / count($user_feedback);
+                    $points_detail->stars = $sum_stars;
+                    $points_detail->review = $user_feedback[0]->review;
+                    $points_detail->kudos_points = $user_feedback->sum('kudos_points');
+                    $sum_feedback = $sum_feedback + $user_feedback->sum('kudos_points');
+                    array_push($points_array, $points_detail);
+                }
+
+
+                $rating_sum = $sum_stars + $rating_sum;
+            }
         }
+
+        $average_rating = $rating_sum / count($points_array);
 
         $attendence_count = 0;
         $completed_clasess = 0;
@@ -3284,8 +3326,9 @@ class AdminController extends Controller
             'message' => 'All Bookings!',
             'teacher' => $teacher,
             'total_bookings' => count($courses),
+            'rating_count' => count($points_array),
             'average_rating' => $average_rating,
-            'attendence_rate' => $attendence_rate,
+            'attendence_rate' => round($attendence_rate),
             'bookings' => $courses,
         ]);
     }

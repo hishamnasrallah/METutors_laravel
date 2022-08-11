@@ -29,8 +29,16 @@ class InterviewRequestController extends Controller
     $interviewRequests = null;
 
     if (isset($id)) {
+      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacherAvailability', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')
+        ->where('id', $id)->first();
 
-      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
+      $availability_days = [];
+      foreach ($interviewRequests['user']['teacherAvailability'] as $availability)
+        if (!(in_array($availability->day, $availability_days))) {
+          array_push($availability_days, $availability->day);
+        }
+
+      $interviewRequests->availability_days = $availability_days;
     }
 
     return response()->json([
@@ -45,15 +53,13 @@ class InterviewRequestController extends Controller
 
     if (isset($request->status) && $request->status == "approved") {
 
-        $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "approved")->paginate($request->per_page ?? 10);
-
+      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "approved")->paginate($request->per_page ?? 10);
     } elseif (isset($request->status) && $request->status == "rejected") {
 
-        $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "rejected")->paginate($request->per_page ?? 10);
-
+      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->where("status", "rejected")->paginate($request->per_page ?? 10);
     } else {
 
-        $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->whereIn("status", ['pending', 'scheduled'])->paginate($request->per_page ?? 10);
+      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.teacherSpecifications', 'user.teacherQualifications')->orderBy('id', 'DESC')->whereIn("status", ['pending', 'scheduled'])->paginate($request->per_page ?? 10);
     }
 
 
@@ -225,8 +231,8 @@ class InterviewRequestController extends Controller
 
   public function paginate($items, $perPage, $page = null, $options = [])
   {
-      $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
-      $items = $items instanceof Collection ? $items : Collection::make($items);
-      return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+    $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+    $items = $items instanceof Collection ? $items : Collection::make($items);
+    return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
   }
 }

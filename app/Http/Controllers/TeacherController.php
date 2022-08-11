@@ -34,6 +34,7 @@ use App\Models\Topic;
 use App\Models\User;
 use App\Models\UserAssignment;
 use App\Models\UserFeedback;
+use App\Models\UserPrefrence;
 use Illuminate\Http\Request;
 use JWTAuth;
 use Carbon\Carbon;
@@ -1595,6 +1596,70 @@ class TeacherController extends Controller
             'message' => 'Course Assignment updated Successfully!',
             'deleted_assignment' => $assignment,
 
+        ]);
+    }
+
+    public function prefrences(Request $request)
+    {
+
+        $rules = [
+            'preferred_gender' =>  'required|string',
+            'spoken_languages' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $count = UserPrefrence::where('user_id', $token_user->id)->count();
+        //Create Method
+        if ($count == 0) {
+            foreach ($request->spoken_languages as $language) {
+                $prefrence = new UserPrefrence();
+                $prefrence->user_id = $token_user->id;
+                $prefrence->preferred_gender = $request->preferred_gender;
+                $prefrence->teacher_language = $language['language'];
+                $prefrence->efficiency = $language['efficiency'];
+                $prefrence->role_name = $token_user->role_name;
+                $prefrence->save();
+            }
+        } else {
+            //Update Method
+            $records = UserPrefrence::where('user_id', $token_user->id)->get();
+            foreach ($records as $record) {
+                $record->delete();
+            }
+
+            foreach ($request->spoken_languages as $language) {
+                $prefrence = new UserPrefrence();
+                $prefrence->user_id = $token_user->id;
+                $prefrence->preferred_gender = $request->preferred_gender;
+                $prefrence->teacher_language = $language['language'];
+                $prefrence->efficiency = $language['efficiency'];
+                $prefrence->role_name = $token_user->role_name;
+                $prefrence->save();
+            }
+        }
+
+        $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+            ->with('spoken_language')
+            ->where('user_id', $token_user->id)->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => "User Prefrences Added Successfully!",
+            'prefrences' => $prefrences
         ]);
     }
 

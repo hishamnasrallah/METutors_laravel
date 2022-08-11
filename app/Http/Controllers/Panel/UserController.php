@@ -1263,10 +1263,9 @@ class UserController extends Controller
     public function upload_documents(Request $request)
     {
         $rules = [
-
             'email' => 'required|email|min:3|max:100',
             'documents' => 'required',
-            // 'documents.*' => 'required|file|mimes:xlsx,xls,csv,jpg,jpeg,png,bmp,doc,docx,pdf,tif,tiff'
+            // 'documents.*' => 'required||file|mimes:xlsx,xls,csv,jpg,jpeg,png,bmp,doc,docx,pdf,tif,tiff|max:5120'
 
 
         ];
@@ -1324,7 +1323,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => 'true',
-                    'message' =>  'documents uploaded successfully'
+                    'message' =>  'Documents uploaded successfully! Please login to continue'
 
                 ]);
             }

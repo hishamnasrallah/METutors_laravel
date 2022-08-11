@@ -16,7 +16,7 @@ class CreateUserPrefrencesTable extends Migration
         Schema::create('user_prefrences', function (Blueprint $table) {
             $table->id();
             $table->integer('user_id');
-            $table->integer('preffered_language');
+            $table->integer('preffered_language')->nullable();
             $table->string('preffered_gender');
             $table->integer('teacher_language')->nullable();
             $table->timestamps();

@@ -964,6 +964,7 @@ class UserController extends Controller
         $prefrence->user_id = $token_user->id;
         $prefrence->preferred_language = $request->preferred_language;
         $prefrence->preferred_gender = $request->preferred_gender;
+        $prefrence->role_name = $token_user->role_name;
         if ($request->teacher_language) {
             $prefrence->teacher_language = $request->teacher_language;
         } else {
@@ -976,11 +977,14 @@ class UserController extends Controller
         event(new PrefrenceSettingEvent($token_user->id,  $token_user, "Prefrences updated successfully!"));
         dispatch(new PrefrenceSettingJob($token_user->id, $token_user, "Prefrences updated successfully!"));
 
-
+        $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language')
+            ->where('user_id', $token_user->id)
+            ->first();
 
         return response()->json([
             'status' => true,
             'message' => "User Prefrences Added Successfully",
+            'prefrences' => $prefrences,
         ]);
     }
 

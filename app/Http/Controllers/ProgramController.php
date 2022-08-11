@@ -221,8 +221,6 @@ class ProgramController extends Controller
     }
 
 
-
-
     public function paginate($items, $perPage, $page = null, $options = [])
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);

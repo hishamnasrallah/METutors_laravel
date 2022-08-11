@@ -17,7 +17,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('queue:work')->everyMinute();
         $schedule->command('class:cron')->everyMinute();
-        $schedule->command('queue:work')->everyMinute();
+        $schedule->command('class:completed')->everyMinute();
         $schedule->command('assignment:completed')->dailyAt("00:01");
         $schedule->command('course:completed')->everyMinute();
         $schedule->command('course:reminder')->hourly();

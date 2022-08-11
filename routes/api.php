@@ -390,6 +390,7 @@ Route::post('student/course/{course_id}/class', 'Student\ClassController@addClas
 //**************** Courses routes ****************
 Route::post('course/{id}/cancel', 'TeacherController@cancelCourse');
 Route::post('teacher/course/{id}/cancel', 'TeacherController@cancelCourse');
+Route::post('teacher/preferences', 'TeacherController@prefrences');
 Route::get('courses/progress', 'TeacherController@coursesProgress');
 Route::get('course/{id}/progress', 'TeacherController@courseProgress');
 Route::post('course/accept/{id}', 'TeacherController@acceptCourse');
@@ -524,6 +525,7 @@ Route::post('teacher/feedback/platform', 'FeedbackController@userPlatform');
 Route::get('teacher/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
 Route::get('teacher/feedback/classroom/params', 'FeedbackController@classroom_params');
 Route::post('teacher/feedback/classroom', 'FeedbackController@classroom_feedback');
+
 
 Route::get('teacher/course/{course_id}/attendance', 'Student\CourseController@teacherAttendence');
 // });

@@ -17,4 +17,9 @@ class UserPrefrence extends Model
     {
         return $this->belongsTo('App\Language', 'teacher_language', 'id');
     }
+
+    public function spoken_language()
+    {
+        return $this->belongsTo('App\Language', 'teacher_language', 'id');
+    }
 }
