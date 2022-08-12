@@ -3959,7 +3959,7 @@ class AdminController extends Controller
     {
         $courses = Course::all();
         $featured_teachers = [];
-        $teachers = User::where('role_name', 'teacher')->limit(3)->get();
+        $teachers = User::with('country')->where('role_name', 'teacher')->limit(3)->get();
         foreach ($teachers as $teacher) {
             // return $teacher;
             $courses_count = $courses->where('teacher_id', $teacher->id)->count();
@@ -4041,6 +4041,30 @@ class AdminController extends Controller
             'status' => true,
             'message' => 'Refunded Successfully!',
             'refund' => $refunds,
+        ]);
+    }
+
+    public function all_courses(Request $request)
+    {
+        $courses = Course::select('id', 'course_code', 'course_name', 'subject_id', 'student_id',  'teacher_id', 'program_id', 'country_id', 'created_at')
+            ->with('program', 'program_country')
+            ->paginate($request->per_page ?? 10);
+        foreach ($courses as  $course) {
+            $teacher_subjects = TeacherSubject::where(['subject_id' => $course->subject_id, 'program_id' => $course->program_id])->get();
+            $subjects = Subject::where(['id' => $course->subject_id, 'program_id' => $course->program_id])->get();
+
+            $course->price_per_hour = $course->subject->price_per_hour;
+            unset($course->subject);
+            $course->min_hourly_rate_ask =   $teacher_subjects->min('hourly_price');
+            $course->max_hourly_rate_ask = $teacher_subjects->max('hourly_price');
+            $course->min_hourly_rate_actual = $subjects->min('price_per_hour');
+            $course->max_hourly_rate_actual = $subjects->max('price_per_hour');
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'All Courses!',
+            'courses' =>  $courses,
+            // 'courses' =>  $this->paginate($courses, $request->per_page ?? 10),
         ]);
     }
 

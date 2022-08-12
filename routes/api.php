@@ -444,6 +444,7 @@ Route::resource('platform-param', 'PlatformParamController');
 Route::get('admin/newsletter', 'AdminController@newsletter');
 Route::delete('admin/newsletter/{id}', 'AdminController@del_newsletter');
 Route::get('admin/courses', 'AdminController@booked_courses');
+Route::get('admin/all-courses', 'AdminController@all_courses');
 Route::get('admin/course/{id}', 'AdminController@course_detail');
 Route::get('admin/teachers/courses', 'AdminController@course_teachers');
 Route::get('admin/courses/classes', 'AdminController@courses_classes');

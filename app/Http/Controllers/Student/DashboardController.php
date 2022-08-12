@@ -115,7 +115,7 @@ class DashboardController extends Controller
                 ->with('teacher', 'course', 'course.subject', 'course.student', 'course.teacher', 'course.program')
                 ->where('start_date', $current_date)->where($userrole, $user_id)
                 ->where('status', '!=', 'pending')
-                ->orderBy('start_time', 'asc')
+                ->orderBy('start_time', 'desc')
                 ->get();
             $total_classes = AcademicClass::where($userrole, $user_id)->whereBetween('created_at', [$endDate, $current_date])->count();
             $attended_classes = Attendance::where('user_id', $user_id)->whereBetween('created_at', [$endDate, $current_date])->where('status', 'present')->count();

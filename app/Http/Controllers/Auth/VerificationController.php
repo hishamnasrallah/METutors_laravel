@@ -195,11 +195,6 @@ class VerificationController extends Controller
     public function confirmCode(Request $request)
     {
 
-
-
-
-
-
         $value = $request->get('username');
         $code = $request->get('code');
         $username = $this->username($value);
@@ -268,7 +263,7 @@ class VerificationController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'Email verified Successfully! Please login to continue',
+                        'message' => $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
                         'return_url' => $request->return_url ?? false,
 
                     ]);
@@ -283,7 +278,7 @@ class VerificationController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Email verified Successfully! Please login to continue',
+                'message' =>  $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
                 'return_url' => $request->return_url ?? false,
             ]);
         }

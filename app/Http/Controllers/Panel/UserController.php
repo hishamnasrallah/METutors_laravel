@@ -2104,7 +2104,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Profile details updated succesfully!',
+                'message' => 'Profile details updated successfully!!',
             ]);
         }
         if ($request->step == 2) {
@@ -2137,7 +2137,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully'
+                'message' => 'Profile details updated successfully!'
 
             ]);
         }
@@ -2174,7 +2174,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'data updated succesfully'
+                    'message' => 'Profile details updated successfully!'
 
                 ]);
             }
@@ -2205,7 +2205,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'data updated succesfully'
+                    'message' => 'Profile details updated successfully!'
 
                 ]);
             }
@@ -2267,7 +2267,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully'
+                'message' => 'Profile details updated successfully!'
 
             ]);
         }

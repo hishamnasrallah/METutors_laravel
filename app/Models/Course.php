@@ -139,4 +139,9 @@ class Course extends Model
     {
         return $this->belongsTo(TeachingSpecification::class, 'teacher_id', 'user_id');
     }
+
+    public function program_country()
+    {
+        return $this->belongsTo(ProgramCountry::class, 'country_id', 'id');
+    }
 }
