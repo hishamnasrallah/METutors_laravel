@@ -23,4 +23,5 @@ RUN composer update
 RUN php artisan optimize
 RUN chmod +x /var/www/html/entry.sh
 RUN sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/apache2/php.ini
+RUN sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/cli/php.ini
 ENTRYPOINT ["/var/www/html/entry.sh"]
