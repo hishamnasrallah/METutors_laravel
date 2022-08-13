@@ -24,6 +24,7 @@ use App\Models\UserMeta;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,7 +33,7 @@ class UserController extends Controller
 {
     public function approve_document(Request $request, $id)
     {
-        return $user_meta = UserMeta::with('user')->find($id);
+        $user_meta = UserMeta::with('user')->find($id);
 
         if ($user_meta != null) {
             $user_meta->status = 'approved';
@@ -40,11 +41,40 @@ class UserController extends Controller
 
             $user = User::findOrFail($user_meta->user_id);
             $admin = User::where('role_name', 'admin')->first();
-            // Emails and notifications
-            event(new AcceptDocumentEvent($user->id, $user, $user_meta, "Your documents have been Approved!"));
-            event(new AcceptDocumentEvent($admin->id, $admin, $user_meta, "Documents have been Approved Successfully!"));
-            dispatch(new AcceptDocumentJob($user->id, $user, $user_meta, "Your documents have been Approved!"));
-            dispatch(new AcceptDocumentJob($admin->id, $admin, $user_meta, "Documents have been Approved Successfully!"));
+
+            //*********** Sending Email to teacher  ************\\
+            $user_email = $user->email;
+            $custom_message = "Your documents have been Approved!";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
+
+            Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Documents Accepted!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            //******** Email ends **********//
+
+            //*********** Sending Email to teacher  ************\\
+            $user_email = $admin->email;
+            $custom_message = "Documents have been Approved Successfully!";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $admin);
+
+            Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Documents Accepted!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+
+
+            //******** Email ends **********//
+
+            // // Emails and notifications
+            // event(new AcceptDocumentEvent($user->id, $user, $user_meta, "Your documents have been Approved!"));
+            // event(new AcceptDocumentEvent($admin->id, $admin, $user_meta, "Documents have been Approved Successfully!"));
+            // dispatch(new AcceptDocumentJob($user->id, $user, $user_meta, "Your documents have been Approved!"));
+            // dispatch(new AcceptDocumentJob($admin->id, $admin, $user_meta, "Documents have been Approved Successfully!"));
 
             return response()->json([
 
@@ -63,8 +93,6 @@ class UserController extends Controller
     }
     public function reject_document(Request $request, $id)
     {
-
-
         $user_meta = UserMeta::with('user')->find($id);
 
         if ($user_meta != null) {
@@ -73,11 +101,39 @@ class UserController extends Controller
 
             $user = User::findOrFail($user_meta->user_id);
             $admin = User::where('role_name', 'admin')->first();
-            // Emails and Notifications
-            event(new RejectDocumentEvent($user->id, $user, $user_meta, "Your documents have been Rejected!"));
-            event(new RejectDocumentEvent($admin->id, $admin, $user_meta, "Documents have Rejected Successfully!"));
-            dispatch(new RejectDocumentJob($user->id, $user, $user_meta, "Your documents have been Rejected!"));
-            dispatch(new RejectDocumentJob($admin->id, $admin, $user_meta, "Documents have Rejected Successfully!"));
+
+
+            //*********** Sending Email to teacher  ************\\
+            $user_email = $user->email;
+            $custom_message = "Your documents have been Rejected!";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
+
+            Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Documents Rejected!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            //*********** Sending Email ends  ************\\
+
+            //*********** Sending Email to admin  ************\\
+            $user_email = $admin->email;
+            $custom_message = "Documents have Rejected Successfully!";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $admin);
+
+            Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Documents Rejected!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            //*********** Sending Email ends  ************\\
+
+            // // Emails and Notifications
+            // event(new RejectDocumentEvent($user->id, $user, $user_meta, "Your documents have been Rejected!"));
+            // event(new RejectDocumentEvent($admin->id, $admin, $user_meta, "Documents have Rejected Successfully!"));
+            // dispatch(new RejectDocumentJob($user->id, $user, $user_meta, "Your documents have been Rejected!"));
+            // dispatch(new RejectDocumentJob($admin->id, $admin, $user_meta, "Documents have Rejected Successfully!"));
 
             return response()->json([
 

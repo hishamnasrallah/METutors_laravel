@@ -14,6 +14,7 @@ use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 
@@ -314,8 +315,22 @@ class ResetPasswordController extends Controller
             ];
 
             $user = User::where('email', $request->email)->first();
-            event(new PasswordResetEvent($user->id, $user, "Password reset Successsfully"));
-            dispatch(new PasswordResetJob($user->id, $user, "Password reset Successsfully"));
+
+            //*********** Sending Email to teacher  ************\\
+            $user_email = $user->email;
+            $custom_message = "Password reset Successsfully";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
+
+            Mail::send('email.password_reset', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Password Reset!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            // //******** Email ends **********//
+
+            // event(new PasswordResetEvent($user->id, $user, "Password reset Successsfully"));
+            // dispatch(new PasswordResetJob($user->id, $user, "Password reset Successsfully"));
 
 
             return response()->json([
@@ -333,7 +348,7 @@ class ResetPasswordController extends Controller
 
             'status' => false,
             'title' => trans('public.request_failed'),
-            'message' => trans('auth.reset_password_token_invalid'),
+            'message' => "This link has expired!",
         ];
 
 

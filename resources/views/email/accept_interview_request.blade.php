@@ -8,7 +8,7 @@
                     <div class="card">
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
-                                <p>Dear <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
+                                <p>Dear <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
                                 <p>Congratulations, your interview request is <b>ACCEPTED</b>. Please find your interview
                                     schedule with the METutor team on {{ $interview_request->date_for_interview }} (date) at
                                     {{ $interview_request->time_for_interview }} (Time).</p>
@@ -20,7 +20,7 @@
 
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
-                                <p>Hi <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
+                                <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
                                 <p>You have successfully approved Tutor <b>{{ $user->first_name }}</b> based on their
                                     interview.
                                 </p>

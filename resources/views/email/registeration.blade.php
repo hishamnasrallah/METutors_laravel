@@ -25,13 +25,16 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
-                                <p>Please note a new registration by Yasin. Click the link to view the profile.</p>
+                                <p>Please note a new registration by tutor {{ $user->teacher->first_name }} Click the link
+                                    to
+                                    view the profile.</p>
+                                {{-- {{ $user->teacher->first_name }} --}}
                                 <p>Link:
                                     @php
                                         echo 'https://frontend.eshapsough.com/tutor/settings';
                                     @endphp
                                 </p>
-                                <p>Teacher Information Number:<b>{{ $user->teacher }}</b></p>
+                                <p>Teacher Information Number:<b>{{ $user->teacher->id_number }}</b></p>
                                 <p>Regards</p>
 
                             </div>

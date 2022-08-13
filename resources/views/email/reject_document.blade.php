@@ -8,7 +8,7 @@
                     <div class="card">
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
-                                <p>Hi <b>{{ $user->first_name }}." ".{{ $user->last_name }},</b> Please note that your
+                                <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }},</b> Please note that your
                                     documents got rejected. You can resubmit them again after xx days with the improvements.
                                 </p>
                                 <p> Teacher Information Number (TIN): <b>{{ $user_meta->user->id_number }}</b></p>

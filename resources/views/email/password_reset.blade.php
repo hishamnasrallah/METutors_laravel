@@ -8,12 +8,12 @@
                 <div class="col-md-8">
                     <div class="card">
                         {{-- @if ($user->role_name == 'teacher') --}}
-                            <div class="card-body">
-                                <p>Dear {{ $user->first_name }}." ".{{ $user->last_name }} </p>
-                                <p>You have successfully reset your password.</p>
-                                <p>Regards,</p>
+                        <div class="card-body">
+                            <p>Dear {{ $user->first_name }} {{ $user->last_name }} </p>
+                            <p>You have successfully reset your password.</p>
+                            <p>Regards,</p>
 
-                            </div>
+                        </div>
                         {{-- @endif --}}
                     </div>
                 </div>

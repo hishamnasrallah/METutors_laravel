@@ -128,16 +128,43 @@ class InterviewRequestController extends Controller
 
       $interviewRequest->save();
 
-      $interviewRequest = TeacherInterviewRequest::wit('user')->find($interviewRequest->id);
+      $interviewRequest = TeacherInterviewRequest::with('user')->find($interviewRequest->id);
       $admin = User::where('role_name', 'admin')->first();
       $admin_message = "New Request for interview has been Submitted!";
       $teacher_message = "Your Request has been submitted! we will contact you soon!";
 
-      //Emails and Notifications
-      event(new InterviewRequestEvent($user->id, $user, $teacher_message, $interviewRequest));
-      event(new InterviewRequestEvent($admin->id, $admin, $admin_message, $interviewRequest));
-      dispatch(new InterviewRequestJob($user->id, $user, $teacher_message, $interviewRequest));
-      dispatch(new InterviewRequestJob($admin->id, $admin, $admin_message, $interviewRequest));
+
+      //*********** Sending Email to teacher  ************\\
+      $user_email = $user->email;
+      $custom_message = "Your Request has been submitted! we will contact you soon!";
+      $to_email = $user_email;
+
+      $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $user);
+
+      Mail::send('email.interview', $data, function ($message) use ($to_email) {
+        $message->to($to_email)->subject('New interview request sent successfully.');
+        $message->from('metutorsmail@gmail.com', 'MeTutor');
+      });
+
+      // //******** Email ends **********//
+
+      //*********** Sending Email to admin  ************\\
+      $user_email = $admin->email;
+      $custom_message = "New Request for interview has been Submitted!";
+      $to_email = $user_email;
+      $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest,'user' => $admin);
+
+      Mail::send('email.interview', $data, function ($message) use ($to_email) {
+        $message->to($to_email)->subject('New interview request');
+        $message->from('metutorsmail@gmail.com', 'MeTutor');
+      });
+      // //******** Email ends **********//
+
+      // //Emails and Notifications
+      // event(new InterviewRequestEvent($user->id, $user, $teacher_message, $interviewRequest));
+      // event(new InterviewRequestEvent($admin->id, $admin, $admin_message, $interviewRequest));
+      // dispatch(new InterviewRequestJob($user->id, $user, $teacher_message, $interviewRequest));
+      // dispatch(new InterviewRequestJob($admin->id, $admin, $admin_message, $interviewRequest));
 
       return response()->json([
         'status' => true,

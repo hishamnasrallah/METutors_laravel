@@ -9,7 +9,7 @@
 
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
-                                <p>Hi <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
+                                <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
                                 <p We are sorry to inform you that Admin REJECTED your candidature based on the interview.
                                     </p>
                                 <p> Teacher Information Number (TIN): <b>{{ $interview->user->id_number }}</b></p>
@@ -19,7 +19,7 @@
 
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
-                                <p>Hi <b> {{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
+                                <p>Hi <b> {{ $user->first_name }} {{ $user->last_name }}</b> </p>
                                 <p> You have REJECTED Tutor {{ $interview->user->first_name }} based on their interview.</p>
                                 <p> Teacher Information Number (TIN): <b>{{ $interview->user->id_number }}</b></p>
                                 <p>Regards</p>

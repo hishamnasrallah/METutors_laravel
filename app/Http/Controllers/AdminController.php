@@ -1836,17 +1836,44 @@ class AdminController extends Controller
 
             $int->update();
 
-            $interviewRequest = TeacherInterviewRequest::find($request->interview_request_id);
+            $interviewRequest = TeacherInterviewRequest::with('user')->find($request->interview_request_id);
             $admin = User::where('role_name', 'admin')->first();
-            $user = User::where('role_name', 'admin')->first();
+            $user = $interviewRequest['user'];
             $admin_message = "Meeting Scheduled Successfully!";
             $teacher_message = "Your meeting has been scheduled";
 
-            //Emails and Notifications
-            event(new MeetingScheduledEvent($user->id, $user, $teacher_message, $interviewRequest));
-            event(new MeetingScheduledEvent($admin->id, $admin, $admin_message, $interviewRequest));
-            dispatch(new MeetingScheduledJob($user->id, $user, $teacher_message, $interviewRequest));
-            dispatch(new MeetingScheduledJob($admin->id, $admin, $admin_message, $interviewRequest));
+
+            //*********** Sending Email to teacher  ************\\
+            $user_email = $user->email;
+            $custom_message = "Your meeting has been scheduled";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $user);
+
+            Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Interview Request!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            //******** Email ends **********//
+
+            //*********** Sending Email to admin  ************\\
+            $user_email = $admin->email;
+            $custom_message = "Meeting Scheduled Successfully!";
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $admin);
+
+            Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Interview Request!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            //******** Email ends **********//
+
+            // //Emails and Notifications
+            // event(new MeetingScheduledEvent($user->id, $user, $teacher_message, $interviewRequest));
+            // event(new MeetingScheduledEvent($admin->id, $admin, $admin_message, $interviewRequest));
+            // dispatch(new MeetingScheduledJob($user->id, $user, $teacher_message, $interviewRequest));
+            // dispatch(new MeetingScheduledJob($admin->id, $admin, $admin_message, $interviewRequest));
 
             return response()->json([
                 'success' => true,

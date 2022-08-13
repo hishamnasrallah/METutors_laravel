@@ -35,7 +35,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
+use Illuminate\Support\Facades\Mail;
 use JWTAuth;
+use stdClass;
 
 class UserController extends Controller
 {
@@ -240,7 +242,7 @@ class UserController extends Controller
         }
 
 
-        $interview_req = TeacherInterviewRequest::find($id);
+        $interview_req = TeacherInterviewRequest::with('user')->find($id);
 
         if ($interview_req != null) {
 
@@ -260,11 +262,38 @@ class UserController extends Controller
                 $teacher_message = "You have been Rejected!";
                 $admin_message = "Teacher Rejected Successfully!";
 
+
+                //*********** Sending Email to admin  ************\\
+                $user_email = $admin->email;
+                $custom_message = "Teacher Rejected Successfully!";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $admin);
+
+                Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Teacher REJECTION Notification!');
+                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+                });
+                // //******** Email ends **********//
+
+                //*********** Sending Email to teacher  ************\\
+                $user_email = $user->email;
+                $custom_message = "You have been Rejected!!";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $user);
+
+                Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Teacher REJECTION Notification!');
+                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+                });
+                // //******** Email ends **********//
+
                 // Emails and notifications
-                event(new RejectTeacherEvent($admin->id, $admin, $admin_message, $interview_req));
-                event(new RejectTeacherEvent($user->id, $user, $teacher_message, $interview_req));
-                dispatch(new RejectTeacherJob($admin->id, $admin, $admin_message, $interview_req));
-                dispatch(new RejectTeacherJob($user->id, $user, $teacher_message, $interview_req));
+                // event(new RejectTeacherEvent($admin->id, $admin, $admin_message, $interview_req));
+                // event(new RejectTeacherEvent($user->id, $user, $teacher_message, $interview_req));
+                // dispatch(new RejectTeacherJob($admin->id, $admin, $admin_message, $interview_req));
+                // dispatch(new RejectTeacherJob($user->id, $user, $teacher_message, $interview_req));
 
                 return response()->json([
                     'status' => 'true',
@@ -303,7 +332,7 @@ class UserController extends Controller
         }
 
 
-        return $interview_req = TeacherInterviewRequest::with('user')->find($id);
+        $interview_req = TeacherInterviewRequest::with('user')->find($id);
 
         if ($interview_req != null) {
             $teacher_subjects = json_decode(json_encode($request->subjects));
@@ -329,11 +358,39 @@ class UserController extends Controller
                 $teacher_message = "You have been Approved for Metutors!";
                 $admin_message = "Teacher Approved Successfully!";
 
-                // Emails and notifications
-                event(new AcceptTeacherEvent($admin->id, $admin, $admin_message, $interview_req));
-                event(new AcceptTeacherEvent($user->id, $user, $teacher_message, $interview_req));
-                dispatch(new AcceptTeacherJob($admin->id, $admin, $admin_message, $interview_req));
-                dispatch(new AcceptTeacherJob($user->id, $user, $teacher_message, $interview_req));
+
+                //*********** Sending Email to teacher  ************\\
+                $user_email = $user->email;
+                $custom_message = "You have been Approved for Metutors!";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $user);
+
+                Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Teacher Approval Notification!');
+                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+                });
+                // //******** Email ends **********//
+
+                //*********** Sending Email to admin  ************\\
+                $user_email = $admin->email;
+                $custom_message = "Teacher Approved Successfully!";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $admin);
+
+                Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Teacher Approval Notification!');
+                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+                });
+                // //******** Email ends **********//
+
+
+                // // Emails and notifications
+                // event(new AcceptTeacherEvent($admin->id, $admin, $admin_message, $interview_req));
+                // event(new AcceptTeacherEvent($user->id, $user, $teacher_message, $interview_req));
+                // dispatch(new AcceptTeacherJob($admin->id, $admin, $admin_message, $interview_req));
+                // dispatch(new AcceptTeacherJob($user->id, $user, $teacher_message, $interview_req));
 
                 return response()->json([
 
@@ -1317,19 +1374,49 @@ class UserController extends Controller
                 }
 
                 $admin = User::where('role_name', 'admin')->first();
-                $admin->teacher = $user;
+                // $admin->teacher = $user;
+                // $admin_data = $admin;
 
-                // //
-                // return  $admin;
+                $admin_data = new stdClass();
+                $admin_data = $admin;
+                $admin_data->teacher = $user;
+                // return $admin_data;
 
-                // Emails and notifications for registeration
-                event(new UserRegisterEvent($user->id, $user, "Registerd Successfully"));
-                event(new UserRegisterEvent($admin->id, $admin, "A New User Registerd Successfully"));
-                dispatch(new UserRegisterJob($user->id, $user, "Registerd Successfully"));
-                dispatch(new UserRegisterJob($admin->id, $admin, "A New User Registerd Successfully"));
+
+                //********* Sending Email to admin **********
+                $user_email = $admin->email;
+                $custom_message = "A New User Registerd Successfully";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $admin_data);
+
+                Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Successful new teacher registration.!');
+                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+                });
+                //********* Sending Email ends **********
+
+                //********* Sending Email to teacher **********
+                $user_email = $user->email;
+                $custom_message = "Teacher Registerd Successfully";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
+
+                Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Successful new teacher registration. !');
+                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+                });
+                //********* Sending Email ends **********
+
+
+                // // Emails and notifications for registeration
+                // event(new UserRegisterEvent($user->id, $user, "Teacher Registerd Successfully"));
+                // event(new UserRegisterEvent($admin->id, $admin_data, "A New User Registerd Successfully"));
+                // dispatch(new UserRegisterJob($user->id, $user, "teacher Registerd Successfully"));
+                // dispatch(new UserRegisterJob($admin->id, $admin_data, "A New User Registerd Successfully"));
 
                 return response()->json([
-
                     'status' => 'true',
                     'message' =>  'Documents uploaded successfully! Please login to continue'
 
