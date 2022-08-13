@@ -24,4 +24,15 @@ RUN php artisan optimize
 RUN chmod +x /var/www/html/entry.sh
 RUN sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/apache2/php.ini
 RUN sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/cli/php.ini
+RUN sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/7.4/apache2/php.ini
+RUN sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/7.4/cli/php.ini
+
+RUN sed -i "s/max_input_time = 60/max_input_time = 24000/g" /etc/php/7.4/apache2/php.ini
+RUN sed -i "s/max_input_time = 60/max_input_time = 24000/g" /etc/php/7.4/cli/php.ini
+
+RUN sed -i "s/max_execution_time = 30/max_execution_time = 24000/g" /etc/php/7.4/apache2/php.ini
+RUN sed -i "s/max_execution_time = 30/max_execution_time = 24000/g" /etc/php/7.4/cli/php.ini
+
+RUN sed -i "s/memory_limit = 128M/memory_limit = 12000M/g" /etc/php/7.4/apache2/php.ini
+RUN sed -i "s/memory_limit = 128M/memory_limit = 12000M/g" /etc/php/7.4/cli/php.ini
 ENTRYPOINT ["/var/www/html/entry.sh"]
