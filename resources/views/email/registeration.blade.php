@@ -8,7 +8,7 @@
                     <div class="card">
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
-                                <p>Dear {{ $user->first_name }}." ".{{ $user->last_name }} </p>
+                                <p>Dear <b> {{ $user->first_name }} {{ $user->last_name }}</b> </p>
                                 <p>Welcome to MeTutor platform. You have registered successfully. We are glad to have you on
                                     board. You can click the link to view your profile.</p>
                                 <p>Link:
@@ -16,7 +16,7 @@
                                         echo 'https://frontend.eshapsough.com/tutor/settings';
                                     @endphp
                                 </p>
-                                <p>Best wishes and happy teaching,</p>
+                                <p>Best wishes and happy teaching</p>
                                 <p>Regards</p>
 
                             </div>
@@ -24,14 +24,14 @@
 
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
-                                <p>Hi <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
+                                <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
                                 <p>Please note a new registration by Yasin. Click the link to view the profile.</p>
                                 <p>Link:
                                     @php
                                         echo 'https://frontend.eshapsough.com/tutor/settings';
                                     @endphp
                                 </p>
-                                <p>Teacher Information Number:<b>{{ $user->teacher->id_number }}</b></p>
+                                <p>Teacher Information Number:<b>{{ $user->teacher }}</b></p>
                                 <p>Regards</p>
 
                             </div>

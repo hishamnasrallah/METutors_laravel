@@ -3999,27 +3999,27 @@ class AdminController extends Controller
         $teachers = User::with('country')->where('role_name', 'teacher')->limit(3)->get();
         foreach ($teachers as $teacher) {
             //  $teacher;
-            $courses_count = $courses->where('teacher_id', $teacher->id)->count();
-            $teacher_programs = TeacherSubject::where('user_id', $teacher->id)
+            $courses_count = $courses->where('teacher_id', 1149)->count();
+            $teacher_programs = TeacherSubject::where('user_id', 1149)
                 ->where('status', 'approved')
                 ->pluck('program_id')
                 ->unique();
 
             $programs = Program::whereIn('id', $teacher_programs)->get();
-            $classes = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->count();
+            $classes = AcademicClass::where('teacher_id', 1149)->where('status', 'completed')->count();
             $teacher->courses_count = $courses_count;
             $teacher->classes_taught = $classes;
 
 
             //-------rating--------
             $average_rating = 5;
-            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
-            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+            $rating_sum = UserFeedback::where('receiver_id', 1149)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', 1149)->count();
             if ($total_reviews > 0) {
                 $average_rating = $rating_sum / $total_reviews;
             }
 
-            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+            $reviews = UserFeedback::where('receiver_id', 1149)->get();
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 

@@ -313,6 +313,7 @@ class ResetPasswordController extends Controller
                 'status' => 'success'
             ];
 
+            $user = User::where('email', $request->email)->first();
             event(new PasswordResetEvent($user->id, $user, "Password reset Successsfully"));
             dispatch(new PasswordResetJob($user->id, $user, "Password reset Successsfully"));
 

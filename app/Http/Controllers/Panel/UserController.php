@@ -1319,8 +1319,7 @@ class UserController extends Controller
                 $admin = User::where('role_name', 'admin')->first();
                 $admin->teacher = $user;
 
-                // return $admin->teacher->id_number;
-
+                // //
                 // return  $admin;
 
                 // Emails and notifications for registeration
@@ -1328,8 +1327,6 @@ class UserController extends Controller
                 event(new UserRegisterEvent($admin->id, $admin, "A New User Registerd Successfully"));
                 dispatch(new UserRegisterJob($user->id, $user, "Registerd Successfully"));
                 dispatch(new UserRegisterJob($admin->id, $admin, "A New User Registerd Successfully"));
-
-
 
                 return response()->json([
 
