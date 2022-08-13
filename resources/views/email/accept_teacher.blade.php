@@ -24,7 +24,8 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
-                                <p>You have successfully approved Tutor <b>{{ $user->first_name }}</b> based on their
+                                <p>You have successfully approved Tutor <b>{{ $interview->user->first_name }}</b> based on
+                                    their
                                     interview.
                                 </p>
                                 <p>{{ $user->first_name }} got added to the
