@@ -261,11 +261,12 @@ class DashboardController extends Controller
 
         $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
             ->with('spoken_language')
-            ->where('user_id', $token_user->id)->get();
+            ->where('user_id', $token_user->id)
+            ->get();
 
         $spoken_languages = [];
         $final_prefrences = new stdClass();
-        if (!empty($prefrences)) {
+        if (count($prefrences) > 0) {
             $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
             foreach ($prefrences as $key => $prefrence) {
                 $language = new stdClass();
