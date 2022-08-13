@@ -49,7 +49,7 @@ class UserController extends Controller
 
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
 
-            Mail::send('email.1', $data, function ($message) use ($to_email) {
+            Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Accepted!');
                 $message->from('metutorsmail@gmail.com', 'MeTutor');
             });
