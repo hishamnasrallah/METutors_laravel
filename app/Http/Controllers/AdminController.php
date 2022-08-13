@@ -3998,9 +3998,13 @@ class AdminController extends Controller
         $featured_teachers = [];
         $teachers = User::with('country')->where('role_name', 'teacher')->limit(3)->get();
         foreach ($teachers as $teacher) {
-            // return $teacher;
+            //  $teacher;
             $courses_count = $courses->where('teacher_id', $teacher->id)->count();
-            $teacher_programs = TeacherSubject::where('user_id', 1149)->where('status', 'approved')->pluck('program_id')->unique();
+            $teacher_programs = TeacherSubject::where('user_id', $teacher->id)
+                ->where('status', 'approved')
+                ->pluck('program_id')
+                ->unique();
+
             $programs = Program::whereIn('id', $teacher_programs)->get();
             $classes = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->count();
             $teacher->courses_count = $courses_count;
@@ -4027,6 +4031,12 @@ class AdminController extends Controller
         $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(4);
         $teachers_list = [];
         foreach ($featured_teachers as $featured_teacher) {
+            $subjects = TeacherSubject::where('user_id', $featured_teacher->id)
+                ->where('status', 'approved')
+                ->pluck('subject_id')
+                ->unique();
+
+            $featured_teacher->subjects = Subject::whereIn('id', $subjects)->get();
             array_push($teachers_list, $featured_teacher);
         }
 
