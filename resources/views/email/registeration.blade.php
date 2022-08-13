@@ -31,7 +31,7 @@
                                         echo 'https://frontend.eshapsough.com/tutor/settings';
                                     @endphp
                                 </p>
-                                <p>Teacher Information Number:<b>{{ $user->teacher->id_number }}</b></p>
+                                <p>Teacher Information Number:<b>{{ $user['teacher']['id_number'] }}</b></p>
                                 <p>Regards</p>
 
                             </div>

@@ -937,7 +937,7 @@ class UserController extends Controller
 
         $rules = [
             'preferred_language' => 'required|integer',
-            'preferred_gender' => 'required|string',
+            'upload_documents' => 'required|string',
             // 'teacher_language' => 'required|integer',
         ];
 
