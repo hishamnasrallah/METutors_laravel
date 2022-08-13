@@ -37,18 +37,21 @@ class AcceptDocumentJob implements ShouldQueue
      */
     public function handle()
     {
-        //*********** Sending Email to Student  ************\\
-        $user_email = $this->user->email;
-        $custom_message = $this->custom_message;
-        $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $this->user_meta);
+        if ($this->user->role_name == 'teacher') {
+            //*********** Sending Email to Student  ************\\
+            $user_email = $this->user->email;
+            $custom_message = $this->custom_message;
+            $to_email = $user_email;
 
-        Mail::send('email.document', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Documents Accepted!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
-        });
-        // //******** Email ends **********//
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $this->user_meta);
+
+            Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Documents Accepted!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            // //******** Email ends **********//
+        }
 
         //Notification
         $notification = new Notification();

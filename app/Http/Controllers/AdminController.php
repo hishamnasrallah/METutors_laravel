@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\AssignTeacherEvent;
 use App\Events\BlockUserEvent;
 use App\Events\CancelCourse;
+use App\Events\MeetingScheduledEvent;
 use App\Events\RefundCourseEvent;
 use App\Events\TeacherStatusEvent;
 use App\Events\UnBlockUserEvent;
@@ -24,6 +25,7 @@ use App\Subject;
 use App\FieldOfStudy;
 use App\Jobs\AssignTeacherJob;
 use App\Jobs\BlockUserJob;
+use App\Jobs\MeetingScheduledJob;
 use App\Jobs\RefundCourseJob;
 use App\Jobs\TeacherStatusJob;
 use App\Jobs\UnBlockUserJob;
@@ -1443,10 +1445,27 @@ class AdminController extends Controller
         // }
 
         $all_teachers = User::whereIn('id', $interview)->count();
-        $active_teachers = User::where('status', 'active')->where('admin_approval', 'approved')->whereIn('id', $interview)->count();
-        $inactive_teachers = User::where('status', 'inactive')->where('admin_approval', 'approved')->whereIn('id', $interview)->count();
-        $pending_teachers = User::where('status', 'pending')->whereIn('id', $interview)->count();
-        $suspended_teachers = User::where('status', 'suspended')->whereIn('id', $interview)->count();
+        $active_teachers = User::where('status', 'active')
+            ->where('role_name', 'teacher')
+            ->where('admin_approval', 'approved')
+            ->whereIn('id', $interview)
+            ->count();
+
+        $inactive_teachers = User::where('status', 'inactive')
+            ->where('role_name', 'teacher')
+            ->where('admin_approval', 'approved')
+            ->whereIn('id', $interview)
+            ->count();
+
+        $pending_teachers = User::where('status', 'pending')
+            ->where('role_name', 'teacher')
+            ->whereIn('id', $interview)
+            ->count();
+
+        $suspended_teachers = User::where('status', 'suspended')
+            ->where('role_name', 'teacher')
+            ->whereIn('id', $interview)
+            ->count();
 
         $message = 'All teachers!';
 
@@ -1817,6 +1836,18 @@ class AdminController extends Controller
 
             $int->update();
 
+            $interviewRequest = TeacherInterviewRequest::find($request->interview_request_id);
+            $admin = User::where('role_name', 'admin')->first();
+            $user = User::where('role_name', 'admin')->first();
+            $admin_message = "Meeting Scheduled Successfully!";
+            $teacher_message = "Your meeting has been scheduled";
+
+            //Emails and Notifications
+            event(new MeetingScheduledEvent($user->id, $user, $teacher_message, $interviewRequest));
+            event(new MeetingScheduledEvent($admin->id, $admin, $admin_message, $interviewRequest));
+            dispatch(new MeetingScheduledJob($user->id, $user, $teacher_message, $interviewRequest));
+            dispatch(new MeetingScheduledJob($admin->id, $admin, $admin_message, $interviewRequest));
+
             return response()->json([
                 'success' => true,
                 'message' => "Meeting Scheduled Successfully",
@@ -1998,6 +2029,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
+            'program' => $subjects[0]->program,
             'subjects' => $subjects,
             'field_of_studies' => $field_of_studies,
         ]);
@@ -3298,7 +3330,9 @@ class AdminController extends Controller
             }
         }
 
-        $average_rating = $rating_sum / count($points_array);
+        if (count($points_array) > 0) {
+            $average_rating = $rating_sum / count($points_array);
+        }
 
         $attendence_count = 0;
         $completed_clasess = 0;
@@ -3320,6 +3354,8 @@ class AdminController extends Controller
         if ($completed_clasess > 0) {
             $attendence_rate = ($attendence_count / $completed_clasess) * 100;
         }
+
+        $teacher->review_count = count($points_array);
 
         return response()->json([
             'status' => true,
@@ -3906,11 +3942,12 @@ class AdminController extends Controller
     public function featured_teacher($subject_id)
     {
         $featured_teachers = [];
-        $subject = Subject::with('program', 'field', 'available_teachers.teacher')
+        $subject = Subject::with('program', 'field', 'available_teachers.teacher.country')
             ->with('available_teachers', function ($q) {
                 $q->with('teacher_qualification', 'teacher_subjects.subject');
             })
             ->findOrFail($subject_id);
+
         $courses = Course::get();
         foreach ($subject['available_teachers'] as $teacher) {
             // return $teacher;
@@ -3941,7 +3978,7 @@ class AdminController extends Controller
         }
         unset($subject['available_teachers']);
 
-        $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(4);
+        $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(3);
         $teachers_list = [];
         foreach ($featured_teachers as $featured_teacher) {
             array_push($teachers_list, $featured_teacher);
@@ -4049,6 +4086,19 @@ class AdminController extends Controller
         $courses = Course::select('id', 'course_code', 'course_name', 'subject_id', 'student_id',  'teacher_id', 'program_id', 'country_id', 'created_at')
             ->with('program', 'program_country')
             ->paginate($request->per_page ?? 10);
+
+        //search implementation
+        if ($request->has('search')) {
+            $courses = Course::select('id', 'course_code', 'course_name', 'subject_id', 'student_id',  'teacher_id', 'program_id', 'country_id', 'created_at')
+                ->with('program', 'program_country')
+                ->where(function ($query) use ($request) {
+                    $query->where('course_code', $request->search)
+                        ->orWhere('course_name', 'LIKE', "%$request->search%");
+                })
+                ->paginate($request->per_page ?? 10);
+        }
+
+        //calculating min max prices
         foreach ($courses as  $course) {
             $teacher_subjects = TeacherSubject::where(['subject_id' => $course->subject_id, 'program_id' => $course->program_id])->get();
             $subjects = Subject::where(['id' => $course->subject_id, 'program_id' => $course->program_id])->get();
@@ -4060,6 +4110,8 @@ class AdminController extends Controller
             $course->min_hourly_rate_actual = $subjects->min('price_per_hour');
             $course->max_hourly_rate_actual = $subjects->max('price_per_hour');
         }
+
+
         return response()->json([
             'status' => true,
             'message' => 'All Courses!',

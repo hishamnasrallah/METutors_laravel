@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
 use Illuminate\Http\Request;
@@ -52,6 +53,7 @@ class ForgotPasswordController extends Controller
             ], 400);
         }
 
+        $user = User::where('email', $request->email)->first();
         $token = \Illuminate\Support\Str::random(60);
         DB::table('password_resets')->insert([
             'email' => $request->input('email'),
@@ -63,13 +65,13 @@ class ForgotPasswordController extends Controller
         $emailData = [
             'token' => $token,
             'generalSettings' => $generalSettings,
-            'email' => $request->input('email')
+            'email' => $request->input('email'),
+            'user' => $user,
         ];
 
         Mail::send('web.default.auth.password_verify', $emailData, function ($message) use ($request) {
-
             $message->to($request->input('email'));
-            $message->subject('Reset Password Notification');
+            $message->subject('Password Reset!');
         });
 
         $toastData = [

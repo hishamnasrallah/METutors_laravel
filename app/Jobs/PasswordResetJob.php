@@ -43,7 +43,7 @@ class PasswordResetJob implements ShouldQueue
 
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $this->user);
 
-        Mail::send('email.ticket', $data, function ($message) use ($to_email) {
+        Mail::send('email.password_reset', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Password Reset!');
             $message->from('metutorsmail@gmail.com', 'MeTutor');
         });

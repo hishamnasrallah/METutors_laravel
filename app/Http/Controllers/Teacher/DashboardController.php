@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Teacher;
+
 use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
 use App\Models\Attendance;
@@ -8,12 +9,14 @@ use App\Models\Course;
 use App\Models\Feedback;
 use App\Models\User;
 use App\Models\UserFeedback;
+use App\Models\UserPrefrence;
 use App\Subject;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use stdClass;
 
 class DashboardController extends Controller
 {
@@ -52,26 +55,25 @@ class DashboardController extends Controller
             $total_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'completed')->count();
 
-            $newly_assigned_courses = Course::with('subject', 'student','program','classes',)
-                ->whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status','pending')->get();
+            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes',)
+                ->whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
-            $todays_classes = AcademicClass::select('id','class_id','title', "start_date", "end_date", "start_time", "end_time", "course_id", "status","duration")->with('course','course.subject','course.student','course.program','attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             //checking if class has completed
-            $currentTime=Carbon::now()->format('H:i:s');
-            foreach($todays_classes as $class){
+            $currentTime = Carbon::now()->format('H:i:s');
+            foreach ($todays_classes as $class) {
                 // return $class;
                 $classTime = Carbon::parse($class->end_time)->format('H:i:s');
-                $attend = $class->attendence->where('user_id',$user_id );
-                if($currentTime >= $classTime &&  count($attend) > 0)
-                {
-                    $class->status="completed";
+                $attend = $class->attendence->where('user_id', $user_id);
+                if ($currentTime >= $classTime &&  count($attend) > 0) {
+                    $class->status = "completed";
                     $class->update();
                 }
             }
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->whereBetween('created_at', [$endDate, $current_date])->where('receiver_id', $user_id)->get();
 
-            $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status','pending')->count();
-            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date','<',$current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status','!=','completed')->count();
+            $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->count();
+            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status', '!=', 'completed')->count();
             return response()->json([
                 "status" => true,
                 "message" => "todays classes",
@@ -92,14 +94,14 @@ class DashboardController extends Controller
 
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
-            $todays_classes = AcademicClass::select('id','class_id','title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course','course.subject','course.student','course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'course.subject', 'course.student', 'course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->where('receiver_id', $user_id)->get();
 
-            $newly_assigned_courses = Course::with('subject', 'student','program','classes')
-            ->where('teacher_id', $user_id)->where('status','pending')->get();
+            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
+                ->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
-            $total_newly_courses = Course::where('teacher_id', $user_id)->where('status','pending')->count();
-            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date','<',$current_date)->where('status','!=','completed')->count();
+            $total_newly_courses = Course::where('teacher_id', $user_id)->where('status', 'pending')->count();
+            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->where('status', '!=', 'completed')->count();
 
             return response()->json([
                 "status" => true,
@@ -133,7 +135,7 @@ class DashboardController extends Controller
             return response()->json([
                 'status' => false,
                 'errors' => $errors,
-            ],400);
+            ], 400);
         }
 
         //*********** Sending Invoive Email  ************\\
@@ -222,7 +224,7 @@ class DashboardController extends Controller
             return response()->json([
                 'status' => false,
                 'errors' => $errors,
-            ],400);
+            ], 400);
         }
 
         $token_1 = JWTAuth::getToken();
@@ -249,22 +251,40 @@ class DashboardController extends Controller
     }
 
 
-    public function profile(){
-
-      
+    public function profile()
+    {
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $user=\App\User::with('country','userMetas','teacherSpecifications','teacherQualifications','teacherAvailability','spokenLanguages','spokenLanguages.language','teacher_subjects','teacher_subjects.program','teacher_subjects.field','teacher_subjects.subject.country','teacher_interview_request')->find($token_user->id);
+        $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            ->find($token_user->id);
+
+        $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+            ->with('spoken_language')
+            ->where('user_id', $token_user->id)->get();
+
+        $spoken_languages = [];
+        $final_prefrences = new stdClass();
+        if (!empty($prefrences)) {
+            $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+            foreach ($prefrences as $key => $prefrence) {
+                $language = new stdClass();
+                $object = new stdClass();
+                $language->id = $prefrence->spoken_language->id;
+                $language->name = $prefrence->spoken_language->name;
+                $object->efficiency =   $prefrence->efficiency;
+                $object->language =  $language;
+                array_push($spoken_languages, $object);
+            }
+
+            $final_prefrences->spoken_languages = $spoken_languages;
+            $user->preferences = $final_prefrences;
+        }
 
         return response()->json([
             'status' => true,
+            'message' => "Teacher Profile!",
             'user' => $user
         ]);
-
     }
-
-    
-
-    
 }

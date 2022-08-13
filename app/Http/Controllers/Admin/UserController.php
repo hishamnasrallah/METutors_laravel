@@ -32,7 +32,7 @@ class UserController extends Controller
 {
     public function approve_document(Request $request, $id)
     {
-        $user_meta = UserMeta::find($id);
+        return $user_meta = UserMeta::with('user')->find($id);
 
         if ($user_meta != null) {
             $user_meta->status = 'approved';
@@ -41,10 +41,10 @@ class UserController extends Controller
             $user = User::findOrFail($user_meta->user_id);
             $admin = User::where('role_name', 'admin')->first();
             // Emails and notifications
-            // event(new AcceptDocumentEvent($user->id, $user, $user_meta, "Your documents have been Approved!"));
-            // event(new AcceptDocumentEvent($admin->id, $admin, $user_meta, "Documents have Approved Successfully!"));
-            // dispatch(new AcceptDocumentJob($user->id, $user, $user_meta, "Your documents have been Approved!"));
-            // dispatch(new AcceptDocumentJob($admin->id, $admin, $user_meta, "Documents have Approved Successfully!"));
+            event(new AcceptDocumentEvent($user->id, $user, $user_meta, "Your documents have been Approved!"));
+            event(new AcceptDocumentEvent($admin->id, $admin, $user_meta, "Documents have been Approved Successfully!"));
+            dispatch(new AcceptDocumentJob($user->id, $user, $user_meta, "Your documents have been Approved!"));
+            dispatch(new AcceptDocumentJob($admin->id, $admin, $user_meta, "Documents have been Approved Successfully!"));
 
             return response()->json([
 
@@ -55,7 +55,7 @@ class UserController extends Controller
         } else {
             return response()->json([
 
-                'status' => 'false',
+                'status' => false,
                 'message' => 'document not found',
 
             ]);
@@ -65,7 +65,7 @@ class UserController extends Controller
     {
 
 
-        $user_meta = UserMeta::find($id);
+        $user_meta = UserMeta::with('user')->find($id);
 
         if ($user_meta != null) {
             $user_meta->status = 'rejected';
@@ -81,16 +81,14 @@ class UserController extends Controller
 
             return response()->json([
 
-                'status' => 'true',
+                'status' => true,
                 'message' => 'document rejected successfully',
                 'document' => $user_meta,
             ]);
         } else {
             return response()->json([
-
-                'status' => 'false',
+                'status' => false,
                 'message' => 'document not found',
-
             ]);
         }
     }

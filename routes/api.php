@@ -391,6 +391,7 @@ Route::post('student/course/{course_id}/class', 'Student\ClassController@addClas
 Route::post('course/{id}/cancel', 'TeacherController@cancelCourse');
 Route::post('teacher/course/{id}/cancel', 'TeacherController@cancelCourse');
 Route::post('teacher/preferences', 'TeacherController@prefrences');
+Route::get('teacher/preferences', 'TeacherController@teacher_prefrences');
 Route::get('courses/progress', 'TeacherController@coursesProgress');
 Route::get('course/{id}/progress', 'TeacherController@courseProgress');
 Route::post('course/accept/{id}', 'TeacherController@acceptCourse');

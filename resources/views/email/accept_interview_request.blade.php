@@ -9,12 +9,11 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Dear <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
-                                <p>Hi <b>{{ $user->first_name }}</b>, You have successfully sent an interview request to the
-                                    METutor Admin team. You will
-                                    receive a notification when the MEtutor platform admin team accepts/rejects your request
-                                    or schedules an interview as per their decision.</p>
+                                <p>Congratulations, your interview request is <b>ACCEPTED</b>. Please find your interview
+                                    schedule with the METutor team on {{ $interview_request->date_for_interview }} (date) at
+                                    {{ $interview_request->time_for_interview }} (Time).</p>
 
-                                <p> Teacher Information Number (TIN): <b>{{ $interview_request->user->id_number }}</b></p>
+                                <p>Best wishes for the interview.</p>
                                 <p>Regards</p>
                             </div>
                         @endif
@@ -22,11 +21,12 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
-                                <p>You have a new interview request from
-                                    <b>{{ $interview_request->user->first_name }}</b>.
-                                    Please action it by approving or rejecting it and accordingly schedule the interview.
+                                <p>You have successfully approved Tutor <b>{{ $user->first_name }}</b> based on their
+                                    interview.
                                 </p>
-                                <p> Teacher Information Number (TIN): <b>{{ $interview_request->user->id_number }}</b></p>
+                                <p>{{ $user->first_name }} got added to the
+                                    MEtutor platform tutors' list and is available for course bookings</p>
+                                <p> Teacher Information Number (TIN): <b>{{ $interview->user->id_number }}</b></p>
                                 <p>Regards</p>
                             </div>
                         @endif

@@ -313,8 +313,8 @@ class ResetPasswordController extends Controller
                 'status' => 'success'
             ];
 
-            // event(new PasswordResetEvent($user->id, $user, "Password reset Successsfully"));
-            // dispatch(new PasswordResetJob($user->id, $user, "Password reset Successsfully"));
+            event(new PasswordResetEvent($user->id, $user, "Password reset Successsfully"));
+            dispatch(new PasswordResetJob($user->id, $user, "Password reset Successsfully"));
 
 
             return response()->json([

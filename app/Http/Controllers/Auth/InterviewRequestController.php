@@ -108,7 +108,7 @@ class InterviewRequestController extends Controller
         ], 400);
       }
 
-      $interviewRequests = TeacherInterviewRequest::where('user_id', $user->id)->first();
+      $interviewRequests = TeacherInterviewRequest::with('user')->where('user_id', $user->id)->first();
 
       if ($interviewRequests != null) {
 
@@ -128,16 +128,16 @@ class InterviewRequestController extends Controller
 
       $interviewRequest->save();
 
-      $interviewRequest = TeacherInterviewRequest::find($interviewRequest->id);
+      $interviewRequest = TeacherInterviewRequest::wit('user')->find($interviewRequest->id);
       $admin = User::where('role_name', 'admin')->first();
       $admin_message = "New Request for interview has been Submitted!";
       $teacher_message = "Your Request has been submitted! we will contact you soon!";
 
       //Emails and Notifications
-      // event(new InterviewRequestEvent($user->id, $user, $teacher_message, $interviewRequest));
-      // event(new InterviewRequestEvent($admin->id, $admin, $admin_message, $interviewRequest));
-      // dispatch(new InterviewRequestJob($user->id, $user, $teacher_message, $interviewRequest));
-      // dispatch(new InterviewRequestJob($admin->id, $admin, $admin_message, $interviewRequest));
+      event(new InterviewRequestEvent($user->id, $user, $teacher_message, $interviewRequest));
+      event(new InterviewRequestEvent($admin->id, $admin, $admin_message, $interviewRequest));
+      dispatch(new InterviewRequestJob($user->id, $user, $teacher_message, $interviewRequest));
+      dispatch(new InterviewRequestJob($admin->id, $admin, $admin_message, $interviewRequest));
 
       return response()->json([
         'status' => true,

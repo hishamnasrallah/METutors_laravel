@@ -44,6 +44,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use stdClass;
 
 class TeacherController extends Controller
 {
@@ -1625,6 +1626,7 @@ class TeacherController extends Controller
         $count = UserPrefrence::where('user_id', $token_user->id)->count();
         //Create Method
         if ($count == 0) {
+            //adding record
             foreach ($request->spoken_languages as $language) {
                 $prefrence = new UserPrefrence();
                 $prefrence->user_id = $token_user->id;
@@ -1637,10 +1639,11 @@ class TeacherController extends Controller
         } else {
             //Update Method
             $records = UserPrefrence::where('user_id', $token_user->id)->get();
+            //deleting previous record
             foreach ($records as $record) {
                 $record->delete();
             }
-
+            //adding record
             foreach ($request->spoken_languages as $language) {
                 $prefrence = new UserPrefrence();
                 $prefrence->user_id = $token_user->id;
@@ -1656,10 +1659,58 @@ class TeacherController extends Controller
             ->with('spoken_language')
             ->where('user_id', $token_user->id)->get();
 
+        $spoken_languages = [];
+        $final_prefrences = new stdClass();
+
+        $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+        foreach ($prefrences as $key => $prefrence) {
+            $language = new stdClass();
+            $object = new stdClass();
+            $language->id = $prefrence->spoken_language->id;
+            $language->name = $prefrence->spoken_language->name;
+            $object->efficiency =   $prefrence->efficiency;
+            $object->language =  $language;
+            array_push($spoken_languages, $object);
+        }
+
+        $final_prefrences->spoken_languages = $spoken_languages;
+
+
         return response()->json([
             'status' => true,
-            'message' => "User Prefrences Added Successfully!",
-            'prefrences' => $prefrences
+            'message' => "Teacher Preferences Added Successfully!",
+            'preferences' => $final_prefrences
+        ]);
+    }
+
+    public function teacher_prefrences()
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+            ->with('spoken_language')
+            ->where('user_id', $token_user->id)->get();
+
+        $spoken_languages = [];
+        $final_prefrences = new stdClass();
+        $final_prefrences->user_id = $prefrences[0]->user_id;
+        $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+
+
+        foreach ($prefrences as $key => $prefrence) {
+            $language = new stdClass();
+            $language->name = $prefrence->spoken_language->name;
+            $language->efficiency = $prefrence->efficiency;
+            array_push($spoken_languages, $language);
+        }
+
+        $final_prefrences->spoken_language = $spoken_languages;
+
+        return response()->json([
+            'status' => true,
+            'message' => "Teacher Preferences!",
+            'prefrences' => $final_prefrences
         ]);
     }
 

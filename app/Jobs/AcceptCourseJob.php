@@ -40,6 +40,7 @@ class AcceptCourseJob implements ShouldQueue
      */
     public function handle()
     {
+       
         //********* Sending Email **********
         $user_email = $this->user->email;
         $courseMessage = $this->message;

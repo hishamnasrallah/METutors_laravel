@@ -9,11 +9,11 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Dear <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
-                                <p>Hi <b>{{ $user->first_name }}</b>, You have successfully sent an interview request to the
-                                    METutor Admin team. You will
-                                    receive a notification when the MEtutor platform admin team accepts/rejects your request
-                                    or schedules an interview as per their decision.</p>
-
+                                <p>Hi <b>{{ $user->first_name }}</b>, MEtutor platform admin team accepts your request
+                                    or schedules an interview as per their decision on
+                                    <b>{{ $interview_request->date_for_interview }}</b> (date) at
+                                    <b>{{ $interview_request->time_for_interview }} (time)</b> .
+                                </p>
                                 <p> Teacher Information Number (TIN): <b>{{ $interview_request->user->id_number }}</b></p>
                                 <p>Regards</p>
                             </div>
@@ -22,9 +22,10 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }}." ".{{ $user->last_name }}</b> </p>
-                                <p>You have a new interview request from
+                                <p>You have a suuccessfully scheduled an interview on
+                                    <b>{{ $interview_request->date_for_interview }}</b> (date) at
+                                    <b>{{ $interview_request->time_for_interview }} (time)</b> .
                                     <b>{{ $interview_request->user->first_name }}</b>.
-                                    Please action it by approving or rejecting it and accordingly schedule the interview.
                                 </p>
                                 <p> Teacher Information Number (TIN): <b>{{ $interview_request->user->id_number }}</b></p>
                                 <p>Regards</p>

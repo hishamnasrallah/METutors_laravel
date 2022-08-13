@@ -7,6 +7,7 @@ use App\Events\RejectTeacherEvent;
 use App\Events\UpdateAvatarEvent;
 use App\Events\UpdateCoverEvent;
 use App\Events\UserProfileEvent;
+use App\Events\UserRegisterEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\AcceptTeacherJob;
 use App\Jobs\RejectCourseJob;
@@ -14,6 +15,7 @@ use App\Jobs\RejectTeacherJob;
 use App\Jobs\UpdateAvatarJob;
 use App\Jobs\UpdateCoverJob;
 use App\Jobs\UserProfileJob;
+use App\Jobs\UserRegisterJob;
 use App\Models\Category;
 use App\Models\Newsletter;
 use App\Models\Role;
@@ -280,16 +282,10 @@ class UserController extends Controller
     }
     public function teacher_approve(Request $request, $id)
     {
-
-        //   print_r($request->all());die;
-
-
-
         $rules = [
 
             'subjects' => 'required',
             'admin_comments' => 'required',
-
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -307,7 +303,7 @@ class UserController extends Controller
         }
 
 
-        $interview_req = TeacherInterviewRequest::find($id);
+        return $interview_req = TeacherInterviewRequest::with('user')->find($id);
 
         if ($interview_req != null) {
             $teacher_subjects = json_decode(json_encode($request->subjects));
@@ -1319,6 +1315,15 @@ class UserController extends Controller
                     $userMeta->value = $fileName;
                     $userMeta->save();
                 }
+
+                $admin = User::where('role_name', 'admin')->first();
+                $admin->teacher = $user;
+
+                // Emails and notifications for registeration
+                event(new UserRegisterEvent($user->id, $user, "Registerd Successfully"));
+                event(new UserRegisterEvent($admin->id, $admin, "A New User Registerd Successfully"));
+                dispatch(new UserRegisterJob($user->id, $user, "Registerd Successfully"));
+                dispatch(new UserRegisterJob($admin->id, $admin, "A New User Registerd Successfully"));
 
                 return response()->json([
 

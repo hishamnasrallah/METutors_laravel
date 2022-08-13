@@ -39,18 +39,20 @@ class RejectDocumentJob implements ShouldQueue
     public function handle()
     {
 
-        //*********** Sending Email to Student  ************\\
-        $user_email = $this->user->email;
-        $custom_message = $this->custom_message;
-        $to_email = $user_email;
+        if ($this->user->role_name == 'teacher') {
+            //*********** Sending Email to Student  ************\\
+            $user_email = $this->user->email;
+            $custom_message = $this->custom_message;
+            $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $this->user_meta);
+            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $this->user_meta);
 
-        Mail::send('email.document', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Documents Rejected!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
-        });
-        // //******** Email ends **********//
+            Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Documents Rejected!');
+                $message->from('metutorsmail@gmail.com', 'MeTutor');
+            });
+            // //******** Email ends **********//
+        }
 
         //Notification
         $notification = new Notification();

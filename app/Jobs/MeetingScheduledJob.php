@@ -11,23 +11,24 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class RejectTeacherJob implements ShouldQueue
+class MeetingScheduledJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    public $userid, $user, $custom_message, $interview_request;
 
-    public $userid, $user, $custom_message, $interview;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($userid, $user, $custom_message, $interview)
+    public function __construct($userid, $user, $custom_message, $interview_request)
     {
+
         $this->connection = 'database';
         $this->userid = $userid;
         $this->user = $user;
         $this->custom_message = $custom_message;
-        $this->interview = $interview;
+        $this->interview_request = $interview_request;
     }
 
     /**
@@ -42,21 +43,21 @@ class RejectTeacherJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $this->interview);
+        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $this->interview_request);
 
-        Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Teacher REJECTION Notification!');
+        Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('Interview Request!');
             $message->from('metutorsmail@gmail.com', 'MeTutor');
         });
         // //******** Email ends **********//
 
-        //Notification
+        //******** Notification ************
         $notification = new Notification();
-        $notification->type = "App\Events\RequestTeacherEvent";
-        $notification->notifiable_type = "App\Models\User";
+        $notification->type = "App\Events\MeetingScheduledEvent";
+        $notification->notifiable_type = "App\Models\Interview";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;
-        $notification->data =  $this->interview;
+        $notification->data =  $this->interview_request;
         $notification->save();
     }
 }

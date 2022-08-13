@@ -45,8 +45,8 @@ class AcceptTeacherJob implements ShouldQueue
 
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $this->interview);
 
-        Mail::send('email.interview', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Interview Accepted!');
+        Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('Teacher Approval Notification!');
             $message->from('metutorsmail@gmail.com', 'MeTutor');
         });
         // //******** Email ends **********//
