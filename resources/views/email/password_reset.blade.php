@@ -9,7 +9,7 @@
                     <div class="card">
                         {{-- @if ($user->role_name == 'teacher') --}}
                         <div class="card-body">
-                            <p>Dear {{ $user->first_name }} {{ $user->last_name }} </p>
+                            <p>Dear <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
                             <p>You have successfully reset your password.</p>
                             <p>Regards,</p>
 

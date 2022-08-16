@@ -126,7 +126,7 @@ class UserController extends Controller
 
 
 
-        $requestedClasses = json_decode($request->classes);
+        $requestedClasses = json_decode(json_encode($request->classes));
         $weekdays = [];
         foreach ($requestedClasses as $requestedClass) {
             array_push($weekdays, $requestedClass->day);

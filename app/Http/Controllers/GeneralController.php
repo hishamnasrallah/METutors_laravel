@@ -173,7 +173,7 @@ class GeneralController extends Controller
         if ($request->program_id == 3) {
 
             $rules['country_id'] = 'required';
-            $rules['grade'] = 'required';
+            // $rules['grade'] = 'required';
         }
 
         $validator = Validator::make($request->all(), $rules);
@@ -196,7 +196,9 @@ class GeneralController extends Controller
 
         if ($request->program_id == 3) {
 
-            $field_of_study = FieldOfStudy::where('program_id', $request->program_id)->where('country_id', $request->country_id)->where('grade', $request->grade)->get();
+            $field_of_study = FieldOfStudy::where('program_id', $request->program_id)->where('country_id', $request->country_id)
+            // ->where('grade', $request->grade)
+            ->get();
         }
 
 

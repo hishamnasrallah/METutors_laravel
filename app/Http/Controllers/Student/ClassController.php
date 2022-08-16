@@ -645,15 +645,31 @@ class ClassController extends Controller
             $userrole = 'student_id';
         }
 
+
+
         $classroom = ClassRoom::where($userrole, $token_user->id)->pluck('course_id');
 
-        $programs = Program::all();
+        if ($token_user->role_name == 'teacher') {
+            $courses = Course::where('teacher_id', $token_user->id)->get();
+            $course_programs = $courses->unique('program_id')->pluck('program_id');
+            $programs = Program::whereIn('id', $course_programs)->get();
+            $course_field_of_studies = $courses->unique('field_of_study')->pluck('field_of_study');
+            $field_of_studies = FieldOfStudy::whereIn('id', $course_field_of_studies)->get();
+        }
+        if ($token_user->role_name == 'student') {
+            $courses = Course::where('student_id', $token_user->id)->get();
+            $course_programs = $courses->unique('program_id')->pluck('program_id');
+            $programs = Program::whereIn('id', $course_programs)->get();
+            $course_field_of_studies = $courses->unique('field_of_study')->pluck('field_of_study');
+            $field_of_studies = FieldOfStudy::whereIn('id', $course_field_of_studies)->get();
+        }
+
         if (count($request->all()) >= 1) {
 
             if (count($request->all()) == 1) {
                 $program = Program::find($request->program);
                 $countries = Country::select('id', 'name', 'emojiU')->get();
-                $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
+                $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
 
                 $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
@@ -711,7 +727,7 @@ class ClassController extends Controller
                     $field_of_study = FieldOfStudy::find($request->field_of_study);
                     $countries = Country::select('id', 'name', 'emojiU')->get();
 
-                    $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
+                    $fieldOfStudies =  FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
                     $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
@@ -766,7 +782,7 @@ class ClassController extends Controller
                     $country = Country::find($request->country);
                     $countries = Country::select('id', 'name', 'emojiU')->get();
 
-                    $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
@@ -825,7 +841,7 @@ class ClassController extends Controller
                 $countries = Country::select('id', 'name', 'emojiU')->get();
 
 
-                $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->where('country_id', $country->id)->get();
+                $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                 $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();

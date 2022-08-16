@@ -32,6 +32,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class FieldOfStudyController extends Controller
 {
@@ -42,23 +43,23 @@ class FieldOfStudyController extends Controller
      */
     public function index()
     {
-         $FieldOfStudys=FieldOfStudy::with('program','country')->get();
+        $FieldOfStudys = FieldOfStudy::with('program', 'country')->get();
 
-         if(isset($request->country_id) && isset($request->grade)){
+        if (isset($request->country_id) && isset($request->grade)) {
 
-             $FieldOfStudys=FieldOfStudy::where('country_id',$request->country_id)->whereIn('grade',$request->grade)->get();
-         }
+            $FieldOfStudys = FieldOfStudy::where('country_id', $request->country_id)->whereIn('grade', $request->grade)->get();
+        }
 
-        if(isset($request->program_id)){
+        if (isset($request->program_id)) {
 
-             $FieldOfStudys=FieldOfStudy::where('program_id',$request->program_id)->get();
-         }
+            $FieldOfStudys = FieldOfStudy::where('program_id', $request->program_id)->get();
+        }
 
-         return response()->json([
+        return response()->json([
 
-                'status' => true,
-                'FieldOfStudy' => $this->paginate($FieldOfStudys, $request->per_page ?? 10),
-                ]);
+            'status' => true,
+            'FieldOfStudy' => $this->paginate($FieldOfStudys, $request->per_page ?? 10),
+        ]);
     }
 
     /**
@@ -68,8 +69,6 @@ class FieldOfStudyController extends Controller
      */
     public function create()
     {
-
-
     }
 
     /**
@@ -80,46 +79,52 @@ class FieldOfStudyController extends Controller
      */
     public function store(Request $request)
     {
-         $rules = [
+        $rules = [
 
             'program_id' => 'required',
-            'name' => 'required',
+            'name' => 'required', //|unique:field_of_studies
+            'image' => 'required',
         ];
 
-         if($request->program_id == 3){
+        if ($request->program_id == 3) {
 
-                  $rules['country_id'] = 'required';
-                  $rules['grade'] = 'required';
-            }
+            $rules['country_id'] = 'required';
+            $rules['grade'] = 'required';
+        }
 
 
-        
-        $validator=Validator::make($request->all(),$rules);
 
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-           
+            ], 400);
         }
 
-        $FieldOfStudy=new FieldOfStudy();
-        $FieldOfStudy->program_id=$request->program_id;
-         if($request->program_id == 3){
+        $FieldOfStudy = new FieldOfStudy();
+        $FieldOfStudy->program_id = $request->program_id;
+        if ($request->program_id == 3) {
+            $FieldOfStudy->country_id = $request->country_id;
+            $FieldOfStudy->grade = $request->grade;
+        }
+        $FieldOfStudy->name = $request->name;
 
-                 $FieldOfStudy->country_id=$request->country_id;
-                 $FieldOfStudy->grade=$request->grade;
-            }
-        $FieldOfStudy->name=$request->name;
+        if ($request->hasFile('image')) {
+            $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+            $request->image->move(public_path('uploads/field_of_studies'), $imageName);
+            $FieldOfStudy->image = $imageName;
+        }
+
+
         $FieldOfStudy->save();
 
-        $FieldOfStudy=FieldOfStudy::with('program','country')->find($FieldOfStudy->id);
+        $FieldOfStudy = FieldOfStudy::with('program', 'country')->find($FieldOfStudy->id);
 
         return response()->json([
             'success' => true,
@@ -136,12 +141,12 @@ class FieldOfStudyController extends Controller
      */
     public function show($id)
     {
-        
-         $FieldOfStudy = FieldOfStudy::find($id);
+
+        $FieldOfStudy = FieldOfStudy::find($id);
         if (is_null($FieldOfStudy)) {
-            return response()->json('Data not found', 404); 
+            return response()->json('Data not found', 404);
         }
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => "FieldOfStudy data  retrieved successfully",
             'FieldOfStudy' => $FieldOfStudy,
@@ -168,42 +173,54 @@ class FieldOfStudyController extends Controller
      */
     public function update(Request $request, $id)
     {
-          $rules = [
+        // $rules = [
+        //     'name' => Rule::unique('field_of_studies')->ignore($id, 'id'),
+        // ];
+        $rules = [];
 
-           
-        ];
+        if ($request->program_id == 3) {
 
-         if($request->program_id == 3){
-
-                  $rules['country_id'] = 'required';
-            }
+            $rules['country_id'] = 'required';
+        }
 
 
-        
-        $validator=Validator::make($request->all(),$rules);
 
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-           
+            ], 400);
         }
 
 
-        $FieldOfStudy=FieldOfStudy::find($id);
+        $FieldOfStudy = FieldOfStudy::find($id);
         if (is_null($FieldOfStudy)) {
-            return response()->json(['message'=>'Data not found'], 404); 
+            return response()->json(['message' => 'Data not found'], 404);
         }
-        $FieldOfStudy->update($request->all());
 
-           $FieldOfStudy=FieldOfStudy::with('program','country')->find($FieldOfStudy->id);
-         return response()->json([
+        $FieldOfStudy->program_id = $request->program_id;
+        if ($request->program_id == 3) {
+            $FieldOfStudy->country_id = $request->country_id;
+            $FieldOfStudy->grade = $request->grade;
+        }
+        $FieldOfStudy->name = $request->name;
+
+        if ($request->hasFile('image')) {
+            $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+            $request->image->move(public_path('uploads/field_of_studies'), $imageName);
+            $FieldOfStudy->image = $imageName;
+        }
+        $FieldOfStudy->update();
+
+
+        $FieldOfStudy = FieldOfStudy::with('program', 'country')->find($FieldOfStudy->id);
+        return response()->json([
             'success' => true,
             'message' => "FieldOfStudy data updated successfully",
             'FieldOfStudy' => $FieldOfStudy,
@@ -218,24 +235,23 @@ class FieldOfStudyController extends Controller
      */
     public function destroy($id)
     {
-           
-         $FieldOfStudy = FieldOfStudy::find($id);
+
+        $FieldOfStudy = FieldOfStudy::find($id);
         if (is_null($FieldOfStudy)) {
-            return response()->json('Data not found', 404); 
+            return response()->json('Data not found', 404);
         }
         $FieldOfStudy->delete();
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => "FieldOfStudy deleted successfully",
         ]);
     }
 
 
-     public function paginate($items, $perPage, $page = null, $options = [])
+    public function paginate($items, $perPage, $page = null, $options = [])
     {
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
         return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
-    
 }
