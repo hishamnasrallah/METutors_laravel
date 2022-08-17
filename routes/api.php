@@ -220,6 +220,7 @@ Route::get('all-countries', 'ProgramCountryController@countries');
 
 Route::resource('fieldofstudy', 'FieldOfStudyController');
 Route::post('fieldofstudy/{id}', 'FieldOfStudyController@update');
+
 Route::resource('subject', 'SubjectController');
 
 Route::get('admin/program-countries', 'ProgramCountryController@program_countries');

@@ -43,6 +43,8 @@ use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
 use App\Models\LastActivity;
 use App\TeacherAvailability;
+use App\TeacherProgram;
+use App\TeacherSubject;
 use App\TeachingSpecification;
 use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -1236,10 +1238,10 @@ class ClassController extends Controller
         }
 
         if ($token_user->role_name == 'teacher') {
-            $courses = Course::where('teacher_id', $token_user->id)->get();
-            $course_programs = $courses->unique('program_id')->pluck('program_id');
+            // $courses = Course::where('teacher_id', $token_user->id)->get();
+            $course_programs = TeacherSubject::where('user_id', $token_user->id)->distinct('program_id')->pluck('program_id');
             $programs = Program::whereIn('id', $course_programs)->get();
-            $course_field_of_studies = $courses->unique('field_of_study')->pluck('field_of_study');
+            $course_field_of_studies =  TeacherSubject::where('user_id', $token_user->id)->distinct('field_id')->pluck('field_id');
             $field_of_studies = FieldOfStudy::whereIn('id', $course_field_of_studies)->get();
         }
         if ($token_user->role_name == 'student') {
@@ -1256,11 +1258,13 @@ class ClassController extends Controller
         if (count($request->all()) >= 1) {
 
             if (count($request->all()) == 1) {
-                $program = Program::find($request->program);
+                $program = Program::findOrFail($request->program);
                 $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')
+                    ->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)
+                    ->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();

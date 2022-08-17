@@ -34,7 +34,7 @@ class DashboardController extends Controller
 
         if (count($request->all()) >= 1) {
             // return "not null";
-            $startDate = Carbon::today()->format('Y-m-d');
+            $startDate = Carbon::now();
 
             if ($request->search_query == '7days') {
                 $endDate = Carbon::today()->subDays(7);
@@ -56,7 +56,7 @@ class DashboardController extends Controller
 
 
             $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();
-            $current_date = Carbon::now()->format('Y-m-d');
+            $current_date = Carbon::now();
 
             $total_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->count();
             $total_last_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->count();
@@ -81,12 +81,15 @@ class DashboardController extends Controller
                 $completed_courses_growth = (($total_last_completed_courses - $total_completed_courses) / $greater) * 100;
                 $completed_courses_last_count = $total_last_completed_courses;
             }
+            // return $endDate . ' - ' . $current_date;
 
-
-            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes',)
+            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
                 ->whereBetween('created_at', [$endDate, $current_date])
+                // ->where('created_at', '>=', $endDate)
+                // ->where('created_at', '<=', $current_date)
                 ->where('teacher_id', $user_id)
                 ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')

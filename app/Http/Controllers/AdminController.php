@@ -4022,11 +4022,16 @@ class AdminController extends Controller
     public function featured_teachers_list()
     {
         $courses = Course::all();
+
         $featured_teachers = [];
-        $teachers = User::with('country')->where('role_name', 'teacher')->where('admin_approval', 'approved')->limit(3)->get();
+        $teacher_ids = TeacherSubject::where('status', 'approved')
+            ->pluck('user_id')
+            ->unique();
+        $teachers = User::with('country')->whereIn('id', $teacher_ids)->where('admin_approval', 'approved')->limit(3)->get();
         foreach ($teachers as $teacher) {
             //  $teacher;
             $courses_count = $courses->where('teacher_id', $teacher->id)->count();
+            $students_count = $courses->where('teacher_id', $teacher->id)->pluck('student_id')->unique('student_id')->count();
             $teacher_programs = TeacherSubject::where('user_id', $teacher->id)
                 ->where('status', 'approved')
                 ->pluck('program_id')
@@ -4052,9 +4057,12 @@ class AdminController extends Controller
 
             $teacher->average_rating = $average_rating;
             $teacher->reviews_count  = $reviews_count;
+            $teacher->teacher_students_count  = $students_count;
             array_push($featured_teachers, $teacher);
             $teacher->programs = $programs;
         }
+
+
         $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(4);
         $teachers_list = [];
         foreach ($featured_teachers as $featured_teacher) {

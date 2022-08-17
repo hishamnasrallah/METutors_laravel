@@ -21,7 +21,7 @@ class Subject extends Model
     }
     public function field()
     {
-        return $this->belongsTo('App\FieldOfStudy', 'field_id', 'id')->select('id', 'name');
+        return $this->belongsTo('App\FieldOfStudy', 'field_id', 'id')->select('id', 'name','image');
     }
     public function country()
     {
