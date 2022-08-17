@@ -105,7 +105,7 @@ class ResourcesController extends Controller
 
             //************* Resource files ends **********\\
 
-            $file_size = $request->file->getSize();
+            $file_size = $request->file('file')->getSize();
             $file_name = $request->file->getClientOriginalName();
         }
 

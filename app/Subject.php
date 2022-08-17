@@ -17,7 +17,7 @@ class Subject extends Model
 
     public function program()
     {
-        return $this->belongsTo('App\Program', 'program_id', 'id')->select('id', 'name', 'code', 'image');
+        return $this->belongsTo('App\Program', 'program_id', 'id')->select('id', 'name','title','description', 'code', 'image');
     }
     public function field()
     {

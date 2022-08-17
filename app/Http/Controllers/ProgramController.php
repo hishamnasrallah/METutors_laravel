@@ -85,6 +85,7 @@ class ProgramController extends Controller
         $rules = [
 
             'name' => 'required|unique:programs',
+            'title' => 'required',
             'description' => 'required',
             'image' => 'required',
         ];
@@ -104,6 +105,7 @@ class ProgramController extends Controller
 
         $program = new Program();
         $program->name = $request->name;
+        $program->title = $request->title;
         $program->description = $request->description;
         if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
@@ -183,6 +185,7 @@ class ProgramController extends Controller
             return response()->json(['message' => 'Data not found'], 404);
         }
         $program->name = $request->name;
+        $program->title = $request->title;
         $program->description = $request->description;
         if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
