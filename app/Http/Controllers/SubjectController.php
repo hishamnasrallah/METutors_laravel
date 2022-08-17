@@ -113,8 +113,8 @@ class SubjectController extends Controller
         $subject->field_id=$request->field_id;
         if($request->program_id == 3){
 
-                 $FieldOfStudy->country_id=$request->country_id;
-                 $FieldOfStudy->grade=$request->grade;
+                 $subject->country_id=$request->country_id;
+                 $subject->grade=$request->grade;
             }
         $subject->name=$request->name;
         $subject->description=$request->description;
