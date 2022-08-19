@@ -789,7 +789,7 @@ class UserController extends Controller
             $rules['computer_skills'] = 'required|string';
             $rules['teaching_experience'] = 'required|string';
             $rules['teaching_experience_online'] = 'required|string';
-            $rules['video'] = 'required|mimes:mp4,ogx,oga,ogv,ogg,webm|max:152400';
+            $rules['video'] = 'required';
             // $rules['current_title'] = 'required|string';
 
         }
