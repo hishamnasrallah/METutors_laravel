@@ -17,7 +17,7 @@
 
                             <p>
                                 @php
-                                    echo 'https://frontend.eshapsough.com/reset-password/' . $token . '/' . $email;
+                                    echo 'metutors.comreset-password/' . $token . '/' . $email;
                                 @endphp
                             </p>
 
@@ -26,7 +26,7 @@
                             <a
                                 href="
                             @php
-                                echo 'https://frontend.eshapsough.com/reset-password/' . $token . '/' . $email;
+                                echo 'metutors.comreset-password/' . $token . '/' . $email;
                             @endphp
                             ">
                                 {{ trans('auth.click_here') }}</a>
@@ -54,7 +54,7 @@
                             <p>Please click this link to reset your password.</p>
                             <p>Link:
                                 @php
-                                    echo 'https://frontend.eshapsough.com/reset-password/' . $token . '/' . $email;
+                                    echo 'metutors.comreset-password/' . $token . '/' . $email;
                                 @endphp
                             </p>
 
@@ -63,7 +63,7 @@
                             <a
                                 href="
                             @php
-                                echo 'https://frontend.eshapsough.com/reset-password/' . $token . '/' . $email;
+                                echo 'metutors.comreset-password/' . $token . '/' . $email;
                             @endphp
                             ">
                                 {{ trans('auth.click_here') }}</a>

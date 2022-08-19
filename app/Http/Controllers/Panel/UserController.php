@@ -776,7 +776,7 @@ class UserController extends Controller
 
             if ($request->hasFile('cover_img')) {
 
-                $rules['cover_img'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
+                $rules['cover_img'] = 'image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
             }
         }
         if ($request->step == 3) {

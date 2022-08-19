@@ -13,7 +13,7 @@
                                     board. You can click the link to view your profile.</p>
                                 <p>Link:
                                     @php
-                                        echo 'https://frontend.eshapsough.com/tutor/settings';
+                                        echo 'metutors.comtutor/settings';
                                     @endphp
                                 </p>
                                 <p>Best wishes and happy teaching</p>
@@ -31,7 +31,7 @@
                                 {{-- {{ $user->teacher->first_name }} --}}
                                 <p>Link:
                                     @php
-                                        echo 'https://frontend.eshapsough.com/tutor/settings';
+                                        echo 'metutors.comtutor/settings';
                                     @endphp
                                 </p>
                                 <p>Teacher Information Number:<b>{{ $user->teacher->id_number }}</b></p>
