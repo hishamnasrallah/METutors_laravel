@@ -17,7 +17,7 @@
 
                             <p>
                                 @php
-                                    echo 'metutors.comreset-password/' . $token . '/' . $email;
+                                    echo 'https://metutors.com/reset-password/' . $token . '/' . $email;
                                 @endphp
                             </p>
 
@@ -26,7 +26,7 @@
                             <a
                                 href="
                             @php
-                                echo 'metutors.comreset-password/' . $token . '/' . $email;
+                                echo 'https://metutors.com/reset-password/' . $token . '/' . $email;
                             @endphp
                             ">
                                 {{ trans('auth.click_here') }}</a>
@@ -50,11 +50,11 @@
                     <div class="card">
                         {{-- <div class="card-header">{{ trans('auth.verify_your_email_address') }}</div> --}}
                         <div class="card-body">
-                            <p>Dear {{ $user->first_name }}." ".{{ $user->last_name }} </p>
+                            <p>Dear {{ $user->first_name }} {{ $user->last_name }} </p>
                             <p>Please click this link to reset your password.</p>
                             <p>Link:
                                 @php
-                                    echo 'metutors.comreset-password/' . $token . '/' . $email;
+                                    echo 'https://metutors.com/reset-password/' . $token . '/' . $email;
                                 @endphp
                             </p>
 
@@ -63,7 +63,7 @@
                             <a
                                 href="
                             @php
-                                echo 'metutors.comreset-password/' . $token . '/' . $email;
+                                echo 'https://metutors.com/reset-password/' . $token . '/' . $email;
                             @endphp
                             ">
                                 {{ trans('auth.click_here') }}</a>
