@@ -66,11 +66,9 @@ class UserController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        if ($request->hasFile('avatar')) {
+        if ($request->has('avatar')) {
 
-            $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->avatar->getClientOriginalExtension();
-            $request->avatar->move(public_path('uploads/images'), $imageName);
-
+            $imageName = $request->avatar;
             $user = User::find($token_user->id);
             $user->avatar = $imageName;
             $user->update();
@@ -131,12 +129,10 @@ class UserController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        if ($request->hasFile('cover_img')) {
+        if ($request->has('cover_img')) {
 
-            $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->cover_img->getClientOriginalExtension();
-            $request->cover_img->move(public_path('uploads/images'), $imageName);
-
-
+            $imageName = $request->cover_img;
+           
             $user = User::find($token_user->id);
             $user->cover_img = $imageName;
             $user->update();
@@ -771,13 +767,8 @@ class UserController extends Controller
         }
         if ($request->step == 2) {
 
-            $rules['avatar'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100';
+            $rules['avatar'] = 'required';
 
-
-            if ($request->hasFile('cover_img')) {
-
-                $rules['cover_img'] = 'image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
-            }
         }
         if ($request->step == 3) {
 
@@ -887,15 +878,13 @@ class UserController extends Controller
                 $user->profile_completed_step = 2;
             }
 
-            if ($request->hasFile('avatar')) {
+            if ($request->has('avatar')) {
 
-                $imageName = rand(10, 100) . time() . '.' . $request->avatar->getClientOriginalExtension();
-                $request->avatar->move(public_path('uploads/images'), $imageName);
+                $imageName = $request->avatar;
                 $user->avatar = $imageName;
             }
-            if ($request->hasFile('cover_img')) {
-                $imageName = rand(10, 100) . time() . '.' . $request->cover_img->getClientOriginalExtension();
-                $request->cover_img->move(public_path('uploads/images'), $imageName);
+            if ($request->has('cover_img')) {
+                $imageName = $request->cover_img;
                 $user->cover_img = $imageName;
             }
 
@@ -966,13 +955,13 @@ class UserController extends Controller
                 $teaching_quali->computer_skills = $request->computer_skills;
                 $teaching_quali->teaching_experience = $request->teaching_experience;
                 $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
-                $teaching_quali->current_employer = $request->current_employer;
-                $teaching_quali->current_title = $request->current_title;
+                $teaching_quali->current_employer = $request->current_employer ?? Null;
+                $teaching_quali->current_title = $request->current_title ?? Null;
 
-                if ($request->hasFile('video')) {
+                if ($request->has('video')) {
 
-                    $imageName = rand(10, 100) . time() . '.' . $request->video->getClientOriginalExtension();
-                    $request->video->move(public_path('uploads/teacher_videos'), $imageName);
+                    $imageName = $request->video;
+                   
                     $teaching_quali->video = $imageName;
                 }
                 $teaching_quali->save();
@@ -1009,12 +998,11 @@ class UserController extends Controller
 
                 $teaching_quali->computer_skills = $request->computer_skills;
                 $teaching_quali->teaching_experience = $request->teaching_experience;
-                $teaching_quali->current_employer = $request->current_employer;
-                $teaching_quali->current_title = $request->current_title;
-                if ($request->hasFile('video')) {
+                $teaching_quali->current_employer = $request->current_employer ?? Null;
+                $teaching_quali->current_title = $request->current_title ?? Null;
+                if ($request->has('video')) {
 
-                    $imageName = rand(10, 100) . time() . '.' . $request->video->getClientOriginalExtension();
-                    $request->video->move(public_path('uploads/teacher_videos'), $imageName);
+                    $imageName = $request->video;
                     $teaching_quali->video = $imageName;
                 }
                 $teaching_quali->update();
