@@ -38,15 +38,14 @@ class DashboardController extends Controller
                 $endDate = Carbon::today()->subDays(7);
             }
             if ($request->search_query == '1month') {
-                $endDate = Carbon::today()->subDays(30);
+                $endDate = Carbon::today()->subMonth(1);
             }
             if ($request->search_query == '3months') {
-                $endDate = Carbon::today()->subDays(90);
+                $endDate = Carbon::today()->subMonth(3);
             }
             if ($request->search_query == '1year') {
-                $endDate = Carbon::today()->subDays(365);
+                $endDate = Carbon::today()->subYear(1);
             }
-
 
 
             $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();

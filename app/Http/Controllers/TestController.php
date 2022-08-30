@@ -185,11 +185,72 @@ class TestController extends Controller
         ]);
     }
 
+    public function update_class(Request $request, $id)
+    {
+        $rules = [
+            'start_time' =>  'required',
+            'end_time' =>  'required',
+            'start_date' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        // $class = AcademicClass::findOrFail($id);
+        // $class->start_time = $request->start_time;
+        // $class->end_time = $request->end_time;
+        // $class->start_date = Carbon::parse($request->start_date);
+
+        $apiURL = 'https://api.braincert.com/v2/updateclass';
+        $postInput = [
+            'apikey' => 'xKUyaLJHtbvBUtl3otJc',
+            'id' => $id,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'date' => $request->start_date,
+            'end_date' => $request->start_date,
+        ];
+        $client = new Client();
+        $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+        $responseBody = json_decode($response->getBody(), true);
+        if ($responseBody['status'] == 'error') {
+            return response()->json([
+                'status' => false,
+                'message' => "Class Updation Failed!",
+                'message' => $responseBody['error'],
+            ], 400);
+        } else {
+            // $class->class_id = $responseBody['class_id'];
+            // $class->update();
+            return response()->json([
+                'status' => true,
+                'message' => "Class SuccessFully Updated!",
+                'class' => $responseBody,
+            ], 400);
+        }
+    }
+
     public function test()
     {
-        $classes = AcademicClass::orderBy('start_time', 'asc')->take(10)->get();
+        // $course = Course::findOrFail($id);
+        $iso_date = Carbon::now()->addHours(12)->toISOString();
+        $current_date = Carbon::now();
+        $current_date = Carbon::parse('2022-08-24T18:34:39.915206Z')->format('H:i');
+       
         return response()->json([
-            'classes' => $classes,
+            'status' => true,
+            'message' => 'Action done successfully!',
+            'iso_date' => $iso_date,
+            'current_date' => $current_date,
         ]);
     }
 }

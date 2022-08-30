@@ -73,8 +73,6 @@ class UserController extends Controller
             ->where('status', 'active')->where('id', 1212)
             ->get();
 
-
-
         return response()->json([
             'success' => true,
             'available_teachers' => $filtered_teacher,

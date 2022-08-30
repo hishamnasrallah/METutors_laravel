@@ -261,8 +261,6 @@ class RegisterController extends Controller
             if ($response = $this->registered($request, $user)) {
                 return $response;
             }
-
-            return 'hello';
         }
     }
 }

@@ -703,7 +703,7 @@ class ClassController extends Controller
                 $progress = 0;
                 if ($lastActivity_course != null) {
                     $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
-                    $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
+                    $progress = ($completecoursesd_classes / $lastActivity_course->course->total_classes) * 100;
                     $lastActivity_course->course->progress = round($progress);
                 }
 
@@ -1284,7 +1284,7 @@ class ClassController extends Controller
                     if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
                         return response()->json([
                             'status' => false,
-                            'errors' => "Already have Scheduled Class at this time!",
+                            'errors' => "Already have Scheduled Class at this time! please check teacher availability first",
                         ], 400);
                     }
                 }
@@ -1296,7 +1296,7 @@ class ClassController extends Controller
             if ($availabilites->isEmpty()) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Teacher is not Available at this day!",
+                    'message' => "Teacher is not Available at this day! please check teacher availability first",
                 ], 400);
             }
 
@@ -1313,7 +1313,7 @@ class ClassController extends Controller
                     if (count($availabilites) == $counter) {
                         return response()->json([
                             'status' => false,
-                            'message' => "Teacher is not Available at this time!",
+                            'message' => "Teacher is not Available at this time! please check teacher availability first",
                         ], 400);
                     }
                 }
@@ -1336,9 +1336,9 @@ class ClassController extends Controller
                     $postInput = [
                         'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                         'id' => $class->class_id,
-                        'start_time' => $request->start_time,
-                        'end_time' => $request->end_time,
-                        'date' => $request->start_date,
+                        'start_time' => Carbon::parse($request->start_time)->format('h:i a'),
+                        'end_time' => Carbon::parse($request->end_time)->format('h:i a'),
+                        'date' =>  Carbon::parse($request->start_date)->format('Y-m-d'),
                     ];
 
                     $client = new Client();
@@ -1386,15 +1386,15 @@ class ClassController extends Controller
                         'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
                         'title' =>  'class',
                         'timezone' => 90,
-                        'start_time' => $request->start_time,
-                        'end_time' => $request->end_time,
-                        'date' => $request->start_date,
+                        'start_time' => Carbon::parse($request->start_time)->format('h:i a'),
+                        'end_time' => Carbon::parse($request->end_time)->format('h:i a'),
+                        'date' => Carbon::parse($request->start_date)->format('Y-m-d'),
                         'currency' => "USD",
                         'ispaid' => null,
                         'is_recurring' => 0,
                         'repeat' => 0,
                         'weekdays' => null,
-                        'end_date' => $request->start_date,
+                        'end_date' => Carbon::parse($request->start_date)->format('Y-m-d'),
                         'seat_attendees' => null,
                         'record' => 0,
                         'isRecordingLayout ' => 1,
@@ -1512,7 +1512,7 @@ class ClassController extends Controller
             if (count($weekAvailabilities) == 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Teacher not available at this day!',
+                    'message' => 'Teacher not available at this day! please check teacher availability first',
                 ], 400);
             }
             $flag = 0;
@@ -1529,7 +1529,7 @@ class ClassController extends Controller
                     if ($flag == count($weekAvailabilities))
                         return response()->json([
                             'status' => false,
-                            'message' => 'Teacher not available at this time slot!',
+                            'message' => 'Teacher not available at this time slot! please check teacher availability first',
                         ], 400);
                 }
             }

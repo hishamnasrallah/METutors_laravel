@@ -36,7 +36,7 @@ class DashboardController extends Controller
 
         $endDate = 0;
         $todays_date = Carbon::now()->format('d-M-Y [l]');
-        $current_date = Carbon::now()->format('Y-m-d');
+        $current_date = Carbon::now();
         if (count($request->all()) >= 1) {
             // return "not null";
             $startDate = Carbon::today()->format('Y-m-d');
@@ -127,8 +127,11 @@ class DashboardController extends Controller
             if ($greater > 0 && $token_user->created_at <= $compareDate) {
                 $attendence_growth = (($last_attended_classes - $attended_classes) / $greater) * 100;
             }
-
-            $total_payment = Course::whereBetween('created_at', [$endDate, $current_date])->where($userrole, $user_id)->sum('total_price');
+            // return $current_date;
+            // return $endDate.$Carbion(z);
+            $total_payment = Course::whereBetween('created_at', [$endDate, $current_date])
+                ->where($userrole, $user_id)->where('course_code', '!=', null)->sum('total_price');
+            // return $total_payment = Course::whereBetween('created_at', [$endDate, $current_date])->where($userrole, $user_id)->sum('total_price');
             //Payment Growth
             $total_last_payment = Course::whereBetween('created_at', [$compareDate, $endDate])->where($userrole, $user_id)->sum('total_price');
             $payment_growth = 0;

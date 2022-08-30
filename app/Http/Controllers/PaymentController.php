@@ -15,6 +15,7 @@ use App\Models\Course;
 use App\Models\Order;
 use App\Program;
 use App\Subject;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
 use JWTAuth;
@@ -187,15 +188,15 @@ class PaymentController extends Controller
                     'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
                     'title' =>  "title",
                     'timezone' => 90,
-                    'start_time' => $class->start_time,
-                    'end_time' => $class->end_time,
-                    'date' => $class->start_date,
+                    'start_time' => Carbon::parse($class->start_time)->format('G:i a'),
+                    'end_time' => Carbon::parse($class->end_time)->format('G:i a'),
+                    'date' => Carbon::parse($class->start_date)->format('Y-m-d'),
                     'currency' => "USD",
                     'ispaid' => null,
                     'is_recurring' => 0,
                     'repeat' => 0,
                     'weekdays' => $course->weekdays,
-                    'end_date' => $class->start_date,
+                    'end_date' => Carbon::parse($class->start_date)->format('Y-m-d'),
                     'seat_attendees' => null,
                     'record' => 0,
                     'isRecordingLayout ' => 1,

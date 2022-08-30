@@ -43,19 +43,19 @@ class SubjectController extends Controller
     public function index()
     {
 
-          $subjects=Subject::with('program','country','field')->get();
-         // $subjects=Subject::all();
+        $subjects = Subject::with('program', 'country', 'field')->get();
+        // $subjects=Subject::all();
 
-         if(isset($request->field_id)){
+        if (isset($request->field_id)) {
 
-            $subjects=Subject::where('field_id',$request->field_id)->get();
-         }
+            $subjects = Subject::where('field_id', $request->field_id)->get();
+        }
 
-       return response()->json([
+        return response()->json([
 
-                'status' => true,
-                'subject' => $this->paginate($subjects, $request->per_page ?? 10),
-                ]);
+            'status' => true,
+            'subject' => $this->paginate($subjects, $request->per_page ?? 10),
+        ]);
     }
 
     /**
@@ -65,8 +65,6 @@ class SubjectController extends Controller
      */
     public function create()
     {
-
-
     }
 
     /**
@@ -77,35 +75,32 @@ class SubjectController extends Controller
      */
     public function store(Request $request)
     {
-         $rules = [
+        $rules = [
 
             'program_id' => 'required',
-
             'field_id' => 'required',
             'name' => 'required',
             'description' => 'required',
             'price_per_hour' => 'required',
         ];
 
-            if($request->program_id == 3){
+        if ($request->program_id == 3) {
 
-                  $rules['country_id'] = 'required';
-                  $rules['grade'] = 'required';
-            }
+            $rules['country_id'] = 'required';
+            $rules['grade'] = 'required';
+        }
 
-        $validator=Validator::make($request->all(),$rules);
+        $validator = Validator::make($request->all(), $rules);
 
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-
+            ], 400);
         }
 
         $subject=new subject();
@@ -121,7 +116,7 @@ class SubjectController extends Controller
         $subject->price_per_hour=$request->price_per_hour;
         $subject->save();
 
-        $subject=Subject::with('program','country','field')->find($subject->id);
+        $subject = Subject::with('program', 'country', 'field')->find($subject->id);
 
         return response()->json([
             'success' => true,
@@ -139,11 +134,11 @@ class SubjectController extends Controller
     public function show($id)
     {
 
-         $subject = Subject::with('program','country','field')->find($id);
+        $subject = Subject::with('program', 'country', 'field')->find($id);
         if (is_null($subject)) {
             return response()->json('Data not found', 404);
         }
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => "subject data  retrieved successfully",
             'subject' => $subject,
@@ -170,40 +165,35 @@ class SubjectController extends Controller
      */
     public function update(Request $request, $id)
     {
-          $rules = [
-
-
-        ];
+        $rules = [];
 
 
 
 
 
-        $validator=Validator::make($request->all(),$rules);
+        $validator = Validator::make($request->all(), $rules);
 
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
 
             return response()->json([
 
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-
+            ], 400);
         }
 
 
-        $subject=Subject::find($id);
+        $subject = Subject::find($id);
         if (is_null($subject)) {
-            return response()->json(['message'=>'Data not found'], 404);
+            return response()->json(['message' => 'Data not found'], 404);
         }
         $subject->update($request->all());
 
-          $subject=Subject::with('program','country','field')->find($subject->id);
+        $subject = Subject::with('program', 'country', 'field')->find($subject->id);
 
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => "subject data updated successfully",
             'subject' => $subject,
@@ -219,12 +209,12 @@ class SubjectController extends Controller
     public function destroy($id)
     {
 
-         $subject = Subject::find($id);
+        $subject = Subject::find($id);
         if (is_null($subject)) {
             return response()->json('Data not found', 404);
         }
         $subject->delete();
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => "subject deleted successfully",
         ]);

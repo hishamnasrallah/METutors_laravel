@@ -572,7 +572,7 @@ class AdminController extends Controller
                 ->where('teacher_id', $teacher)
                 ->where('start_date', '>=', $weekStartDate)
                 ->where('start_date', '<=', $weekEndDate)
-                ->whereIn('status', ['scheduled', 'pending'])
+                ->whereIn('status', ['scheduled'])
                 // ->orderBy('start_time')
                 ->get();
 
@@ -1256,15 +1256,15 @@ class AdminController extends Controller
                 'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                 'title' =>  'Introduction|class1',
                 'timezone' => 90,
-                'start_time' => $class->start_time,
-                'end_time' => $class->end_time,
-                'date' => $class->start_date,
+                'start_time' => Carbon::parse($class->start_time)->format('G:i a'),
+                'end_time' => Carbon::parse($class->end_time)->format('G:i a'),
+                'date' => Carbon::parse($class->start_date)->format('Y-m-d'),
                 'currency' => "USD",
                 'ispaid' => null,
                 'is_recurring' => 0,
                 'repeat' => 0,
                 'weekdays' => $course->weekdays,
-                'end_date' => $class->end_date,
+                'end_date' => Carbon::parse($class->end_date)->format('Y-m-d'),
                 'seat_attendees' => null,
                 'record' => 0,
                 'isRecordingLayout ' => 1,
@@ -1369,15 +1369,15 @@ class AdminController extends Controller
                 'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                 'title' =>  'Introduction|class1',
                 'timezone' => 90,
-                'start_time' => $class->start_time,
-                'end_time' => $class->end_time,
-                'date' => $class->start_date,
+                'start_time' => Carbon::parse($class->start_time)->format('G:i a'),
+                'end_time' => Carbon::parse($class->end_time)->format('G:i a'),
+                'date' => Carbon::parse($class->start_date)->format('Y-m-d'),
                 'currency' => "USD",
                 'ispaid' => null,
                 'is_recurring' => 0,
                 'repeat' => 0,
                 'weekdays' => $course->weekdays,
-                'end_date' => $class->end_date,
+                'end_date' => Carbon::parse($class->end_date)->format('Y-m-d'),
                 'seat_attendees' => null,
                 'record' => 0,
                 'isRecordingLayout ' => 1,
@@ -1809,9 +1809,9 @@ class AdminController extends Controller
             'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
             'title' =>  'Interview with teacher',
             'timezone' => 90,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'date' => $request->date,
+            'start_time' => Carbon::parse($request->start_time)->format('G:i a'),
+            'end_time' => Carbon::parse($request->end_time)->format('G:i a'),
+            'date' => Carbon::parse($request->date)->format('Y-m-d'),
             'currency' => "USD",
             'record' => 0,
             'isRecordingLayout ' => 1,

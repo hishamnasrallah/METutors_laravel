@@ -1032,10 +1032,10 @@ class ClassController extends Controller
                 $postInput = [
                     'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                     'id' => $class->class_id,
-                    'start_time' => $request->start_time,
-                    'end_time' => $request->end_time,
-                    'date' => $request->start_date,
-                    'end_date' => $request->start_date,
+                    'start_time' => Carbon::parse($request->start_time)->format('h:i a'),
+                    'end_time' => Carbon::parse($request->end_time)->format('h:i a'),
+                    'date' => Carbon::parse($request->start_date)->format('Y-m-d'),
+                    'end_date' => Carbon::parse($request->start_date)->format('Y-m-d'),
                 ];
                 $client = new Client();
                 $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);

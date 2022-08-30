@@ -1049,13 +1049,9 @@ class UserController extends Controller
 
                     $availability_slots = $availability->time_slots;
 
-                    foreach ($availability_slots as $slot) {
+                     $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
 
-                        //   return $slot;
-
-                        $avail = TeacherAvailability::where('user_id', $token_user->id)->where('day', $availability->day)->where('time_from', $slot->start_time)->where('time_to', $slot->end_time)->first();
-
-                        if ($avail == null) {
+                     foreach ($availability_slots as $slot) {
 
                             $teacher_sub = new TeacherAvailability();
                             $teacher_sub->user_id = $token_user->id;
@@ -1063,13 +1059,7 @@ class UserController extends Controller
                             $teacher_sub->time_from = $slot->start_time;
                             $teacher_sub->time_to = $slot->end_time;
                             $teacher_sub->save();
-                        } else {
-                            $avail->user_id = $token_user->id;
-                            $avail->day = $availability->day;
-                            $avail->time_from = $slot->start_time;
-                            $avail->time_to = $slot->end_time;
-                            $avail->update();
-                        }
+                        
                     }
                 }
 
@@ -1106,20 +1096,18 @@ class UserController extends Controller
 
                 $availabilities = json_decode(json_encode($request->availability));
 
+                $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
 
-                foreach ($availabilities as $availability) {
+
+              foreach ($availabilities as $availability) {
 
                     // print_r($availability->time_slots);die;
 
                     $availability_slots = $availability->time_slots;
 
-                    foreach ($availability_slots as $slot) {
+                     
 
-                        //   return $slot;
-
-                        $avail = TeacherAvailability::where('user_id', $token_user->id)->where('day', $availability->day)->where('time_from', $slot->start_time)->where('time_to', $slot->end_time)->first();
-
-                        if ($avail == null) {
+                     foreach ($availability_slots as $slot) {
 
                             $teacher_sub = new TeacherAvailability();
                             $teacher_sub->user_id = $token_user->id;
@@ -1127,13 +1115,7 @@ class UserController extends Controller
                             $teacher_sub->time_from = $slot->start_time;
                             $teacher_sub->time_to = $slot->end_time;
                             $teacher_sub->save();
-                        } else {
-                            $avail->user_id = $token_user->id;
-                            $avail->day = $availability->day;
-                            $avail->time_from = $slot->start_time;
-                            $avail->time_to = $slot->end_time;
-                            $avail->update();
-                        }
+                        
                     }
                 }
 

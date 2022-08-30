@@ -233,6 +233,9 @@ class TicketsController extends Controller
         $admin_message = "New Ticket has been opened!";
         $admin = User::where('role_name', 'admin')->first();
 
+        $tickets=Ticket::with('category', 'priority', 'user')->find($ticket->id);
+
+
         // event(new OpenTicketEvent($user->id, $user, $teacher_message, $ticket));
         // event(new OpenTicketEvent($admin->id, $admin, $admin_message, $ticket));
         // dispatch(new OpenTicketJob($user->id, $user, $teacher_message, $ticket));
@@ -240,7 +243,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'message' => 'success',
-            'ticket' => $ticket,
+            'ticket' => $tickets,
             'status' => "A ticket with ID: #$ticket->ticket_id has been opened",
         ]);
     }
@@ -278,7 +281,7 @@ class TicketsController extends Controller
         foreach ($tickets as $ticket) {
             $latest_comment = $ticket->ticket_comments->first();
             if ($latest_comment) {
-                $ticket->last_reply = $latest_comment->created_at->diffForHumans();
+                $ticket->last_reply = $latest_comment->created_at;
             } else {
                 $ticket->last_reply = null;
             }
@@ -360,7 +363,7 @@ class TicketsController extends Controller
         //Latest reply time
         $latest_comment = $ticket->ticket_comments->first();
         if ($latest_comment) {
-            $ticket->last_reply = $latest_comment->created_at->diffForHumans();
+            $ticket->last_reply = $latest_comment->created_at;
         } else {
             $ticket->last_reply = null;
         }

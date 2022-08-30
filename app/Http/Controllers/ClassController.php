@@ -309,13 +309,12 @@ class ClassController extends Controller
 
         $program = Program::find($request->program_id);
         $subject = Subject::find($request->subject_id);
-        $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->latest()->first();
+        $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->count();
         if ($course_count != null) {
-            $course_count = substr($course_count->course_code, 7) + 1;
+            $course_count =  $course_count + 1;
         } else {
             $course_count = 1;
         }
-
 
 
         $course = Course::with('subject', 'language', 'field', 'teacher', 'program')->find($course->id);
@@ -324,7 +323,7 @@ class ClassController extends Controller
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
 
         // Adding Course name
-        if ($course_count == null) {
+        if ($course_count == 0) {
             $course->course_name = $subject->name . "0001";
         } else {
             //Course name conditions
@@ -566,15 +565,15 @@ class ClassController extends Controller
                 'apikey' =>  "xKUyaLJHtbvBUtl3otJc",
                 'title' =>  'class' . $counter,
                 'timezone' => 90,
-                'start_time' => $academicClass->start_time,
-                'end_time' => $academicClass->end_time,
-                'date' => $academicClass->start_date,
+                'start_time' => Carbon::parse($academicClass->start_time)->format('G:i a'),
+                'end_time' => Carbon::parse($academicClass->end_time)->format('G:i a'),
+                'date' => Carbon::parse($academicClass->start_date)->format('Y-m-d'),
                 'currency' => "USD",
                 'ispaid' => null,
                 'is_recurring' => 0,
                 'repeat' => 1,
                 'weekdays' => $reqClass->day,
-                'end_date' => $academicClass->end_date,
+                'end_date' => Carbon::parse($academicClass->end_date)->format('Y-m-d'),
                 'seat_attendees' => null,
                 'record' => 1,
                 'isRecordingLayout ' => 1,
@@ -988,15 +987,15 @@ class ClassController extends Controller
             'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
             'title' =>  $request->title,
             'timezone' => 90,
-            'start_time' => $class->start_time,
-            'end_time' => $class->end_time,
-            'date' => $class->start_date,
+            'start_time' =>  Carbon::parse($class->start_time)->format('G:i a'),
+            'end_time' => Carbon::parse($class->end_time)->format('G:i a'),
+            'date' => Carbon::parse($class->start_date)->format('Y-m-d'),
             'currency' => "USD",
             'ispaid' => null,
             'is_recurring' => 0,
             'repeat' => 0,
             'weekdays' => $course->weekdays,
-            'end_date' => $class->end_date,
+            'end_date' =>  Carbon::parse($class->end_date)->format('Y-m-d'),
             'seat_attendees' => null,
             'record' => 0,
             'isRecordingLayout ' => 1,
@@ -1892,9 +1891,9 @@ class ClassController extends Controller
                     $postInput = [
                         'apikey' => 'xKUyaLJHtbvBUtl3otJc',
                         'id' => $class->class_id,
-                        'start_time' => $request->start_time,
-                        'end_time' => $request->end_time,
-                        'date' => $request->start_date,
+                        'start_time' => Carbon::parse($request->start_time)->format('G:i a'),
+                        'end_time' => Carbon::parse($request->end_time)->format('G:i a'),
+                        'date' => Carbon::parse($request->start_date)->format('Y-m-d'),
                     ];
 
                     $client = new Client();
