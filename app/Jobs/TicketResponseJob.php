@@ -47,7 +47,7 @@ class TicketResponseJob implements ShouldQueue
 
         Mail::send('email.ticket_response', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Ticket Response');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         //********* Sending  Email ends **********//
 

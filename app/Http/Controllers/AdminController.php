@@ -1809,8 +1809,8 @@ class AdminController extends Controller
             'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
             'title' =>  'Interview with teacher',
             'timezone' => 90,
-            'start_time' => Carbon::parse($request->start_time)->format('G:i a'),
-            'end_time' => Carbon::parse($request->end_time)->format('G:i a'),
+            'start_time' => Carbon::parse($request->start_time)->format('g:ia'),
+            'end_time' => Carbon::parse($request->end_time)->format('g:ia'),
             'date' => Carbon::parse($request->date)->format('Y-m-d'),
             'currency' => "USD",
             'record' => 0,
@@ -1852,7 +1852,7 @@ class AdminController extends Controller
 
             Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Interview Request!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+                $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
             //******** Email ends **********//
 
@@ -1865,7 +1865,7 @@ class AdminController extends Controller
 
             Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Interview Request!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+                $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
             //******** Email ends **********//
 
@@ -2227,13 +2227,13 @@ class AdminController extends Controller
     public function classroom(Request $request)
     {
         $courses = Course::with('student', 'teacher', 'program')
-            ->get();
+            ->orderBy('id', 'desc')->get();
 
         if ($request->has('status') && $request->status == "running") {
-            $courses = Course::with('student', 'teacher', 'program')->where('status', 'inprogress')->get();
+            $courses = Course::with('student', 'teacher', 'program')->where('status', 'inprogress')->orderBy('id', 'desc')->get();
         }
         if ($request->has('status') && $request->status == "completed") {
-            $courses = Course::with('student', 'teacher', 'program')->where('status', 'completed')->get();
+            $courses = Course::with('student', 'teacher', 'program')->where('status', 'completed')->orderBy('id', 'desc')->get();
         }
 
 
@@ -3643,7 +3643,7 @@ class AdminController extends Controller
 
         Mail::send('email.send_mail', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Course Email');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
 
         //********* Sending Email ends **********//

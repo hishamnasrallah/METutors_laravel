@@ -46,7 +46,7 @@ class AddSyllabusJob implements ShouldQueue
 
         Mail::send('email.syllabus', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Syllabus Added');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         //********* Sending Email ends **********
 

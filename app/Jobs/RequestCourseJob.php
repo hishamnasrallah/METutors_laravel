@@ -44,7 +44,7 @@ class RequestCourseJob implements ShouldQueue
 
         Mail::send('email.request_course', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Course Request!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         // //******** Email ends **********//
     }

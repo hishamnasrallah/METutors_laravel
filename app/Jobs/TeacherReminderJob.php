@@ -47,7 +47,7 @@ class TeacherReminderJob implements ShouldQueue
 
         Mail::send('email.course', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Course has not accepted yet');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+           $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         //********* Sending Course Reminder Email ends **********//
 

@@ -22,6 +22,15 @@ use App\Models\Role;
 use App\Models\UserMeta;
 use App\Models\UserOccupation;
 use App\Models\UserZoomApi;
+
+use App\Models\AcademicClass;
+use App\Models\Attendance;
+use App\Models\Course;
+use App\Models\Feedback;
+
+use App\Models\UserFeedback;
+use App\Models\UserPrefrence;
+
 use App\User;
 use App\TeacherAvailability;
 use App\TeacherSubject;
@@ -132,7 +141,7 @@ class UserController extends Controller
         if ($request->has('cover_img')) {
 
             $imageName = $request->cover_img;
-           
+
             $user = User::find($token_user->id);
             $user->cover_img = $imageName;
             $user->update();
@@ -267,8 +276,9 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $admin);
 
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Teacher REJECTION Notification!');
-                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+                    $message->to($to_email)->subject('Teacher Hiring Application Status.');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -280,8 +290,9 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $user);
 
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Teacher REJECTION Notification!');
-                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+                    $message->to($to_email)->subject('MEtutors Hiring Application Status.');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -363,8 +374,9 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $user);
 
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Teacher Approval Notification!');
-                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+                    $message->to($to_email)->subject('Your Application on MEtutors is Approved');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -376,8 +388,9 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $admin);
 
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Teacher Approval Notification!');
-                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+                    $message->to($to_email)->subject('New Teacher Approved on MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -768,7 +781,6 @@ class UserController extends Controller
         if ($request->step == 2) {
 
             $rules['avatar'] = 'required';
-
         }
         if ($request->step == 3) {
 
@@ -857,7 +869,35 @@ class UserController extends Controller
             $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
 
-            //  return $user;
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+
+            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                ->find($token_user->id);
+
+            $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                ->with('spoken_language')
+                ->where('user_id', $token_user->id)
+                ->get();
+
+            $spoken_languages = [];
+            $final_prefrences = new stdClass();
+            if (count($prefrences) > 0) {
+                $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                foreach ($prefrences as $key => $prefrence) {
+                    $language = new stdClass();
+                    $object = new stdClass();
+                    $language->id = $prefrence->spoken_language->id;
+                    $language->name = $prefrence->spoken_language->name;
+                    $object->efficiency =   $prefrence->efficiency;
+                    $object->language =  $language;
+                    array_push($spoken_languages, $object);
+                }
+
+                $final_prefrences->spoken_languages = $spoken_languages;
+                $user->preferences = $final_prefrences;
+            }
+
 
 
             return response()->json([
@@ -865,6 +905,7 @@ class UserController extends Controller
                 'status' => true,
                 'message' => 'data updated succesfully',
                 'token' => $token,
+                'user' => $user,
             ]);
         }
         if ($request->step == 2) {
@@ -898,37 +939,59 @@ class UserController extends Controller
 
             $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+
+            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                ->find($token_user->id);
+
+            $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                ->with('spoken_language')
+                ->where('user_id', $token_user->id)
+                ->get();
+
+            $spoken_languages = [];
+            $final_prefrences = new stdClass();
+            if (count($prefrences) > 0) {
+                $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                foreach ($prefrences as $key => $prefrence) {
+                    $language = new stdClass();
+                    $object = new stdClass();
+                    $language->id = $prefrence->spoken_language->id;
+                    $language->name = $prefrence->spoken_language->name;
+                    $object->efficiency =   $prefrence->efficiency;
+                    $object->language =  $language;
+                    array_push($spoken_languages, $object);
+                }
+
+                $final_prefrences->spoken_languages = $spoken_languages;
+                $user->preferences = $final_prefrences;
+            }
+
             return response()->json([
 
                 'status' => true,
                 'message' => 'data updated succesfully',
                 'token' => $token,
+                'user' => $user,
             ]);
         }
         if ($request->step == 3) {
 
 
+            $avail = SpokenLanguage::where('user_id', $token_user->id)->delete();
 
             $languages = json_decode($request->spoken_languages);
 
             foreach ($languages as $language) {
 
 
-
-                $ling = SpokenLanguage::where('user_id', $token_user->id)->where('language', $language->language_id)->first();
-
-                if ($ling == null) {
-                    $lang = new SpokenLanguage();
-                    $lang->user_id = $token_user->id;
-                    $lang->language = $language->language_id;
-                    $lang->level = $language->level;
-                    $lang->save();
-                } else {
-                    $ling->user_id = $token_user->id;
-                    $ling->language = $language->language_id;
-                    $ling->level = $language->level;
-                    $ling->update();
-                }
+                $lang = new SpokenLanguage();
+                $lang->user_id = $token_user->id;
+                $lang->language = $language->language_id;
+                $lang->level = $language->level;
+                $lang->save();
             }
 
 
@@ -961,7 +1024,7 @@ class UserController extends Controller
                 if ($request->has('video')) {
 
                     $imageName = $request->video;
-                   
+
                     $teaching_quali->video = $imageName;
                 }
                 $teaching_quali->save();
@@ -980,11 +1043,41 @@ class UserController extends Controller
 
                 $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+                $token_1 = JWTAuth::getToken();
+                $token_user = JWTAuth::toUser($token_1);
+
+                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                    ->find($token_user->id);
+
+                $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                    ->with('spoken_language')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+
+                $spoken_languages = [];
+                $final_prefrences = new stdClass();
+                if (count($prefrences) > 0) {
+                    $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                    foreach ($prefrences as $key => $prefrence) {
+                        $language = new stdClass();
+                        $object = new stdClass();
+                        $language->id = $prefrence->spoken_language->id;
+                        $language->name = $prefrence->spoken_language->name;
+                        $object->efficiency =   $prefrence->efficiency;
+                        $object->language =  $language;
+                        array_push($spoken_languages, $object);
+                    }
+
+                    $final_prefrences->spoken_languages = $spoken_languages;
+                    $user->preferences = $final_prefrences;
+                }
+
                 return response()->json([
 
                     'status' => true,
                     'message' => 'data updated succesfully',
                     'token' => $token,
+                    'user' => $user,
                 ]);
             } else {
 
@@ -1015,11 +1108,41 @@ class UserController extends Controller
 
                 $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+                $token_1 = JWTAuth::getToken();
+                $token_user = JWTAuth::toUser($token_1);
+
+                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                    ->find($token_user->id);
+
+                $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                    ->with('spoken_language')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+
+                $spoken_languages = [];
+                $final_prefrences = new stdClass();
+                if (count($prefrences) > 0) {
+                    $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                    foreach ($prefrences as $key => $prefrence) {
+                        $language = new stdClass();
+                        $object = new stdClass();
+                        $language->id = $prefrence->spoken_language->id;
+                        $language->name = $prefrence->spoken_language->name;
+                        $object->efficiency =   $prefrence->efficiency;
+                        $object->language =  $language;
+                        array_push($spoken_languages, $object);
+                    }
+
+                    $final_prefrences->spoken_languages = $spoken_languages;
+                    $user->preferences = $final_prefrences;
+                }
+
                 return response()->json([
 
                     'status' => true,
                     'message' => 'data updated succesfully',
                     'token' => $token,
+                    'user' => $user,
                 ]);
             }
         }
@@ -1049,17 +1172,16 @@ class UserController extends Controller
 
                     $availability_slots = $availability->time_slots;
 
-                     $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
+                    $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
 
-                     foreach ($availability_slots as $slot) {
+                    foreach ($availability_slots as $slot) {
 
-                            $teacher_sub = new TeacherAvailability();
-                            $teacher_sub->user_id = $token_user->id;
-                            $teacher_sub->day = $availability->day;
-                            $teacher_sub->time_from = $slot->start_time;
-                            $teacher_sub->time_to = $slot->end_time;
-                            $teacher_sub->save();
-                        
+                        $teacher_sub = new TeacherAvailability();
+                        $teacher_sub->user_id = $token_user->id;
+                        $teacher_sub->day = $availability->day;
+                        $teacher_sub->time_from = $slot->start_time;
+                        $teacher_sub->time_to = $slot->end_time;
+                        $teacher_sub->save();
                     }
                 }
 
@@ -1072,12 +1194,42 @@ class UserController extends Controller
 
                 $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+                $token_1 = JWTAuth::getToken();
+                $token_user = JWTAuth::toUser($token_1);
+
+                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                    ->find($token_user->id);
+
+                $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                    ->with('spoken_language')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+
+                $spoken_languages = [];
+                $final_prefrences = new stdClass();
+                if (count($prefrences) > 0) {
+                    $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                    foreach ($prefrences as $key => $prefrence) {
+                        $language = new stdClass();
+                        $object = new stdClass();
+                        $language->id = $prefrence->spoken_language->id;
+                        $language->name = $prefrence->spoken_language->name;
+                        $object->efficiency =   $prefrence->efficiency;
+                        $object->language =  $language;
+                        array_push($spoken_languages, $object);
+                    }
+
+                    $final_prefrences->spoken_languages = $spoken_languages;
+                    $user->preferences = $final_prefrences;
+                }
+
 
                 return response()->json([
 
                     'status' => true,
                     'message' => 'data updated succesfully',
                     'token' => $token,
+                    'user' => $user,
                 ]);
             } else {
 
@@ -1099,23 +1251,22 @@ class UserController extends Controller
                 $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
 
 
-              foreach ($availabilities as $availability) {
+                foreach ($availabilities as $availability) {
 
                     // print_r($availability->time_slots);die;
 
                     $availability_slots = $availability->time_slots;
 
-                     
 
-                     foreach ($availability_slots as $slot) {
 
-                            $teacher_sub = new TeacherAvailability();
-                            $teacher_sub->user_id = $token_user->id;
-                            $teacher_sub->day = $availability->day;
-                            $teacher_sub->time_from = $slot->start_time;
-                            $teacher_sub->time_to = $slot->end_time;
-                            $teacher_sub->save();
-                        
+                    foreach ($availability_slots as $slot) {
+
+                        $teacher_sub = new TeacherAvailability();
+                        $teacher_sub->user_id = $token_user->id;
+                        $teacher_sub->day = $availability->day;
+                        $teacher_sub->time_from = $slot->start_time;
+                        $teacher_sub->time_to = $slot->end_time;
+                        $teacher_sub->save();
                     }
                 }
 
@@ -1130,11 +1281,41 @@ class UserController extends Controller
 
                 $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+                $token_1 = JWTAuth::getToken();
+                $token_user = JWTAuth::toUser($token_1);
+
+                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                    ->find($token_user->id);
+
+                $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                    ->with('spoken_language')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+
+                $spoken_languages = [];
+                $final_prefrences = new stdClass();
+                if (count($prefrences) > 0) {
+                    $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                    foreach ($prefrences as $key => $prefrence) {
+                        $language = new stdClass();
+                        $object = new stdClass();
+                        $language->id = $prefrence->spoken_language->id;
+                        $language->name = $prefrence->spoken_language->name;
+                        $object->efficiency =   $prefrence->efficiency;
+                        $object->language =  $language;
+                        array_push($spoken_languages, $object);
+                    }
+
+                    $final_prefrences->spoken_languages = $spoken_languages;
+                    $user->preferences = $final_prefrences;
+                }
+
                 return response()->json([
 
                     'status' => true,
                     'message' => 'data updated succesfully',
                     'token' => $token,
+                    'user' => $user,
                 ]);
             }
         }
@@ -1198,11 +1379,41 @@ class UserController extends Controller
 
             $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+
+            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                ->find($token_user->id);
+
+            $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                ->with('spoken_language')
+                ->where('user_id', $token_user->id)
+                ->get();
+
+            $spoken_languages = [];
+            $final_prefrences = new stdClass();
+            if (count($prefrences) > 0) {
+                $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                foreach ($prefrences as $key => $prefrence) {
+                    $language = new stdClass();
+                    $object = new stdClass();
+                    $language->id = $prefrence->spoken_language->id;
+                    $language->name = $prefrence->spoken_language->name;
+                    $object->efficiency =   $prefrence->efficiency;
+                    $object->language =  $language;
+                    array_push($spoken_languages, $object);
+                }
+
+                $final_prefrences->spoken_languages = $spoken_languages;
+                $user->preferences = $final_prefrences;
+            }
+
             return response()->json([
 
                 'status' => true,
                 'message' => 'data updated succesfully',
                 'token' => $token,
+                'user' => $user,
             ]);
         }
     }
@@ -1361,8 +1572,9 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $admin_data);
 
                 Mail::send('email.registeration', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Successful new teacher registration.!');
-                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+                    $message->to($to_email)->subject('New teacher registration');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
                 });
                 //********* Sending Email ends **********
 
@@ -1374,9 +1586,13 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
 
                 Mail::send('email.registeration', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Successful new teacher registration. !');
-                    $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+                    $message->to($to_email)->subject('Welcome to MEtutors!');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
                 });
+
+
+
                 //********* Sending Email ends **********
 
 

@@ -37,7 +37,7 @@ class CancelCourseListener
 
         Mail::send('email.course', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Course Canceled');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+          $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         // //********* Sending Cancalation Email ends **********//
 

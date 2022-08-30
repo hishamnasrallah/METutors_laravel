@@ -47,7 +47,7 @@ class OpenTicketJob implements ShouldQueue
 
         Mail::send('email.ticket', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Ticket Opened!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         // //******** Email ends **********//
 

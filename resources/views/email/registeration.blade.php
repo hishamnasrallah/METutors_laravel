@@ -8,35 +8,46 @@
                     <div class="card">
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
-                                <p>Dear <b> {{ $user->first_name }} {{ $user->last_name }}</b> </p>
-                                <p>Welcome to MeTutor platform. You have registered successfully. We are glad to have you on
-                                    board. You can click the link to view your profile.</p>
-                                <p>Link:
+                                <p>Hi <b> {{ $user->first_name }} {{ $user->last_name }},</b> </p>
+                                <p>You have successfully registered on MEtutors.com. We are delighted to have you on board
+                                    with us
+                                    and to be considered for a teaching position on our platform.</p>
+                                <p>You have been assigned a Teacher Identification Number (TIN): {{ $user->id_number }}.
+                                    Kindly visit your
+                                    profile
+                                    page at
                                     @php
                                         echo 'https://metutors.com/tutor/settings';
                                     @endphp
-                                </p>
+                                    and submit your Interview Request to begin
+                                    the hiring
+                                    process.</p>
+                                <p> Please feel free to contact us at
+                                    @php
+                                        echo 'https://metutors.com/about';
+                                    @endphp
+                                    in case of any queries.</p>
                                 <p>Best wishes and happy teaching</p>
-                                <p>Regards</p>
+                                <p>Regards,</p>
+                                <p>Administrative Team</p>
 
                             </div>
                         @endif
 
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
-                                <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }}</b> </p>
-                                <p>Please note a new registration by tutor {{ $user->teacher->first_name }} Click the link
-                                    to
-                                    view the profile.</p>
-                                {{-- {{ $user->teacher->first_name }} --}}
-                                <p>Link:
+                                <p>Hi HR, </p>
+                                <p>New registration by {{ $user->teacher->first_name }}, TIN#(
+                                    {{ $user->teacher->id_number }}) was received. Click the
+                                    link to view the profile.
+                                </p>
+                                <p>
                                     @php
                                         echo 'https://metutors.com/tutor/settings';
                                     @endphp
                                 </p>
-                                <p>Teacher Information Number:<b>{{ $user->teacher->id_number }}</b></p>
                                 <p>Regards</p>
-
+                                <p>Administrative Team</p>
                             </div>
                         @endif
 

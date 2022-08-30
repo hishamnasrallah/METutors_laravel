@@ -110,7 +110,7 @@ class TeacherAvailabilityController extends Controller
                         if (count($weekdayClasses) == 0) {
                             array_push($totalAvailabilities, [
                                 'availabilty_date' => $date->format('Y-m-d'),
-                                   // 'time_from' => Carbon::parse($weekAvailability->time_from)->format('h:i a'),
+                                // 'time_from' => Carbon::parse($weekAvailability->time_from)->format('h:i a'),
                                 'time_from' => $weekAvailability->time_from,
                                 // 'time_to' =>  Carbon::parse($weekAvailability->time_to)->format('h:i a'),
                                 'time_to' => $weekAvailability->time_to,
@@ -138,7 +138,7 @@ class TeacherAvailabilityController extends Controller
                             if (count($check_classes) == 0) {
                                 array_push($totalAvailabilities, [
                                     'availabilty_date' => $date->format('Y-m-d'),
-                                      // 'time_from' => Carbon::parse($weekAvailability->time_from)->format('h:i a'),
+                                    // 'time_from' => Carbon::parse($weekAvailability->time_from)->format('h:i a'),
                                     'time_from' => $weekAvailability->time_from,
                                     // 'time_to' =>  Carbon::parse($weekAvailability->time_to)->format('h:i a'),
                                     'time_to' => $weekAvailability->time_to,

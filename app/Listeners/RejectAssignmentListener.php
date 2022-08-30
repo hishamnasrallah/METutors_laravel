@@ -38,7 +38,7 @@ class RejectAssignmentListener
 
         Mail::send('email.assignment', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Assignment Rejected');
-            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MeTutor');
+           $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         //********* Sending Email ends **********
 

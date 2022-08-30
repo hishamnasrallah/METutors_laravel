@@ -48,14 +48,14 @@ class InterviewRequestJob implements ShouldQueue
         if ($this->user->role_name == 'teacher') {
             Mail::send('email.interview', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('New interview request sent successfully.');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+                $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
         }
 
         if ($this->user->role_name == 'admin') {
             Mail::send('email.interview', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('New interview request from ' . $this->user->first_name);
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+               $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
         }
         // //******** Email ends **********//

@@ -45,7 +45,7 @@ class UpdateCoverJob implements ShouldQueue
 
         Mail::send('email.profile', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Profile Cover Updated!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         //********* Sending Email ends **********
 

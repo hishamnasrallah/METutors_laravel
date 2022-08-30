@@ -51,7 +51,7 @@ class UserController extends Controller
 
             Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Accepted!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+                $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
             //******** Email ends **********//
 
@@ -64,7 +64,7 @@ class UserController extends Controller
 
             Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Accepted!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+                $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
 
 
@@ -112,7 +112,7 @@ class UserController extends Controller
 
             Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Rejected!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+               $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
             //*********** Sending Email ends  ************\\
 
@@ -125,7 +125,7 @@ class UserController extends Controller
 
             Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Rejected!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+               $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
             //*********** Sending Email ends  ************\\
 

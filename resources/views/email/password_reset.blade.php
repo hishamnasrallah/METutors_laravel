@@ -14,6 +14,7 @@
                             <p>Regards,</p>
 
                         </div>
+
                         {{-- @endif --}}
                     </div>
                 </div>

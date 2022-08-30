@@ -48,7 +48,7 @@ class AcceptDocumentJob implements ShouldQueue
 
             Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Accepted!');
-                $message->from('metutorsmail@gmail.com', 'MeTutor');
+               $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
             });
             // //******** Email ends **********//
         }

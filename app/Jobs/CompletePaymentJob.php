@@ -47,7 +47,7 @@ class CompletePaymentJob implements ShouldQueue
 
         Mail::send('email.course_payment', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Course Payment!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
         });
         // //******** Email ends **********//
 

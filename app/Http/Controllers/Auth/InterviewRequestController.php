@@ -142,8 +142,9 @@ class InterviewRequestController extends Controller
       $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $user);
 
       Mail::send('email.interview', $data, function ($message) use ($to_email) {
-        $message->to($to_email)->subject('New interview request sent successfully.');
-        $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+        $message->to($to_email)->subject('Interview Request on MEtutors');
+        $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
       });
 
       // //******** Email ends **********//
@@ -152,11 +153,12 @@ class InterviewRequestController extends Controller
       $user_email = $admin->email;
       $custom_message = "New Request for interview has been Submitted!";
       $to_email = $user_email;
-      $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest,'user' => $admin);
+      $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $admin);
 
       Mail::send('email.interview', $data, function ($message) use ($to_email) {
-        $message->to($to_email)->subject('New interview request');
-        $message->from('metutorsmail@gmail.com', 'MeTutor');
+
+        $message->to($to_email)->subject('New Interview Request on MEtutors');
+        $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
       });
       // //******** Email ends **********//
 
