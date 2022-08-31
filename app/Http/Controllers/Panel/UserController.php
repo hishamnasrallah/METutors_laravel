@@ -278,7 +278,7 @@ class UserController extends Controller
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
 
                     $message->to($to_email)->subject('Teacher Hiring Application Status.');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -292,7 +292,7 @@ class UserController extends Controller
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
 
                     $message->to($to_email)->subject('MEtutors Hiring Application Status.');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -376,7 +376,7 @@ class UserController extends Controller
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
 
                     $message->to($to_email)->subject('Your Application on MEtutors is Approved');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -390,7 +390,7 @@ class UserController extends Controller
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
 
                     $message->to($to_email)->subject('New Teacher Approved on MEtutors');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
 
@@ -1574,7 +1574,7 @@ class UserController extends Controller
                 Mail::send('email.registeration', $data, function ($message) use ($to_email) {
 
                     $message->to($to_email)->subject('New teacher registration');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 //********* Sending Email ends **********
 
@@ -1588,7 +1588,7 @@ class UserController extends Controller
                 Mail::send('email.registeration', $data, function ($message) use ($to_email) {
 
                     $message->to($to_email)->subject('Welcome to MEtutors!');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
 
 

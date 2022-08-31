@@ -37,7 +37,7 @@ class AcceptAssignmentListener
 
         Mail::send('email.assignment', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Assignment Accepted');
-            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MeTutor');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MeTutor');
         });
         //********* Sending Email ends **********
 

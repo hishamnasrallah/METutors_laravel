@@ -47,7 +47,7 @@ class MakeupClassJob implements ShouldQueue
 
         Mail::send('email.class', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Makeup class added!');
-            $message->from('metutorsmail@gmail.com', 'MeTutor');
+            $message->from('info@metutors.com', 'MeTutor');
         });
         // //******** Email ends **********//
 

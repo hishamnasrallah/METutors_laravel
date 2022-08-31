@@ -49,7 +49,7 @@ class RejectDocumentJob implements ShouldQueue
 
             Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
                 $message->to($to_email)->subject('Documents Rejected!');
-               $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+               $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             // //******** Email ends **********//
         }

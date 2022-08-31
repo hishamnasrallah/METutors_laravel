@@ -187,7 +187,7 @@ class ClassController extends Controller
         Mail::send('email.student_course', $data, function ($message) use ($to_name, $to_email) {
             $message->to($to_email, $to_name)
                 ->subject('Course Booking');
-           $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         //********* Sending email ends **********//
 
@@ -200,7 +200,7 @@ class ClassController extends Controller
         Mail::send('email.teacher_course', $data, function ($message) use ($to_name, $to_email) {
             $message->to($to_email, $to_name)
                 ->subject('Course Added');
-            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         //********* Sending email ends **********//
 

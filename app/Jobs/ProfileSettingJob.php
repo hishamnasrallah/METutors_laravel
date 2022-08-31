@@ -46,7 +46,7 @@ class ProfileSettingJob implements ShouldQueue
 
         Mail::send('email.profile', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Profile Settings Updated!');
-            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         //********* Sending Email ends **********
 

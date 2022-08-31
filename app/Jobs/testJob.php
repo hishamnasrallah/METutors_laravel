@@ -37,7 +37,7 @@ class testJob implements ShouldQueue
         $data = array('email' =>  "test@gmail.com", 'courseMessage' =>  "test message", 'course' => "courseid:1");
         Mail::send('email.course', $data, function ($message) {
             $message->to($this->details['email'])->subject('Test Mail');
-           $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
     }
 }

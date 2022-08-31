@@ -48,7 +48,7 @@ class UnBlockUserJob implements ShouldQueue
 
         Mail::send('email.block', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('User UnBlocked!');
-            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         // //******** Email ends **********//
 

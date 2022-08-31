@@ -47,7 +47,7 @@ class AcceptTeacherJob implements ShouldQueue
 
         Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Teacher Approval Notification!');
-            $message->from(env('MAIL_FROM_ADDRESS', 'metutorsmail@gmail.com'), 'MEtutors');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         // //******** Email ends **********//
 
