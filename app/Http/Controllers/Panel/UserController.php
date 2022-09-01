@@ -1165,6 +1165,7 @@ class UserController extends Controller
 
                 $availabilities = json_decode(json_encode($request->availability));
 
+                $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
 
                 foreach ($availabilities as $availability) {
 
@@ -1172,7 +1173,7 @@ class UserController extends Controller
 
                     $availability_slots = $availability->time_slots;
 
-                    $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
+                   
 
                     foreach ($availability_slots as $slot) {
 

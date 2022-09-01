@@ -33,7 +33,7 @@
                                 </p>
                                 <p>Please proceed with the interview process at the link here
                                     @php
-                                        echo 'https://metutors.com/admin/tutor/interview/details/' . {{ $interview_request->id }};
+                                        echo 'https://metutors.com/admin/tutor/interview/details/' .  $interview_request->id;
                                     @endphp
                                 </p>
                                 <p>Regards</p>
