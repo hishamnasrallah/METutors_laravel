@@ -19,12 +19,12 @@
                                     @php
                                         echo 'https://metutors.com/tutor/settings';
                                     @endphp
-                                    and submit your Interview Request to begin
+                                    and submit your interview request to begin
                                     the hiring
                                     process.</p>
                                 <p> Please feel free to contact us at
                                     @php
-                                        echo 'https://metutors.com/about';
+                                        echo 'https://metutors.com/contact';
                                     @endphp
                                     in case of any queries.</p>
                                 <p>Best wishes and happy teaching</p>

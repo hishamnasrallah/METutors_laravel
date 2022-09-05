@@ -73,7 +73,7 @@ return [
     'fail_login_by_facebook' => 'Facebook login failed!',
 
     'email_confirmation' => 'Email verification',
-    'email_confirmation_template_body' => 'To verify your email address :email., enter the following code on :site website.',
+    'email_confirmation_template_body' => 'To verify your email address :email enter the following code on :site website.',
     'in' => 'for',
 
     'verification' => 'Verify',

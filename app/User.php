@@ -158,7 +158,7 @@ class User extends Authenticatable implements JWTSubject
             'title' => 'Two Factor authentication for MEtutors',
             'message' => 'Your one time password for MEtutor',
             'code' => $code,
-            'ignoremessage' => "If you haven't submit this request, please ignore it.",
+            'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
         \Mail::to($this->email)->send(new SendMailOtp($details));
 
@@ -185,7 +185,7 @@ class User extends Authenticatable implements JWTSubject
             'title' => 'Two Factor authentication for MEtutors',
             'message' => 'Your one time password for MEtutor',
             'code' => $code,
-            'ignoremessage' => "If you haven't submit this request, please ignore it.",
+            'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
         \Mail::to($this->email)->send(new SendMailOtp($details));
 
@@ -213,7 +213,7 @@ class User extends Authenticatable implements JWTSubject
             'title' => 'Two Factor authentication for MEtutors',
             'message' => 'Your one time password for MEtutor',
             'code' => $code,
-            'ignoremessage' => "If you haven't submit this request, please ignore it.",
+            'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
         \Mail::to($this->email)->send(new SendMailOtp($details));
 

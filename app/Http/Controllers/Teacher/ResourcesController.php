@@ -91,14 +91,14 @@ class ResourcesController extends Controller
 
 
             $imageName = date('YmdHis') . random_int(10, 100) . '.' . $request->file->getClientOriginalExtension();
-            $request->file->move(public_path('assets'), $imageName);
+            $request->file->move(public_path('uploads'), $imageName);
 
             $image = new Images();
             $image->filename = $imageName;
             $image->original_name = $request->file->getClientOriginalName();
 
-            $image->url = $request->root() . '/assets/' . $imageName;
-            $image_url = $request->root() . '/assets/' . $imageName;
+            $image->url = $request->root() . '/uploads/' . $imageName;
+            $image_url = $request->root() . '/uploads/' . $imageName;
 
             $image->save();
 

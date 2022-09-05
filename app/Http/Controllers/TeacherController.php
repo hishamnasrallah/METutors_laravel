@@ -1678,7 +1678,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Preferences Added Successfully!",
+            'message' => "Teacher Preferences Updated Successfully!",
             'preferences' => $final_prefrences
         ]);
     }
