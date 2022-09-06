@@ -373,6 +373,19 @@ class DashboardController extends Controller
 
         $user->update();
 
+        //********* Sending Email to user **********
+        // $user_email = $user->email;
+        // // $custom_message = $custom_message;
+        // $to_email = $user_email;
+
+        // $data = array('email' =>  $user_email, 'user' => $user);
+
+        // Mail::send('email.update_password', $data, function ($message) use ($to_email) {
+        //     $message->to($to_email)->subject('Teacher Profile Updated Successfully on MEtutors');
+        //    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+        // });
+        //********* Sending Email ends **********
+
         event(new UpdateProfile($user, $user->id, $message));
 
         return response()->json([

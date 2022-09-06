@@ -277,7 +277,7 @@ class UserController extends Controller
 
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('Teacher Hiring Application Status.');
+                    $message->to($to_email)->subject('New Teacher Application Rejected');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -291,7 +291,7 @@ class UserController extends Controller
 
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('MEtutors Hiring Application Status.');
+                    $message->to($to_email)->subject('MEtutors Hiring Application Status');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -375,7 +375,7 @@ class UserController extends Controller
 
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('Your Application on MEtutors is Approved');
+                    $message->to($to_email)->subject('Your Application to join MEtutors is Approved');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -389,7 +389,7 @@ class UserController extends Controller
 
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('New Teacher Approved on MEtutors');
+                    $message->to($to_email)->subject('New Teacher Application Approved');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -1173,7 +1173,7 @@ class UserController extends Controller
 
                     $availability_slots = $availability->time_slots;
 
-                   
+
 
                     foreach ($availability_slots as $slot) {
 
@@ -1588,7 +1588,7 @@ class UserController extends Controller
 
                 Mail::send('email.registeration', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('Welcome to MEtutors');
+                    $message->to($to_email)->subject('Welcome to MEtutors!');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
 
@@ -2354,6 +2354,9 @@ class UserController extends Controller
             ], 400);
         }
 
+        $admin = User::where('role_name', 'admin')->first();
+        $user = User::findOrFail($token_user->id);
+
 
         if ($request->step == 1) {
 
@@ -2381,8 +2384,37 @@ class UserController extends Controller
 
             $user->update();
 
-            event(new UserProfileEvent($user->id, $user, "Profile updated Successfully!"));
-            dispatch(new UserProfileJob($user->id, $user, "Profile updated Successfully!"));
+
+            //********* Sending Email TO tEACHER **********
+            $user_email = $user->email;
+            // $custom_message = $custom_message;
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email,  'user' => $user);
+
+            Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+            //********* Sending Email ends **********
+
+            //********* Sending Email TO Admin **********
+            $user_email = $admin->email;
+            // $custom_message = $custom_message;
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+
+            Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Teacher Profile Updated');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+            //********* Sending Email ends **********
+
+
+
+            // event(new UserProfileEvent($user->id, $user, "Profile updated Successfully!"));
+            // dispatch(new UserProfileJob($user->id, $user, "Profile updated Successfully!"));
 
             return response()->json([
                 'status' => true,
@@ -2414,6 +2446,32 @@ class UserController extends Controller
 
             //  return $user;
             $user->update();
+
+            //********* Sending Email TO tEACHER **********
+            $user_email = $user->email;
+            // $custom_message = $custom_message;
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email,  'user' => $user);
+
+            Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+            //********* Sending Email ends **********
+
+            //********* Sending Email TO Admin **********
+            $user_email = $admin->email;
+            // $custom_message = $custom_message;
+            $to_email = $user_email;
+
+            $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+
+            Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Teacher Profile Updated');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+            //********* Sending Email ends **********
 
 
             return response()->json([
@@ -2451,6 +2509,32 @@ class UserController extends Controller
 
                 $teaching_quali->update();
 
+                //********* Sending Email TO tEACHER **********
+                $user_email = $user->email;
+                // $custom_message = $custom_message;
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email,  'user' => $user);
+
+                Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+                //********* Sending Email ends **********
+
+                //********* Sending Email TO Admin **********
+                $user_email = $admin->email;
+                // $custom_message = $custom_message;
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+
+                Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Teacher Profile Updated');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+                //********* Sending Email ends **********
+
 
 
                 return response()->json([
@@ -2482,6 +2566,33 @@ class UserController extends Controller
                 $teaching_specs->availability_start_date = $request->availability_start_date;
                 $teaching_specs->availability_end_date = $request->availability_end_date;
                 $teaching_specs->update();
+
+
+                //********* Sending Email TO tEACHER **********
+                $user_email = $user->email;
+                // $custom_message = $custom_message;
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email,  'user' => $user);
+
+                Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+                //********* Sending Email ends **********
+
+                //********* Sending Email TO Admin **********
+                $user_email = $admin->email;
+                // $custom_message = $custom_message;
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+
+                Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Teacher Profile Updated');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+                //********* Sending Email ends **********
 
 
                 return response()->json([
@@ -2525,6 +2636,32 @@ class UserController extends Controller
                     $teacher_sub->subject_id = $subj->subject_id;
                     $teacher_sub->hourly_price = $subj->hourly_price;
                     $teacher_sub->save();
+
+                    //********* Sending Email TO tEACHER **********
+                    $user_email = $user->email;
+                    // $custom_message = $custom_message;
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email,  'user' => $user);
+
+                    Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                        $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+                    //********* Sending Email ends **********
+
+                    //********* Sending Email TO Admin **********
+                    $user_email = $admin->email;
+                    // $custom_message = $custom_message;
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+
+                    Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                        $message->to($to_email)->subject('Teacher Profile Updated');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+                    //********* Sending Email ends **********
                 } else {
 
                     $sub->user_id = $token_user->id;
@@ -2537,6 +2674,32 @@ class UserController extends Controller
                     $sub->subject_id = $subj->subject_id;
                     $sub->hourly_price = $subj->hourly_price;
                     $sub->update();
+
+                    //********* Sending Email TO tEACHER **********
+                    $user_email = $user->email;
+                    // $custom_message = $custom_message;
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email,  'user' => $user);
+
+                    Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                        $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+                    //********* Sending Email ends **********
+
+                    //********* Sending Email TO Admin **********
+                    $user_email = $admin->email;
+                    // $custom_message = $custom_message;
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+
+                    Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                        $message->to($to_email)->subject('Teacher Profile Updated');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+                    //********* Sending Email ends **********
                 }
             }
 

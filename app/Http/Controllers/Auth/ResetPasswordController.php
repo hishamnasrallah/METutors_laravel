@@ -78,9 +78,11 @@ class ResetPasswordController extends Controller
 
             // //Email and notifiaction
             // event(new SecuritySettingEvent($user->id, $user, "Password updated successfully!"));
-            // dispatch(new SecuritySettingJob($user->id, $user, "Password updated successfully!"));
+            // dispatch(new ($user->id, $user, "Password updated successfully!"));
 
             $user->update();
+
+
             return response()->json([
                 'success' => true,
                 'message' => 'Password Updated Successfully'
@@ -324,7 +326,7 @@ class ResetPasswordController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
 
             Mail::send('email.password_reset', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Password Reset!');
+                $message->to($to_email)->subject('Password Reset on MEtutors');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             // //******** Email ends **********//

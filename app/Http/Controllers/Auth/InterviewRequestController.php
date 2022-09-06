@@ -143,7 +143,7 @@ class InterviewRequestController extends Controller
 
       Mail::send('email.interview', $data, function ($message) use ($to_email) {
 
-        $message->to($to_email)->subject('Interview Request on MEtutors');
+        $message->to($to_email)->subject('MEtutors Interview Request');
         $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
       });
 
@@ -157,7 +157,7 @@ class InterviewRequestController extends Controller
 
       Mail::send('email.interview', $data, function ($message) use ($to_email) {
 
-        $message->to($to_email)->subject('New Interview Request on MEtutors');
+        $message->to($to_email)->subject('New Request for Interview');
         $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
       });
       // //******** Email ends **********//
