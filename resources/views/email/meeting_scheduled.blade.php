@@ -1,6 +1,9 @@
 @extends('web.default.layouts.email')
 
 @section('body')
+@php
+    use Carbon\Carbon;
+@endphp
     <td valign="top" class="bodyContent" mc:edit="body_content">
         <div class="container">
             <div class="row justify-content-center">
@@ -8,12 +11,12 @@
                     <div class="card">
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
-                                <p>Hi <b>{{ $user->first_name }}</b> </p>
+                                <p>Hi <b>{{ $user->first_name }},</b> </p>
                                 <p>Your application to join MEtutors teaching platofrm was reviewed by our talent
                                     acquisition team
                                     and an interview meeting has been scheudled on
-                                    <b>{{ $interview_request->date_for_interview->format('Y-m-d') }}</b>,
-                                    <b>{{ $interview_request->time_for_interview->format('H:i A') }}</b>. Please login to your account
+                                    <b>{{ Carbon::parse($interview_request->date_for_interview)->setTimeZone('US/Central')->format('Y-m-d') }}</b>,
+                                    <b>{{ Carbon::parse($interview_request->time_for_interview)->setTimeZone('US/Central')->format('h:i A') }}</b> (US/Central) timezone. Please login to your account
                                     to start your interview.
                                 </p>
 
