@@ -156,7 +156,7 @@ class User extends Authenticatable implements JWTSubject
 
         $details  = [
             'title' => 'Two Factor authentication for MEtutors',
-            'message' => 'Your one time password for MEtutor',
+            'message' => 'Your one time password for MEtutors',
             'code' => $code,
             'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
@@ -183,7 +183,7 @@ class User extends Authenticatable implements JWTSubject
 
         $details  = [
             'title' => 'Two Factor authentication for MEtutors',
-            'message' => 'Your one time password for MEtutor',
+            'message' => 'Your one time password for MEtutors',
             'code' => $code,
             'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
@@ -211,7 +211,7 @@ class User extends Authenticatable implements JWTSubject
 
         $details  = [
             'title' => 'Two Factor authentication for MEtutors',
-            'message' => 'Your one time password for MEtutor',
+            'message' => 'Your one time password for MEtutors',
             'code' => $code,
             'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];

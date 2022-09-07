@@ -50,22 +50,22 @@ class UserController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
 
             Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Documents Accepted!');
+                $message->to($to_email)->subject('Submitted Document on MEtutors is Accepted');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //******** Email ends **********//
 
-            //*********** Sending Email to teacher  ************\\
-            $user_email = $admin->email;
-            $custom_message = "Documents have been Approved Successfully!";
-            $to_email = $user_email;
+            // //*********** Sending Email to teacher  ************\\
+            // $user_email = $admin->email;
+            // $custom_message = "Documents have been Approved Successfully!";
+            // $to_email = $user_email;
 
-            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $admin);
+            // $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $admin);
 
-            Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Documents Accepted!');
-                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-            });
+            // Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
+            //     $message->to($to_email)->subject('Documents Accepted!');
+            //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            // });
 
 
             //******** Email ends **********//
@@ -111,23 +111,23 @@ class UserController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
 
             Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Documents Rejected!');
+                $message->to($to_email)->subject('Submitted Document on MEtutors is Rejected');
                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //*********** Sending Email ends  ************\\
 
-            //*********** Sending Email to admin  ************\\
-            $user_email = $admin->email;
-            $custom_message = "Documents have Rejected Successfully!";
-            $to_email = $user_email;
+            // //*********** Sending Email to admin  ************\\
+            // $user_email = $admin->email;
+            // $custom_message = "Documents have Rejected Successfully!";
+            // $to_email = $user_email;
 
-            $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $admin);
+            // $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $admin);
 
-            Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Documents Rejected!');
-               $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-            });
-            //*********** Sending Email ends  ************\\
+            // Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
+            //     $message->to($to_email)->subject('Documents Rejected!');
+            //    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            // });
+            // //*********** Sending Email ends  ************\\
 
             // // Emails and Notifications
             // event(new RejectDocumentEvent($user->id, $user, $user_meta, "Your documents have been Rejected!"));

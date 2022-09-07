@@ -75,12 +75,25 @@ class ResetPasswordController extends Controller
         if (Hash::check($request->current_password, $user->password)) {
 
             $user->password = bcrypt($request->new_password);
+            $user->update();
 
             // //Email and notifiaction
             // event(new SecuritySettingEvent($user->id, $user, "Password updated successfully!"));
             // dispatch(new ($user->id, $user, "Password updated successfully!"));
 
-            $user->update();
+            //********* Sending Email to User **********
+            $user_email = $user->email;
+            $to_email = $user_email;
+
+            $data = array('user' => $user);
+
+            Mail::send('email.update_password', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Password Updated on MEtutors');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+            //********* Sending Email ends **********
+
+
 
 
             return response()->json([

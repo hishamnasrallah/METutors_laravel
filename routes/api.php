@@ -253,7 +253,7 @@ Route::group(['prefix' => 'admin'], function () {
 
 Route::get('/roles', 'Admin\RoleController@roles');
 Route::post('admin/approve-document/{id}', 'Admin\UserController@approve_document');
-Route::post('admin/reject-document/{id}', 'Admin\UserController@reject_document');
+Route::post('admin/reject-document/{id}', 'Admin\UserController@upload');
 
 Route::get('filtered-teacher', 'Web\UserController@filteredTeacher');
 Route::get('available-teachers', 'Web\UserController@avail_teachers');

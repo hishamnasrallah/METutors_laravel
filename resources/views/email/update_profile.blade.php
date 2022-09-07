@@ -23,7 +23,7 @@
                                 <p>Hi <b>HR,</b> </p>
                                 <p><b>{{ $user->first_name }}</b>,TIN <b>{{ $user->id_number }}</b>
                                     has updated their profile. You can see the updates here @php
-                                        echo "https://metutors.com//admin/tutor/profile/$user->id";
+                                        echo "https://metutors.com/admin/tutor/profile/$user->id";
                                     @endphp.</p>
                                 <p>Regards,</p>
                                 <p>Technical Support Team</p>
