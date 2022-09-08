@@ -170,14 +170,14 @@ class InterviewRequestController extends Controller
 
       return response()->json([
         'status' => true,
-        'message' => 'Your interview request has been submitted to the admin',
+        'message' => 'Your interview request has submitted successfully',
         'interview_request' => $interviewRequest
       ]);
     } else {
 
       return response()->json([
         'status' => false,
-        'message' => 'Only Teachers can submit request to admin for interview'
+        'message' => 'Only Teachers can submit request to HR for interview'
       ], 401);
     }
   }

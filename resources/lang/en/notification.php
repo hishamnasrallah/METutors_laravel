@@ -14,7 +14,7 @@ return [
     'send_notification' => 'Send notification',
     'edit_notification' => 'Edit notification',
     'empty_notifications' => 'Empty notifications',
-    'email_ignore_msg' => "If you haven't submitted this request, please ignore it",
+    'email_ignore_msg' => "If you haven't submitted this request, please ignore it.",
     'send_noticeboard' => 'Send a new notice',
     'edit_noticeboard' => 'Edit a notice',
     'post_notice' => 'Post a new notice',

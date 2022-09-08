@@ -1091,6 +1091,7 @@ class UserController extends Controller
 
                 $teaching_quali->computer_skills = $request->computer_skills;
                 $teaching_quali->teaching_experience = $request->teaching_experience;
+                 $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
                 $teaching_quali->current_employer = $request->current_employer ?? Null;
                 $teaching_quali->current_title = $request->current_title ?? Null;
                 if ($request->has('video')) {
@@ -2293,6 +2294,8 @@ class UserController extends Controller
         if ($request->step == 1) {
 
             $rules['gender'] = 'required|string';
+            $rules['first_name'] = 'required';
+            $rules['last_name'] = 'required';
             $rules['nationality'] = 'required';
             $rules['date_of_birth'] = 'required|string';
             $rules['postal_code'] = 'required';
@@ -2303,13 +2306,9 @@ class UserController extends Controller
         }
         if ($request->step == 2) {
 
-            $rules['avatar'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100';
+            $rules['avatar'] = 'required';
 
 
-            if ($request->hasFile('cover_img')) {
-
-                $rules['cover_img'] = 'required|image|mimes:jpeg,jpg,png|required|max:20000,dimensions:min_width=100,min_height=100,dimensions:ratio=3/2';
-            }
         }
         if ($request->step == 3) {
 
@@ -2331,6 +2330,8 @@ class UserController extends Controller
 
             $rules['availability_start_date'] = 'required|string';
             $rules['availability_end_date'] = 'required|string';
+
+             $rules['availability'] = 'required';
         }
 
 
@@ -2363,6 +2364,8 @@ class UserController extends Controller
             $user = User::find($token_user->id);
 
 
+            $user->first_name = $request->first_name;
+            $user->last_name = $request->last_name;
             $user->gender = $request->gender;
             $user->nationality = $request->nationality;
             $user->date_of_birth = $request->date_of_birth;
@@ -2399,16 +2402,16 @@ class UserController extends Controller
             //********* Sending Email ends **********
 
             //********* Sending Email TO Admin **********
-            $user_email = $admin->email;
-            // $custom_message = $custom_message;
-            $to_email = $user_email;
+            // $user_email = $admin->email;
+            // // $custom_message = $custom_message;
+            // $to_email = $user_email;
 
-            $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+            // $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
 
-            Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Teacher Profile Updated');
-                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-            });
+            // Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+            //     $message->to($to_email)->subject('Teacher Profile Updated');
+            //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            // });
             //********* Sending Email ends **********
 
 
@@ -2416,10 +2419,44 @@ class UserController extends Controller
             // event(new UserProfileEvent($user->id, $user, "Profile updated Successfully!"));
             // dispatch(new UserProfileJob($user->id, $user, "Profile updated Successfully!"));
 
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+
+            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                ->find($token_user->id);
+
+            $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                ->with('spoken_language')
+                ->where('user_id', $token_user->id)
+                ->get();
+
+            $spoken_languages = [];
+            $final_prefrences = new stdClass();
+            if (count($prefrences) > 0) {
+                $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                foreach ($prefrences as $key => $prefrence) {
+                    $language = new stdClass();
+                    $object = new stdClass();
+                    $language->id = $prefrence->spoken_language->id;
+                    $language->name = $prefrence->spoken_language->name;
+                    $object->efficiency =   $prefrence->efficiency;
+                    $object->language =  $language;
+                    array_push($spoken_languages, $object);
+                }
+
+                $final_prefrences->spoken_languages = $spoken_languages;
+                $user->preferences = $final_prefrences;
+            }
+
+
+
             return response()->json([
+
                 'status' => true,
-                'message' => 'Profile details updated successfully!!',
+                'message' => 'Profile details updated successfully',
+                'user' => $user,
             ]);
+           
         }
         if ($request->step == 2) {
 
@@ -2461,16 +2498,16 @@ class UserController extends Controller
             //********* Sending Email ends **********
 
             //********* Sending Email TO Admin **********
-            $user_email = $admin->email;
-            // $custom_message = $custom_message;
-            $to_email = $user_email;
+            // $user_email = $admin->email;
+            // // $custom_message = $custom_message;
+            // $to_email = $user_email;
 
-            $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+            // $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
 
-            Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Teacher Profile Updated');
-                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-            });
+            // Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+            //     $message->to($to_email)->subject('Teacher Profile Updated');
+            //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            // });
             //********* Sending Email ends **********
 
 
@@ -2504,6 +2541,7 @@ class UserController extends Controller
 
                 $teaching_quali->computer_skills = $request->computer_skills;
                 $teaching_quali->teaching_experience = $request->teaching_experience;
+                 $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
                 $teaching_quali->current_employer = $request->current_employer;
                 $teaching_quali->current_title = $request->current_title;
 
@@ -2523,26 +2561,53 @@ class UserController extends Controller
                 //********* Sending Email ends **********
 
                 //********* Sending Email TO Admin **********
-                $user_email = $admin->email;
-                // $custom_message = $custom_message;
-                $to_email = $user_email;
+                // $user_email = $admin->email;
+                // // $custom_message = $custom_message;
+                // $to_email = $user_email;
 
-                $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+                // $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
 
-                Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Teacher Profile Updated');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-                });
+                // Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                //     $message->to($to_email)->subject('Teacher Profile Updated');
+                //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                // });
                 //********* Sending Email ends **********
+                $token_1 = JWTAuth::getToken();
+                $token_user = JWTAuth::toUser($token_1);
 
+                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                    ->find($token_user->id);
 
+                $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                    ->with('spoken_language')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+
+                $spoken_languages = [];
+                $final_prefrences = new stdClass();
+                if (count($prefrences) > 0) {
+                    $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                    foreach ($prefrences as $key => $prefrence) {
+                        $language = new stdClass();
+                        $object = new stdClass();
+                        $language->id = $prefrence->spoken_language->id;
+                        $language->name = $prefrence->spoken_language->name;
+                        $object->efficiency =   $prefrence->efficiency;
+                        $object->language =  $language;
+                        array_push($spoken_languages, $object);
+                    }
+
+                    $final_prefrences->spoken_languages = $spoken_languages;
+                    $user->preferences = $final_prefrences;
+                }
 
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'Profile details updated successfully!'
-
+                    'message' => 'Profile details updated successfully',
+                    'user' => $user,
                 ]);
+
             }
         }
 
@@ -2568,6 +2633,32 @@ class UserController extends Controller
                 $teaching_specs->update();
 
 
+                $availabilities = json_decode(json_encode($request->availability));
+
+                $avail = TeacherAvailability::where('user_id', $token_user->id)->delete();
+
+
+                foreach ($availabilities as $availability) {
+
+                    // print_r($availability->time_slots);die;
+
+                    $availability_slots = $availability->time_slots;
+
+
+
+                    foreach ($availability_slots as $slot) {
+
+                        $teacher_sub = new TeacherAvailability();
+                        $teacher_sub->user_id = $token_user->id;
+                        $teacher_sub->day = $availability->day;
+                        $teacher_sub->time_from = $slot->start_time;
+                        $teacher_sub->time_to = $slot->end_time;
+                        $teacher_sub->save();
+                    }
+                }
+
+
+
                 //********* Sending Email TO tEACHER **********
                 $user_email = $user->email;
                 // $custom_message = $custom_message;
@@ -2582,25 +2673,54 @@ class UserController extends Controller
                 //********* Sending Email ends **********
 
                 //********* Sending Email TO Admin **********
-                $user_email = $admin->email;
-                // $custom_message = $custom_message;
-                $to_email = $user_email;
+                // $user_email = $admin->email;
+                // // $custom_message = $custom_message;
+                // $to_email = $user_email;
 
-                $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
+                // $data = array('email' =>  $user_email,  'user' => $user, 'admin' => $admin);
 
-                Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject('Teacher Profile Updated');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-                });
+                // Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
+                //     $message->to($to_email)->subject('Teacher Profile Updated');
+                //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                // });
                 //********* Sending Email ends **********
 
+                $token_1 = JWTAuth::getToken();
+                $token_user = JWTAuth::toUser($token_1);
+
+                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                    ->find($token_user->id);
+
+                $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                    ->with('spoken_language')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+
+                $spoken_languages = [];
+                $final_prefrences = new stdClass();
+                if (count($prefrences) > 0) {
+                    $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                    foreach ($prefrences as $key => $prefrence) {
+                        $language = new stdClass();
+                        $object = new stdClass();
+                        $language->id = $prefrence->spoken_language->id;
+                        $language->name = $prefrence->spoken_language->name;
+                        $object->efficiency =   $prefrence->efficiency;
+                        $object->language =  $language;
+                        array_push($spoken_languages, $object);
+                    }
+
+                    $final_prefrences->spoken_languages = $spoken_languages;
+                    $user->preferences = $final_prefrences;
+                }
 
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'Profile details updated successfully!'
-
+                    'message' => 'Profile details updated successfully',
+                    'user' => $user,
                 ]);
+
             }
         }
         if ($request->step == 5) {
