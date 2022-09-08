@@ -12,9 +12,10 @@
                                 <p> Congratulations your application to join MEtutors is approved. Welcome to MEtutors
                                     family!</p>
                                 <p>Kindly find attached all necessary documents for the onboarding process.</p>
-                                <p>In case you have any queries, feel free to reach out to our support team here link here -
+                                <p>In case you have any queries, feel free to reach out to our support team here 
                                     @php echo 'https://metutors.com/contact';@endphp
                                 </p>
+                                <p>We look forward to working with you.</p>
                                 <p>Regards,</p>
                                 <p>Talent Acquisition Team</p>
                             </div>
@@ -26,6 +27,7 @@
                                 <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> TIN
                                     <b>{{ $interview->user->id_number }}</b> was successfully approved as a tutor on MEtutors.
                                 </p>
+                                <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> is now available for bookings.</p>
                                 <p> Tutor profile: @php echo 'https://metutors.com/tutor/settings'; @endphp</p>
                                 <p>Regards,</p>
                                 <p>MEtutors Talent Acquisition Team</p>

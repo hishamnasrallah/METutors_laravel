@@ -23,17 +23,18 @@
                                 <p>If you wish to change your interveiw date or time, please conatct us at
                                     @php echo "https://metutors.com/contact" @endphp.</p>
                                 <p>Regards,</p>
-                                <p>Talent Acquisition Team,</p>
+                                <p>Talent Acquisition Team</p>
                             </div>
                         @endif
 
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>HR,</b></p>
-                                <p>A new interview request has been scheudled and sent to
+                                <p>A new interview request has been scheduled and sent to
                                     <b>{{ $interview_request->user->first_name }}
                                         {{ $interview_request->user->last_name }}</b>, TIN#
                                     <b>{{ $interview_request->user->id_number }}</b>.</p>
+                                    <p>Please proceed with the interview process and accept or reject new teacher.</p>
                                 <p>Regards,</p>
                                 <p>Talent Acquisition Team</p>
                             </div>

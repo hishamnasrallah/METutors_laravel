@@ -44,7 +44,7 @@ class UserRegisterJob implements ShouldQueue
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $this->user);
 
         Mail::send('email.registeration', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Successful new teacher registration. !');
+            $message->to($to_email)->subject('New Teacher Registration. !');
            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         //********* Sending Email ends **********

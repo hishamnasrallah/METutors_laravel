@@ -561,8 +561,7 @@
                                 <table border="0" cellpadding="0" cellspacing="0" width="100%" id="templatePreheader">
                                     <tr>
                                         <td class="headerContent" width="100%">
-                                            {{-- <a href=""><img src="{{ url($generalSettings['logo']) }}" style="max-width:128px;margin-bottom: 8px;margin-top: 24px" id="headerImage campaign-icon" mc:label="header_image" mc:edit="header_image" mc:allowtext/></a> --}}
-                                        </td>
+                                             <a href=""><img src="https://metutors.com/assets/logo/logo-dark.png" style="max-width:240px;margin-bottom: 0px;margin-top: 24px" id="headerImage campaign-icon" mc:label="header_image" mc:edit="header_image" mc:allowtext/></a>                                         </td>
                                     </tr>
                                 </table>
                                 <!-- // END PREHEADER -->

@@ -10,7 +10,7 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }},</b> </p>
-                                <p>You have successfuly updated your password on MEtutors. Please do not share it with others
+                                <p>You have successfully updated your password on MEtutors. Please do not share it with others
                                     and keep it secured.</p>
                                 <p> If you have any queries please contact our support team at @php echo 'https://metutors.com/contact';@endphp.
                                 </p>

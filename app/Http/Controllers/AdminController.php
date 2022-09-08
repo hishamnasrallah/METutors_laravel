@@ -1439,7 +1439,7 @@ class AdminController extends Controller
 
         $interview = TeacherInterviewRequest::pluck("user_id");
         // if (isset($request->per_page)) {
-        $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->get();
+        $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->orderBy('id','desc')->get();
         // } else {
         //     $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->paginate(10);
         // }
@@ -1493,7 +1493,7 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->get();
+                })->orderBy('id','desc')->get();
         }
 
 
@@ -1527,13 +1527,13 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })
+                })->orderBy('id','desc')
                 ->get();
         } else {
 
             $teachers = User::with('teacher_interview_request')
                 ->where('role_name', 'teacher')
-                ->where('status', 'rejected')
+                ->where('status', 'rejected')->orderBy('id','desc')
                 ->get();
         }
 
@@ -1553,7 +1553,7 @@ class AdminController extends Controller
 
         $teachers = User::with('teacher_interview_request')
             ->where('role_name', 'teacher')
-            ->where('status', 'suspended')
+            ->where('status', 'suspended')->orderBy('id','desc')
             ->get();
         // } else {
 
@@ -1586,7 +1586,7 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })
+                })->orderBy('id','desc')
                 ->get();
 
             $rejected_teachers = User::with('teacher_interview_request')
@@ -1599,17 +1599,17 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })
+                })->orderBy('id','desc')
                 ->get();
         } else {
 
             $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
-                ->whereIn('id', $interview)
+                ->whereIn('id', $interview)->orderBy('id','desc')
                 ->get();
 
             $rejected_teachers = User::with('teacher_interview_request')
                 ->where('role_name', 'teacher')
-                ->where('status', 'rejected')
+                ->where('status', 'rejected')->orderBy('id','desc')
                 ->get();
         }
 
@@ -1641,13 +1641,13 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })
+                })->orderBy('id','desc')
                 ->get();
         } else {
 
             $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                 ->where('role_name', 'teacher')
-                ->whereIn('status', ['active', 'inactive'])
+                ->whereIn('status', ['active', 'inactive'])->orderBy('id','desc')
                 ->get();
         }
 
@@ -1670,12 +1670,12 @@ class AdminController extends Controller
                             ->orWhere('status', 'LIKE', "%$request->search%")
                             ->orWhere('middle_name', 'LIKE', "%$request->search%")
                             ->orWhere('nationality', 'LIKE', "%$request->search%");
-                    })
+                    })->orderBy('id','desc')
                     ->get();
             } else {
                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
-                    ->where('status', 'active')
+                    ->where('status', 'active')->orderBy('id','desc')
                     ->get();
             }
 
@@ -1696,12 +1696,12 @@ class AdminController extends Controller
                             ->orWhere('status', 'LIKE', "%$request->search%")
                             ->orWhere('middle_name', 'LIKE', "%$request->search%")
                             ->orWhere('nationality', 'LIKE', "%$request->search%");
-                    })
+                    })->orderBy('id','desc')
                     ->get();
             } else {
                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
-                    ->where('status', 'inactive')
+                    ->where('status', 'inactive')->orderBy('id','desc')
                     ->get();
             }
 
@@ -1729,7 +1729,7 @@ class AdminController extends Controller
             }
         }
 
-        $inactive_teachers = User::where('role_name', 'teacher')->where('status', 'inactive')->get();
+        $inactive_teachers = User::where('role_name', 'teacher')->where('status', 'inactive')->orderBy('id','desc')->get();
 
         //calculating the ratings
         foreach ($teachers as $teacher) {

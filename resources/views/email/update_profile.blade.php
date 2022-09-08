@@ -10,8 +10,7 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }}</b>, </p>
-                                <p>Your profile has been updated successfully, it can be viewed here @php echo 'https://metutors.com//tutor/settings';@endphp.(check this one
-                                    pls).</p>
+                                <p>Your profile has been updated successfully, it can be viewed here @php echo 'https://metutors.com/tutor/settings';@endphp.</p>
                                 <p>We will be happy to help with any other queries you may have.</p>
                                 <p>Regards,</p>
                                 <p>Technical Support Team</p>

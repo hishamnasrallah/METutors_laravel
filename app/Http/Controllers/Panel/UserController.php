@@ -347,6 +347,9 @@ class UserController extends Controller
                 $sub = TeacherSubject::find($subj->id);
                 if ($sub != null) {
                     $sub->hourly_price = $subj->hourly_price;
+                    if($sub->hourly_price != 0){
+                        $sub->status = "approved";
+                    }
                     $sub->update();
                 }
             }
@@ -1567,17 +1570,17 @@ class UserController extends Controller
 
 
                 //********* Sending Email to admin **********
-                $user_email = $admin->email;
-                $custom_message = "A New User Registerd Successfully";
-                $to_email = $user_email;
+                // $user_email = $admin->email;
+                // $custom_message = "A New User Registerd Successfully";
+                // $to_email = $user_email;
 
-                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $admin_data);
+                // $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $admin_data);
 
-                Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+                // Mail::send('email.registeration', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('New teacher registration');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-                });
+                //     $message->to($to_email)->subject('New Teacher Registration');
+                //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                // });
                 //********* Sending Email ends **********
 
                 //********* Sending Email to teacher **********
