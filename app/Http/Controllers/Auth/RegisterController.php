@@ -220,18 +220,14 @@ class RegisterController extends Controller
 
             if ($user->role_name == 'teacher') {
                 $user_count = User::where('role_name', 'teacher')->count();
-                if($user_count == 1){
-                    $user_count = 100000;
-                }
-                $user_count = $user_count + 1;
+
+                $user_count = 100000 + $user_count;
                 $id_number = 'T' . $user_count;
             }
             if ($user->role_name == 'student') {
                 $user_count = User::where('role_name', 'student')->count();
-                if($user_count == 1){
-                    $user_count = 100000;
-                }
-                $user_count = $user_count + 1;
+                
+                $user_count = 100000 + $user_count;
                 $id_number = 'S' . $user_count;
             }
 
