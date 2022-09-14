@@ -864,7 +864,7 @@ class UserController extends Controller
     public function search_teacher(Request $request, $name)
     {
         $result = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'created_at')
-            ->with('teacher_subjects', 'teacher_subjects.subject', 'feedbacks')
+            ->with('teacher_subjects', 'teacher_subjects.subject.country', 'feedbacks')
             // ->whereHas('feedbacks',function($query){
             //     $query->
             // })

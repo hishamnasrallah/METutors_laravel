@@ -248,7 +248,7 @@ class ClassController extends Controller
         $average_feedback = 0;
 
         $teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'kudos_points')
-            ->with('teacher_qualification', 'teacher_specification', 'spoken_languages', 'teacher_subjects')
+            ->with('teacher_qualification', 'teacher_specification', 'spoken_languages', 'teacher_subjects.subject.country')
             ->with(['feedbacks' => function ($query) use ($teacher_id) {
                 $query->where('receiver_id', $teacher_id);
             }])

@@ -1813,7 +1813,7 @@ class AdminController extends Controller
             'end_time' => Carbon::parse($request->end_time)->setTimezone('Asia/Karachi')->format('g:i a'),
             'date' => Carbon::parse($request->date)->setTimezone('Asia/Karachi')->format('Y-m-d'),
             'currency' => "USD",
-            'record' => 0,
+            'record' => 1,
             'isRecordingLayout ' => 1,
             'isVideo  ' => 1,
             'isBoard ' => 0,
@@ -3891,10 +3891,10 @@ class AdminController extends Controller
 
         if (isset($id)) {
 
-            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject')->where('id', $id)->first();
+            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')->where('id', $id)->first();
         }
 
-        $teacher_profile = User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->where('id', $id)->first();
+        $teacher_profile = User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')->where('id', $id)->first();
 
         return response()->json([
             'status' => true,
@@ -3971,7 +3971,7 @@ class AdminController extends Controller
         $featured_teachers = [];
         $subject = Subject::with('program', 'field', 'available_teachers.teacher.country')
             ->with('available_teachers', function ($q) {
-                $q->with('teacher_qualification', 'teacher_subjects.subject');
+                $q->with('teacher_qualification', 'teacher_subjects.subject.country');
             })
             ->findOrFail($subject_id);
 

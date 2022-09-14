@@ -349,8 +349,11 @@ class UserController extends Controller
                     $sub->hourly_price = $subj->hourly_price;
                     if($sub->hourly_price != 0){
                         $sub->status = "approved";
+                        $sub->update();
+                    }else{
+                        $sub->delete();
                     }
-                    $sub->update();
+                    
                 }
             }
             $interview_req->status = 'approved';

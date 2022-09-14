@@ -25,7 +25,7 @@ class Subject extends Model
     }
     public function country()
     {
-        return $this->belongsTo('App\Models\ProgramCountry', 'country_id', 'id')->select('id', 'name');
+        return $this->belongsTo('App\Models\ProgramCountry', 'country_id', 'id')->select('id', 'name','flag');
     }
 
     public function available_teachers()
