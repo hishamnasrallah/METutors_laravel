@@ -71,7 +71,7 @@ class ForgotPasswordController extends Controller
 
         Mail::send('web.default.auth.password_verify', $emailData, function ($message) use ($request) {
             $message->to($request->input('email'));
-            $message->subject('Password Reset!');
+            $message->subject('New password request');
         });
 
         $toastData = [

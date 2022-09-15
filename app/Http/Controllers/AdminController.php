@@ -1851,7 +1851,7 @@ class AdminController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $user);
 
             Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('MEtutors Interview Request is Scheduled');
+                $message->to($to_email)->subject('MEtutors interview has been scheduled');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //******** Email ends **********//
@@ -1864,7 +1864,7 @@ class AdminController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview_request' => $interviewRequest, 'user' => $admin);
 
             Mail::send('email.meeting_scheduled', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('A Teacher Interview Request is Scheduled ');
+                $message->to($to_email)->subject('Teacher interview has been scheduled');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //******** Email ends **********//

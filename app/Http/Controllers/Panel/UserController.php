@@ -277,7 +277,7 @@ class UserController extends Controller
 
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('New Teacher Application Rejected');
+                    $message->to($to_email)->subject('New teacher application declined');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -291,7 +291,7 @@ class UserController extends Controller
 
                 Mail::send('email.reject_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('MEtutors Hiring Application Status');
+                    $message->to($to_email)->subject('MEtutors hiring application status');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -347,30 +347,47 @@ class UserController extends Controller
                 $sub = TeacherSubject::find($subj->id);
                 if ($sub != null) {
                     $sub->hourly_price = $subj->hourly_price;
-                    if($sub->hourly_price != 0){
+                    if ($sub->hourly_price != 0) {
                         $sub->status = "approved";
                         $sub->update();
-                    }else{
+                    } else {
                         $sub->delete();
                     }
-                    
                 }
             }
             $interview_req->status = 'approved';
             $interview_req->admin_comments = $request->admin_comments;
             $interview_req->update();
 
+
+
             $user = User::find($interview_req->user_id);
+
             if ($user != null) {
 
                 $user->status = 'active';
                 $user->admin_approval = 'approved';
                 $user->update();
 
+                $teacher_subjects = TeacherSubject::where('user_id', $user->id)->get();
+
                 $admin = User::where('role_name', 'admin')->first();
                 $teacher_message = "You have been Approved for Metutors!";
                 $admin_message = "Teacher Approved Successfully!";
 
+                //*********** Sending Offer letter Email to teacher  ************\\
+                $user_email = $user->email;
+                $custom_message = "You have been Approved for Metutors!";
+                $to_email = $user_email;
+
+                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'interview' => $interview_req, 'user' => $user, 'teacher_subjects' => $teacher_subjects);
+
+                Mail::send('email.offer_letter', $data, function ($message) use ($to_email) {
+
+                    $message->to($to_email)->subject('Joining MEtutors - application approved');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+                // //********  Offer letter Email ends **********//
 
                 //*********** Sending Email to teacher  ************\\
                 $user_email = $user->email;
@@ -381,7 +398,7 @@ class UserController extends Controller
 
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('Your Application to join MEtutors is Approved');
+                    $message->to($to_email)->subject('Your application to join MEtutors has been approved');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -395,7 +412,7 @@ class UserController extends Controller
 
                 Mail::send('email.accept_teacher', $data, function ($message) use ($to_email) {
 
-                    $message->to($to_email)->subject('New Teacher Application Approved');
+                    $message->to($to_email)->subject('New teacher application approved');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 // //******** Email ends **********//
@@ -762,6 +779,60 @@ class UserController extends Controller
             'language' => $lings,
         ]);
     }
+    public function update_rates(Request $request)
+    {
+         $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        
+
+            $teacher_subjects = json_decode(json_encode($request->subjects));
+
+
+
+            foreach ($teacher_subjects as $subj) {
+
+                $sub = TeacherSubject::find($subj->id);
+                if($sub != null){
+                      $sub->hourly_price=$subj->hourly_rate;
+                     $sub->update();
+                }
+            }
+
+            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                ->find($token_user->id);
+
+            $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
+                ->with('spoken_language')
+                ->where('user_id', $token_user->id)
+                ->get();
+
+            $spoken_languages = [];
+            $final_prefrences = new stdClass();
+            if (count($prefrences) > 0) {
+                $final_prefrences->preferred_gender = $prefrences[0]->preferred_gender;
+                foreach ($prefrences as $key => $prefrence) {
+                    $language = new stdClass();
+                    $object = new stdClass();
+                    $language->id = $prefrence->spoken_language->id;
+                    $language->name = $prefrence->spoken_language->name;
+                    $object->efficiency =   $prefrence->efficiency;
+                    $object->language =  $language;
+                    array_push($spoken_languages, $object);
+                }
+
+                $final_prefrences->spoken_languages = $spoken_languages;
+                $user->preferences = $final_prefrences;
+            }
+
+            return response()->json([
+
+                'status' => true,
+                'message' => 'data updated succesfully',
+                'user' => $user,
+            ]);
+
+
+    }
     public function teacher_complete_account(Request $request)
     {
         $token_1 = JWTAuth::getToken();
@@ -1097,7 +1168,7 @@ class UserController extends Controller
 
                 $teaching_quali->computer_skills = $request->computer_skills;
                 $teaching_quali->teaching_experience = $request->teaching_experience;
-                 $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
+                $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
                 $teaching_quali->current_employer = $request->current_employer ?? Null;
                 $teaching_quali->current_title = $request->current_title ?? Null;
                 if ($request->has('video')) {
@@ -2313,8 +2384,6 @@ class UserController extends Controller
         if ($request->step == 2) {
 
             $rules['avatar'] = 'required';
-
-
         }
         if ($request->step == 3) {
 
@@ -2337,7 +2406,7 @@ class UserController extends Controller
             $rules['availability_start_date'] = 'required|string';
             $rules['availability_end_date'] = 'required|string';
 
-             $rules['availability'] = 'required';
+            $rules['availability'] = 'required';
         }
 
 
@@ -2402,7 +2471,7 @@ class UserController extends Controller
             $data = array('email' =>  $user_email,  'user' => $user);
 
             Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                $message->to($to_email)->subject('Profile updated successfully');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //********* Sending Email ends **********
@@ -2462,7 +2531,6 @@ class UserController extends Controller
                 'message' => 'Profile details updated successfully',
                 'user' => $user,
             ]);
-           
         }
         if ($request->step == 2) {
 
@@ -2498,7 +2566,7 @@ class UserController extends Controller
             $data = array('email' =>  $user_email,  'user' => $user);
 
             Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                $message->to($to_email)->subject('Profile updated successfully');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //********* Sending Email ends **********
@@ -2547,7 +2615,7 @@ class UserController extends Controller
 
                 $teaching_quali->computer_skills = $request->computer_skills;
                 $teaching_quali->teaching_experience = $request->teaching_experience;
-                 $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
+                $teaching_quali->teaching_experience_online = $request->teaching_experience_online;
                 $teaching_quali->current_employer = $request->current_employer;
                 $teaching_quali->current_title = $request->current_title;
 
@@ -2561,7 +2629,7 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email,  'user' => $user);
 
                 Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                    $message->to($to_email)->subject('Profile updated successfully');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 //********* Sending Email ends **********
@@ -2613,7 +2681,6 @@ class UserController extends Controller
                     'message' => 'Profile details updated successfully',
                     'user' => $user,
                 ]);
-
             }
         }
 
@@ -2673,7 +2740,7 @@ class UserController extends Controller
                 $data = array('email' =>  $user_email,  'user' => $user);
 
                 Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                    $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                    $message->to($to_email)->subject('Profile updated successfully');
                     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                 });
                 //********* Sending Email ends **********
@@ -2726,7 +2793,6 @@ class UserController extends Controller
                     'message' => 'Profile details updated successfully',
                     'user' => $user,
                 ]);
-
             }
         }
         if ($request->step == 5) {
@@ -2771,7 +2837,7 @@ class UserController extends Controller
                     $data = array('email' =>  $user_email,  'user' => $user);
 
                     Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                        $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                        $message->to($to_email)->subject('Profile updated successfully');
                         $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                     });
                     //********* Sending Email ends **********
@@ -2809,7 +2875,7 @@ class UserController extends Controller
                     $data = array('email' =>  $user_email,  'user' => $user);
 
                     Mail::send('email.update_profile', $data, function ($message) use ($to_email) {
-                        $message->to($to_email)->subject(' Teacher Profile Updated Successfully on MEtutors');
+                        $message->to($to_email)->subject('Profile updated successfully');
                         $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
                     });
                     //********* Sending Email ends **********

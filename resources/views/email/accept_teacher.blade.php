@@ -9,10 +9,9 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }},</b> </p>
-                                <p> Congratulations your application to join MEtutors is approved. Welcome to MEtutors
-                                    family!</p>
-                                <p>Kindly find attached all necessary documents for the onboarding process.</p>
-                                <p>In case you have any queries, feel free to reach out to our support team here 
+                                <p> Congratulations your application to join MEtutors has been approved. Welcome to the
+                                    MEtutors family!</p>
+                                <p>In case you have any queries, please contact the MEtutors success team 
                                     @php echo 'https://metutors.com/contact';@endphp
                                 </p>
                                 <p>We look forward to working with you.</p>
@@ -25,12 +24,14 @@
                             <div class="card-body">
                                 <p>Hi <b>HR,</b> </p>
                                 <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> TIN
-                                    <b>{{ $interview->user->id_number }}</b> was successfully approved as a tutor on MEtutors.
+                                    <b>{{ $interview->user->id_number }}</b> was successfully approved as a tutor on
+                                    MEtutors.
                                 </p>
-                                <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> is now available for bookings.</p>
-                                <p> Tutor profile: @php echo 'https://metutors.com/tutor/settings'; @endphp</p>
+                                <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> is now
+                                    available for bookings.</p>
+                                <p><b>Tutor profile:</b> @php echo 'https://metutors.com/tutor/settings'; @endphp</p>
                                 <p>Regards,</p>
-                                <p>MEtutors Talent Acquisition Team</p>
+                                <p>Talent Acquisition Team</p>
                             </div>
                         @endif
                     </div>

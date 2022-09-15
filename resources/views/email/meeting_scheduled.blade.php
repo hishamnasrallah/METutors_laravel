@@ -12,12 +12,11 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }},</b> </p>
-                                <p>Your application to join MEtutors teaching platofrm was reviewed by our talent
-                                    acquisition team
-                                    and an interview meeting has been scheudled on
+                                <p>Your application to join MEtutors teaching platofrm was reviewed by our talent acquisition
+                                    team and an interview has been scheduled on
                                     <b>{{ Carbon::parse($interview_request->date_for_interview)->setTimeZone('US/Central')->format('Y-m-d') }}</b>,
-                                    <b>{{ Carbon::parse($interview_request->time_for_interview)->setTimeZone('US/Central')->format('h:i A') }}</b> (US/Central) timezone. Please login to your account
-                                    to start your interview.
+                                    <b>{{ Carbon::parse($interview_request->time_for_interview)->setTimeZone('US/Central')->format('h:i A') }}</b> (US/Central) timezone.
+                                    
                                 </p>
 
                                 <p>If you wish to change your interveiw date or time, please conatct us at
@@ -30,11 +29,11 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>HR,</b></p>
-                                <p>A new interview request has been scheduled and sent to
+                                <p>A new interview request has been scheduled and the details have been sent to
                                     <b>{{ $interview_request->user->first_name }}
                                         {{ $interview_request->user->last_name }}</b>, TIN#
                                     <b>{{ $interview_request->user->id_number }}</b>.</p>
-                                    <p>Please proceed with the interview process and accept or reject new teacher.</p>
+                                    <p>Please proceed with the interview process.</p>
                                 <p>Regards,</p>
                                 <p>Talent Acquisition Team</p>
                             </div>

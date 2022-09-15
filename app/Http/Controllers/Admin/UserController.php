@@ -50,7 +50,7 @@ class UserController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
 
             Mail::send('email.accept_document', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Submitted Document on MEtutors is Accepted');
+                $message->to($to_email)->subject('Document accepted on MEtutors');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //******** Email ends **********//
@@ -111,7 +111,7 @@ class UserController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user_meta' => $user_meta, 'user' => $user);
 
             Mail::send('email.reject_document', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Submitted Document on MEtutors is Rejected');
+                $message->to($to_email)->subject('Document declined on MEtutors');
                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //*********** Sending Email ends  ************\\

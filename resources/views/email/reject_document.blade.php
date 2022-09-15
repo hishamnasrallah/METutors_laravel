@@ -9,15 +9,14 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }},</b></p>
-                                <p> Please note that one of the docuemnts you have submitted part of your employment
-                                    application at
-                                    MEtutors was rejected by HR.
+                                <p>ne of the documents you submitted as part of your application process has been declined. Please log in to your dashboard to upload necessary documents.
                                 </p>
                                 <p>In case you have any queries, please feel free to contact us at @php echo "https://metutors.com/contact" @endphp.</p>
                                 <p>Regards,</p>
-                                <p>MEtutors Talent Acquisition Team</p>
+                                <p>Talent Acquisition Team</p>
                             </div>
                         @endif
+
                     </div>
                 </div>
             </div>

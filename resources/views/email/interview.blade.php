@@ -20,7 +20,7 @@
                                 <p> Please feel free to contact us at
                                     @php
                                         echo 'https://metutors.com/contact';
-                                    @endphp if you have any queries in the meantime.</p>
+                                    @endphp if you have any other queries.</p>
                                 <p>Regards,</p>
                                 <p>Talent Acquisition Team</p>
                             </div>
@@ -29,14 +29,19 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>HR,</b> </p>
-                                <p>You have received a new interview request from
-                                    <b>{{ $interview_request->user->first_name }} {{ $interview_request->user->last_name }}</b>,
-                                        TIN#  <b>{{ $interview_request->user->id_number }}</b>.
+                                <p>
+                                    <b>{{ $interview_request->user->first_name }}
+                                        {{ $interview_request->user->last_name }}</b>,
+                                    TIN# <b>{{ $interview_request->user->id_number }}</b> has requested an interview.
                                 </p>
-                                <p>Please proceed with the interview process and confirm or reschedule the requested time on
-                                    the following link 
+                                <p>Please approve or decline the interview on this link
                                     @php
                                         echo 'https://metutors.com/admin/tutor/interview/details/' . $interview_request->id;
+                                    @endphp
+                                </p>
+                                <p>The interview time and date can be scheduled here
+                                    @php
+                                        echo 'https://metutors.com/admin/tutor/interview'
                                     @endphp
                                 </p>
                                 <p>Regards,</p>

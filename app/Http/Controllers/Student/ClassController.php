@@ -187,7 +187,7 @@ class ClassController extends Controller
         Mail::send('email.student_course', $data, function ($message) use ($to_name, $to_email) {
             $message->to($to_email, $to_name)
                 ->subject('Course Booking');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         //********* Sending email ends **********//
 
@@ -672,11 +672,11 @@ class ClassController extends Controller
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher.teacher_qualification', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
-                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
+                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
 
 
                 $progress = 0;
@@ -684,6 +684,18 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
                 }
 
                 $progress = 0;
@@ -691,6 +703,18 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
                 }
 
                 $progress = 0;
@@ -698,13 +722,37 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
                 }
 
                 $progress = 0;
                 if ($lastActivity_course != null) {
                     $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
-                    $progress = ($completecoursesd_classes / $lastActivity_course->course->total_classes) * 100;
+                    $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                     $lastActivity_course->course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
 
 
@@ -729,11 +777,11 @@ class ClassController extends Controller
 
                     $fieldOfStudies =  FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
-                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
+                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
 
 
                     $progress = 0;
@@ -741,6 +789,18 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
                     }
 
                     $progress = 0;
@@ -748,6 +808,18 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
                     }
 
                     $progress = 0;
@@ -755,6 +827,18 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
                     }
 
                     $progress = 0;
@@ -762,6 +846,18 @@ class ClassController extends Controller
                         $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                         $lastActivity_course->course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+                        // $lastActivity_course->course->teacher;
+                        $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
                     return response()->json([
@@ -784,11 +880,11 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
-                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
+                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
                     $progress = 0;
@@ -796,6 +892,18 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
                     }
 
                     $progress = 0;
@@ -803,6 +911,18 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
                     }
 
                     $progress = 0;
@@ -810,6 +930,18 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
                     }
 
                     $progress = 0;
@@ -817,6 +949,18 @@ class ClassController extends Controller
                         $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                         $lastActivity_course->course->progress = round($progress);
+
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
+
+                        $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
                     return response()->json([
@@ -843,11 +987,11 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                 // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
-                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
+                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
                 $progress = 0;
@@ -855,6 +999,18 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
                 }
 
                 $progress = 0;
@@ -862,6 +1018,18 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
                 }
 
                 $progress = 0;
@@ -869,6 +1037,18 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
                 }
 
                 $progress = 0;
@@ -876,6 +1056,18 @@ class ClassController extends Controller
                     $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                     $lastActivity_course->course->progress = round($progress);
+
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
+
+                    $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
 
 
@@ -895,10 +1087,10 @@ class ClassController extends Controller
 
             $program = Program::where('code', $request->program)->first();
 
-            $active_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
-            $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
-            $completed_courses = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
-            $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher')
+            $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
+            $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
+            $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
+            $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')
                 ->where('user_id', $token_user->id)
                 ->where('role_name', $token_user->role_name)
                 ->latest('updated_at')
@@ -912,6 +1104,18 @@ class ClassController extends Controller
                 $completed_classes = $course->classes->where('status', 'completed')->count();
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
+
+                $rating_sum = 0;
+                $average_rating = 0;
+                $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                if ($rating_sum > 0) {
+                    $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+
+                $course['teacher']->average_rating = $average_rating;
+                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                unset($course['teacher']['teacher_qualification']);
             }
 
             $progress = 0;
@@ -919,6 +1123,18 @@ class ClassController extends Controller
                 $completed_classes = $course->classes->where('status', 'completed')->count();
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
+
+                $rating_sum = 0;
+                $average_rating = 0;
+                $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                if ($rating_sum > 0) {
+                    $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+
+                $course['teacher']->average_rating = $average_rating;
+                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                unset($course['teacher']['teacher_qualification']);
             }
 
             $progress = 0;
@@ -926,6 +1142,18 @@ class ClassController extends Controller
                 $completed_classes = $course->classes->where('status', 'completed')->count();
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
+
+                $rating_sum = 0;
+                $average_rating = 0;
+                $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                if ($rating_sum > 0) {
+                    $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+
+                $course['teacher']->average_rating = $average_rating;
+                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                unset($course['teacher']['teacher_qualification']);
             }
 
             $progress = 0;
@@ -933,6 +1161,18 @@ class ClassController extends Controller
                 $completed_classes = $lastActivity_course->course->classes->where('status', 'completed')->count();
                 $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                 $lastActivity_course->course->progress = round($progress);
+
+                $rating_sum = 0;
+                $average_rating = 0;
+                $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                if ($rating_sum > 0) {
+                    $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+
+                $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                unset($lastActivity_course->course['teacher']['teacher_qualification']);
             }
 
 

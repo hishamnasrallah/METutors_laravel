@@ -88,7 +88,7 @@ class ResetPasswordController extends Controller
             $data = array('user' => $user);
 
             Mail::send('email.update_password', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Password Updated on MEtutors');
+                $message->to($to_email)->subject('Password updated on MEtutors');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             //********* Sending Email ends **********
@@ -287,7 +287,6 @@ class ResetPasswordController extends Controller
     }
     public function updatePassword(Request $request)
     {
-
         $rules = [
             'email' => 'required|email|exists:users',
             'password' => 'required|string|min:6|confirmed',
@@ -308,8 +307,6 @@ class ResetPasswordController extends Controller
                 'errors' => $errors,
             ], 400);
         }
-
-
 
         $data = $request->all();
 
@@ -339,7 +336,7 @@ class ResetPasswordController extends Controller
             $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
 
             Mail::send('email.password_reset', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('Password Reset on MEtutors');
+                $message->to($to_email)->subject('Password updated on MEtutors');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
             // //******** Email ends **********//
