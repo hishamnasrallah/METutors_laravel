@@ -37,12 +37,12 @@
                                 <p>Please approve or decline the interview on this link
                                     @php
                                         echo 'https://metutors.com/admin/tutor/interview/details/' . $interview_request->id;
-                                    @endphp
+                                    @endphp .
                                 </p>
                                 <p>The interview time and date can be scheduled here
                                     @php
                                         echo 'https://metutors.com/admin/tutor/interview'
-                                    @endphp
+                                    @endphp .
                                 </p>
                                 <p>Regards,</p>
                                 <p>Talent Acquisition Team</p>

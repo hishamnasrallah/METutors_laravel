@@ -12,7 +12,7 @@
                                 <p> Congratulations your application to join MEtutors has been approved. Welcome to the
                                     MEtutors family!</p>
                                 <p>In case you have any queries, please contact the MEtutors success team 
-                                    @php echo 'https://metutors.com/contact';@endphp
+                                    @php echo 'https://metutors.com/contact';@endphp .
                                 </p>
                                 <p>We look forward to working with you.</p>
                                 <p>Regards,</p>
@@ -23,7 +23,7 @@
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>HR,</b> </p>
-                                <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> TIN
+                                <p><b>{{ $interview->user->first_name }} {{ $interview->user->last_name }}</b> TIN#
                                     <b>{{ $interview->user->id_number }}</b> was successfully approved as a tutor on
                                     MEtutors.
                                 </p>

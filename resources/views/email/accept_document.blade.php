@@ -10,9 +10,9 @@
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }}</b> </p>
                                 <p>One of the documents you submitted as part of your application process has been accepted.</p>
-                                <p>In case you have any queries, please feel free to contact us at  @php echo "https://metutors.com/contact" @endphp</p>
+                                <p>In case you have any queries, please feel free to contact us at  @php echo "https://metutors.com/contact" @endphp .</p>
                                 <p>Regards,</p>
-                                <p>MEtutors Talent Acquisition Team</p>
+                                <p>Talent Acquisition Team</p>
                             </div>
                         @endif
                         
