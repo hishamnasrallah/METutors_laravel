@@ -89,7 +89,7 @@ class FieldOfStudyController extends Controller
         if ($request->program_id == 3) {
 
             $rules['country_id'] = 'required';
-            $rules['grade'] = 'required';
+            // $rules['grade'] = 'required';
         }
 
 
@@ -111,7 +111,7 @@ class FieldOfStudyController extends Controller
         $FieldOfStudy->program_id = $request->program_id;
         if ($request->program_id == 3) {
             $FieldOfStudy->country_id = $request->country_id;
-            $FieldOfStudy->grade = $request->grade;
+            // $FieldOfStudy->grade = $request->grade;
         }
         $FieldOfStudy->name = $request->name;
 
