@@ -15,7 +15,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('queue:work')->everyMinute();
+        $schedule->command('class:cron')->everyMinute();
+        $schedule->command('class:completed')->everyMinute();
+        $schedule->command('assignment:completed')->dailyAt("00:01");
+        $schedule->command('course:completed')->everyMinute();
+        $schedule->command('course:reminder')->hourly();
+        $schedule->command('assignment:deadline')->dailyAt("00:01");
     }
 
     /**
@@ -25,7 +31,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands()
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

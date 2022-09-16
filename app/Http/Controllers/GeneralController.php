@@ -28,36 +28,237 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
+
+
 class GeneralController extends Controller
 {
-  public function get_step(){
+
+
+    public function testing_verify()
+    {
+
+        return 'very good';
+    }
+
+    public function field_of_studies()
+    {
+
+        $field_of_study = FieldOfStudy::all();
+
+        return response()->json([
+
+            'status' => true,
+            'field_of_study' => $field_of_study,
+        ]);
+    }
+
+    public function level_of_education()
+    {
+
+        $level_of_education = LevelOfEducation::all();
+
+        return response()->json([
+
+            'status' => true,
+            'level_of_education' => $level_of_education,
+        ]);
+    }
+    public function languages()
+    {
+
+        $languages = Language::all();
+
+        return response()->json([
+
+            'status' => true,
+            'languages' => $languages,
+        ]);
+    }
+    public function course_levels()
+    {
+
+        $course_levels = CourseLevel::all();
+
+        return response()->json([
+
+            'status' => true,
+            'course_levels' => $course_levels,
+        ]);
+    }
+    public function timezones()
+    {
+
+        $timezones = TimeZone::all();
+
+        return response()->json([
+
+            'status' => true,
+            'timezones' => $timezones,
+        ]);
+    }
+    public function programs()
+    {
+
+        $programs = Program::where('status', 1)->get();
+
+        return response()->json([
+
+            'status' => true,
+            'programs' => $programs,
+        ]);
+    }
+    public function countries()
+    {
+
+        $countries = Country::whereHas('cities')->get();
+
+        return response()->json([
+
+            'status' => true,
+            'countries' => $countries,
+        ]);
+    }
+
+    public function cities(Request $request)
+    {
+
+        $rules = [
+            'country_id' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $cities = City::where('country_id', $request->country_id)->get();
+
+        return response()->json([
+            'status' => true,
+            'cities' => $cities,
+        ]);
+    }
+
+    public function subjects()
+    {
+
+        $subjects = Subject::with('field','country')->get();
+
+        return response()->json([
+
+            'status' => true,
+            'subjects' => $subjects,
+        ]);
+    }
+    public function field_of_study(Request $request)
+    {
+
+        $rules = [
+
+            'program_id' => 'required',
+        ];
+
+        if ($request->program_id == 3) {
+
+            $rules['country_id'] = 'required';
+            // $rules['grade'] = 'required';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+            // return $this->respondWithError($errors,500);
+        }
+
+
+        $field_of_study = FieldOfStudy::where('program_id', $request->program_id)->get();
+
+
+        if ($request->program_id == 3) {
+
+            $field_of_study = FieldOfStudy::where('program_id', $request->program_id)->where('country_id', $request->country_id)
+            // ->where('grade', $request->grade)
+            ->get();
+        }
+
+
+        return response()->json([
+
+            'status' => true,
+            'field_of_study' => $field_of_study,
+        ]);
+    }
+    public function field_subjects(Request $request)
+    {
+
+        $rules = [
+
+            'field_id' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+            // return $this->respondWithError($errors,500);
+        }
+
+        $subjects = Subject::where('field_id', $request->field_id)->get();
+
+        return response()->json([
+
+            'status' => true,
+            'subjects' => $subjects,
+        ]);
+    }
+    public function get_step()
+    {
 
 
 
 
-		$filtered_teacher = User::
-
-		whereHas('spokenLanguages', function ($query)  {
-
+        $filtered_teacher = User::whereHas('spokenLanguages', function ($query) {
         })
 
-        ->	whereHas('teacherAvailability', function ($query)  {
+            ->whereHas('teacherAvailability', function ($query) {
+            })
+            ->whereHas('teacherProgram', function ($query) {
+            })
+            ->whereHas('teacherSubject', function ($query) {
+            })
+            ->whereHas('teacherQualifications', function ($query) {
+            })
+            ->whereHas('teacherSpecifications', function ($query) {
+            })
 
-        })
-        ->	whereHas('teacherProgram', function ($query)  {
-
-        })
-         ->	whereHas('teacherSubject', function ($query)  {
-
-        })
-         ->	whereHas('teacherQualifications', function ($query)  {
-
-        })
-         ->	whereHas('teacherSpecifications', function ($query)  {
-
-        })
-
-        ->where('role_name', 'teacher')->where('id', 1128)->get();
+            ->where('role_name', 'teacher')->where('id', 1128)->get();
 
         return response()->json([
             'success' => true,
@@ -66,203 +267,12 @@ class GeneralController extends Controller
     }
 
 
-
-  public function field_of_studies(){
-
-      $field_of_study=FieldOfStudy::all();
-
-      return response()->json([
-
-                'status' => true,
-                'field_of_study' => $field_of_study,
-                ]);
-
-  }
-
-  public function level_of_education(){
-
-      $level_of_education=LevelOfEducation::all();
-
-      return response()->json([
-
-                'status' => true,
-                'level_of_education' => $level_of_education,
-                ]);
-
-  }
-  public function languages(){
-
-      $languages=Language::all();
-
-      return response()->json([
-
-                'status' => true,
-                'languages' => $languages,
-                ]);
-
-  }
-   public function course_levels(){
-
-       $course_levels=CourseLevel::all();
-
-       return response()->json([
-
-                'status' => true,
-                'course_levels' => $course_levels,
-                ]);
-
-   }
-   public function timezones(){
-
-       $timezones=TimeZone::all();
-
-       return response()->json([
-
-                'status' => true,
-                'timezones' => $timezones,
-                ]);
-
-   }
-   public function programs(){
-
-       $programs=Program::all();
-
-       return response()->json([
-
-                'status' => true,
-                'programs' => $programs,
-                ]);
-
-   }
-   public function countries(){
-
-       $countries=Country::all();
-
-       return response()->json([
-
-                'status' => true,
-                'countries' => $countries,
-                ]);
-
-   }
-
-    public function cities(Request $request){
-
-        $rules = [
-
-            'country_id' => 'required',
-        ];
-
-        $validator=Validator::make($request->all(),$rules);
-
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-
-            return response()->json([
-
-                'status' => 'false',
-                'errors' => $errors,
-                ],400) ;
-            // return $this->respondWithError($errors,500);
-        }
-
-       $cities=City::where('country_id',$request->country_id)->get();
-
-       return response()->json([
-
-                'status' => true,
-                'cities' => $cities,
-                ]) ;
-
-   }
-
-   public function subjects(){
-
-       $subjects=Subject::all();
-
-       return response()->json([
-
-                'status' => true,
-                'subjects' => $subjects,
-                ]);
-
-   }
-   public function field_of_study(Request $request){
-
-         $rules = [
-
-            'program_id' => 'required',
-        ];
-
-          if($request->program_id == 3){
-
-                  $rules['country_id'] = 'required';
-            }
-
-        $validator=Validator::make($request->all(),$rules);
-
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-
-            return response()->json([
-
-                'status' => 'false',
-                'errors' => $errors,
-                ],400) ;
-            // return $this->respondWithError($errors,500);
-        }
-
-
-       $field_of_study=FieldOfStudy::where('program_id',$request->program_id)->get();
-
-
-         if($request->program_id == 3){
-
-                  $field_of_study=FieldOfStudy::where('program_id',$request->program_id)->where('country_id',$request->country_id)->get();
-
-            }
-
-
-       return response()->json([
-
-                'status' => true,
-                'field_of_study' => $field_of_study,
-                ]) ;
-
-   }
-   public function field_subjects(Request $request){
-
-        $rules = [
-
-            'field_id' => 'required',
-        ];
-
-        $validator=Validator::make($request->all(),$rules);
-
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-
-            return response()->json([
-
-                'status' => 'false',
-                'errors' => $errors,
-                ],400) ;
-            // return $this->respondWithError($errors,500);
-        }
-
-       $subjects=Subject::where('field_id',$request->field_id)->get();
-
-       return response()->json([
-
-                'status' => true,
-                'subjects' => $subjects,
-                ]) ;
-
-   }
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+    }
+
+    
 }

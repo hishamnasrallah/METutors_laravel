@@ -8,6 +8,6 @@
 
         <p class="code">{{ $details['code'] }}</p>
 
-        <p> {{ $details['ignoremessage'] }} </p>
+        <p> {{ $details['ignoremessage'] }}. </p>
     </td>
 @endsection

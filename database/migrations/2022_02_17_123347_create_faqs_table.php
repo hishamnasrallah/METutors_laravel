@@ -1,4 +1,4 @@
-<?php
+    <?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,9 +15,9 @@ class CreateFaqsTable extends Migration
     {
         Schema::create('faqs', function (Blueprint $table) {
             $table->id();
-            $table->longText("title");
-            $table->longText("description");
-            $table->integer("order")->nullable();
+            $table->integer("topic_id");
+            $table->string("title");
+            $table->string("answer");
             $table->timestamps();
         });
     }

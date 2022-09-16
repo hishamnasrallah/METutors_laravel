@@ -18,7 +18,7 @@ class CreateCommentsTable extends Migration
             $table->integer('ticket_id');
             $table->integer('user_id');
             $table->longText('comment');
-            $table->integer('file');
+            $table->string('file')->nullable();
             $table->timestamps();
         });
     }

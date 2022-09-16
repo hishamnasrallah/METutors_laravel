@@ -8,6 +8,27 @@ class TeacherInterviewRequest extends Model
 {
     public function user()
     {
-        return $this->belongsTo('App\User')->select('first_name','last_name','role_name','mobile','email','bio','verified','avatar','cover_img','address','status','created_at')->where('id',$this->user_id);
+          return $this->belongsTo(User::class, 'user_id', 'id');   
     }
+
+    public function userMetas()
+    {
+        return $this->hasMany('App\Models\UserMeta', 'user_id', 'user_id');
+    }
+public function teacherSpecifications()
+    {
+        return $this->hasOne('App\TeachingSpecification', 'user_id', 'user_id');
+    }
+
+    public function teacherQualifications()
+    {
+        return $this->hasOne('App\TeachingQualification', 'user_id', 'user_id');
+    }
+
+ public function spokenLanguages()
+    {
+        return $this->hasMany(SpokenLanguage::class);
+    }
+
+
 }

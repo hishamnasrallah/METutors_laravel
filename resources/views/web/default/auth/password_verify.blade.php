@@ -7,21 +7,17 @@
             <div class="row justify-content-center">
                 <div class="col-md-8">
                     <div class="card">
-                        <div class="card-header">{{ trans('auth.verify_your_email_address') }}</div>
+
                         <div class="card-body">
-                            <div class="alert alert-success" role="alert">
-                                {{ trans('auth.verification_link_has_been_sent_to_your_email') }}
-                            </div>
-                            
-                            copy this link    
-                            
-                            <p><?php echo 'http://localhost:4200/reset-password/'.$token.'/'.$email ?></p>
-                            
-                            <p>OR</p>
-                            
-                            <a href="<?php echo 'http://localhost:4200/reset-password/'.$token.'/'.$email ?>">{{ trans('auth.click_here') }}</a>
-                            
-                           <!--<a href="http://localhost:4200/reset-password">{{ trans('auth.click_here') }}</a>-->
+                            <p>Hi <b>{{ $user->first_name }} {{ $user->last_name }},</b> </p>
+                            <p>Looks like you've forgotten your password! Click the following link to get a new one
+                                @php echo 'https://metutors.com/reset-password/' . $token . '/' . $email; @endphp</p>
+
+
+                            <p>If you didn't request a new password, you can ignore this email.</p>
+                            <p>Regards,</p>
+                            <p>Technical Support Team</p>
+
                         </div>
                     </div>
                 </div>

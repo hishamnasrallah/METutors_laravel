@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\UserRegisterEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\UserRegisterJob;
 use App\Models\Role;
 use App\Providers\RouteServiceProvider;
 use App\User;
@@ -45,21 +47,7 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
-    public function showRegistrationForm()
-    {
-        $seoSettings = getSeoMetas('register');
-        $pageTitle = !empty($seoSettings['title']) ? $seoSettings['title'] : trans('site.register_page_title');
-        $pageDescription = !empty($seoSettings['description']) ? $seoSettings['description'] : trans('site.register_page_title');
-        $pageRobot = getPageRobot('register');
 
-        $data = [
-            'pageTitle' => $pageTitle,
-            'pageDescription' => $pageDescription,
-            'pageRobot' => $pageRobot,
-        ];
-
-        return view(getTemplate() . '.auth.register', $data);
-    }
 
     /**
      * Get a validator for an incoming registration request.
@@ -94,8 +82,8 @@ class RegisterController extends Controller
     protected function create(array $data)
     {
         $username = $this->username();
-        
-        $roles=Role::find($data['role']);
+
+        $roles = Role::find($data['role']);
 
         if ($username == 'mobile') {
             $data[$username] = ltrim($data['country_code'], '+') . ltrim($data[$username], '0');
@@ -110,8 +98,8 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'status' => User::$pending,
             'password' => Hash::make($data['password']),
-            'mobile' => $data['country_code'].''.$data['mobile'],
-           
+            'mobile' => $data['country_code'] . '' . $data['mobile'],
+
         ]);
 
         return $user;
@@ -166,14 +154,14 @@ class RegisterController extends Controller
                 : redirect($this->redirectPath());
         }
     }
-    
-    
+
+
     public function registeration(Request $request)
     {
-        
-       
-         $rules = [
-            
+
+
+        $rules = [
+
             'first_name' => 'required|min:3|max:100',
             'last_name' => 'required|min:3|max:100',
             'country_code' => 'required',
@@ -183,44 +171,40 @@ class RegisterController extends Controller
             'password' => 'required|min:8|max:100',
             'confirm_password' => 'required|same:password',
         ];
-        
-         if ($this->username() == 'email') {
+
+        if ($this->username() == 'email') {
             $rules['email'] = 'required|string|email|max:255|unique:users';
         }
-        
-        $validator=Validator::make($request->all(),$rules);
 
-       
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-    
-        if($request->role == 2 || $request->role > 3)
-        {
-           
-           
-            
+
+        if ($request->role == 2 || $request->role > 3) {
+
+
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'message' => "invalid role",
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-    
-    
-        $user = $this->create($request->all());
 
-        event(new Registered($user));
+
+        $user = $this->create($request->all());
 
         $username = $this->username();
 
@@ -233,14 +217,41 @@ class RegisterController extends Controller
         $checkConfirmed = $verificationController->checkConfirmed($user, $username, $value);
 
         if ($checkConfirmed['status'] == 'send') {
-            
-             return response()->json([
-                        'status'=>true,
-                        'message'=>'User Registered Successfully And Verification Code Has Been Sent !!' ,
-                        
-                        
-                        ]);
-            
+
+            if ($user->role_name == 'teacher') {
+                $user_count = User::where('role_name', 'teacher')->count();
+
+                $user_count = 100000 + $user_count;
+                $id_number = 'T' . $user_count;
+            }
+            if ($user->role_name == 'student') {
+                $user_count = User::where('role_name', 'student')->count();
+                
+                $user_count = 100000 + $user_count;
+                $id_number = 'S' . $user_count;
+            }
+
+            $update_user = User::find($user->id);
+            $update_user->id_number = $id_number;
+            if ($request->has('return_url')) {
+                $update_user->redirect_url = $request->return_url;
+            }
+            $update_user->update();
+
+            $admin = User::where('role_name', 'admin')->first();
+
+            // Emails and notifications for registeration
+            // event(new UserRegisterEvent($user->id, $user, "Registerd Successfully"));
+            // event(new UserRegisterEvent($admin->id, $admin, "A New User Registerd Successfully"));
+            // dispatch(new UserRegisterJob($user->id, $user, "Registerd Successfully"));
+            // dispatch(new UserRegisterJob($admin->id, $admin, "A New User Registerd Successfully"));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'User Registered Successfully And Verification Code Has Been Sent !!',
+                'return_url' => $request->return_url ?? false,
+            ]);
+
             return redirect('/verification');
         } elseif ($checkConfirmed['status'] == 'verified') {
             $this->guard()->login($user);
@@ -252,8 +263,6 @@ class RegisterController extends Controller
             if ($response = $this->registered($request, $user)) {
                 return $response;
             }
-
-            return 'hello';
         }
     }
 }

@@ -7,6 +7,7 @@
     "require": {
         "php": "^7.3|^8.0",
         "barryvdh/laravel-cors": "^2.0",
+        "devinweb/laravel-hyperpay": "^1.1",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.75",
@@ -14,9 +15,11 @@
         "laravel/socialite": "^5.5",
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.4",
+        "pragmarx/countries": "^0.8.2",
         "pusher/pusher-php-server": "^7.0",
-        "twilio/sdk": "^6.33",
-        "tymon/jwt-auth": "dev-develop"
+        "stevebauman/location": "^6.4",
+        "twilio/sdk": "^6.35",
+        "tymon/jwt-auth": "^1.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",

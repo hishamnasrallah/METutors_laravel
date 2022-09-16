@@ -2,10 +2,18 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Events\PrefrenceSettingEvent;
+use App\Events\ProfileSettingEvent;
+use App\Events\SecuritySettingEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\PrefrenceSettingJob;
+use App\Jobs\ProfileSettingJob;
+use App\Jobs\SecuritySettingJob;
+use App\Models\AcademicClass;
 use App\Models\Badge;
 use App\Models\BecomeInstructor;
 use App\Models\Category;
+use App\Models\Course;
 use App\Models\Newsletter;
 use App\Models\ReserveMeeting;
 use App\Models\Sale;
@@ -15,10 +23,17 @@ use App\User;
 use App\Models\Role;
 use App\Models\Follow;
 use App\Models\Meeting;
+use App\Models\UserFeedback;
+use App\Models\UserPrefrence;
+use App\TeacherAvailability;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+
+use function PHPUnit\Framework\isEmpty;
 
 class UserController extends Controller
 {
@@ -26,139 +41,330 @@ class UserController extends Controller
     {
         return view(getTemplate() . '.panel.dashboard');
     }
-    
-    
+
+
     /********************* Filter Teacher ***************************/
-	
-	public function filteredTeacher(Request $request) {
 
-		$language_id = $request->language_id;
+    public function filteredTeacher(Request $request)
+    {
 
-// 		$teacher_availability_id = $request->teacher_availability_id;
+        // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+        //     ->where('role_name', 'teacher')
+        //     ->where('verified', 1)
+        //     ->where('status', 'active')
+        //     ->get();
 
-		$teacher_program_id = $request->teacher_program_id;
+        // return response()->json([
+        //     'success' => true,
+        //     'filtered_teacher' => $filtered_teacher,
+        // ]);
 
-		$teacher_qualification_id = $request->teacher_qualification_id;
 
-		$teacher_specification_id = $request->teacher_specification_id;
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+            ->where('role_name', 'teacher')
+            ->where('verified', 1)
+            ->where('status', 'active')->where('id', '!=', 1212)
+            ->get();
 
-		$teacher_subject_id = $request->teacher_subject_id;
 
-		$filtered_teacher = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('role_name','!=','admin' )->where('role_name','!=','student' )
-        
-
-        ->where('role_name', 'teacher')->where('verified', 0)->get();
+        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+            ->where('role_name', 'teacher')
+            ->where('verified', 1)
+            ->where('status', 'active')->where('id', 1212)
+            ->get();
 
         return response()->json([
             'success' => true,
-            'filtered_teacher' => $filtered_teacher,
+            'available_teachers' => $filtered_teacher,
+            'suggested_teachers' => $suggestedTeachers,
         ]);
-	}
 
-	/****End*****/ 
-    
-    
+
+        $rules = [
+            'classes' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        // return $request->classes;
+        $start_date = Carbon::parse($request->start_date);
+        $end_date = Carbon::parse($request->end_date);
+        $filtered_teacher = User::whereHas('spokenLanguages', function ($q) use ($request) {
+            $q->where('language', $request->language_id);
+        })
+            ->whereHas('teacherProgram', function ($q) use ($request) {
+                $q->where('program_id', $request->program_id);
+            })
+            ->whereHas('teacherSubject', function ($q) use ($request) {
+                $q->where(['subject_id' => $request->subject_id, 'field_id' => $request->field_id]);
+            })
+            ->whereHas('teacher_specification', function ($q) use ($request, $start_date, $end_date) {
+                $q->where('availability_end_date', '<=',  $end_date);
+                // (function ($qe) use ($start_date, $end_date) {
+                //     $qe->whereBetween('availability_start_date', [$start_date, $end_date])->orWhereBetween('availability_end_date', [$start_date, $end_date]);
+                // });
+            })
+            ->where('role_name', 'teacher')
+            ->get();
+
+
+
+        $requestedClasses = json_decode(json_encode($request->classes));
+        $weekdays = [];
+        foreach ($requestedClasses as $requestedClass) {
+            array_push($weekdays, $requestedClass->day);
+        }
+
+        $uniqueWeekdays = array_unique($weekdays);
+
+        //************ Checking Teacher Availabilites ************
+        $available_teachers = [];
+        $classCounter = 0;
+        foreach ($requestedClasses as $requestedClass) {
+            $classCounter++;
+            foreach ($filtered_teacher as $teacher) {
+                $availabilities = TeacherAvailability::whereIn('day', $uniqueWeekdays)->where('user_id', $teacher->id)->get();
+                // if (isEmpty($availabilities)) {
+                //     array_push($available_teachers, $teacher);
+                // } else {
+                $counter = 0;
+                foreach ($availabilities as $availability) {
+
+                    $request_from = Carbon::parse($requestedClass->start_time)->format('G:i');
+                    $db_from = Carbon::parse($availability->time_from)->format('G:i');
+
+                    $request_to = Carbon::parse($requestedClass->end_time)->format('G:i');
+                    $db_to = Carbon::parse($availability->time_to)->format('G:i');
+                    if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
+                        $counter++;
+                        if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
+                            // echo $classCounter;
+                            array_push($available_teachers, $availability->user_id);
+                            break;
+                        }
+                    }
+                }
+                // }
+            }
+        }
+
+        $available_teachers = array_unique($available_teachers);
+
+        //************ Checking If Teacher is ALREADY Booked ***********
+        $final_teachers = [];
+        foreach ($available_teachers as $available_teacher) {
+            $flag = 0;
+            $nullCounter = 0;
+            foreach ($requestedClasses as $requestedClass) {
+
+                $start_time = Carbon::parse($requestedClass->start_time)->format('G:i');
+                $end_time = Carbon::parse($requestedClass->end_time)->format('G:i');
+                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->date)->get();
+                //************ If teacher has no Classes In classes Table ***********
+                if (count($teacherClasses) == 0) {
+                    $nullCounter++;
+                    if ($nullCounter == count($requestedClasses)) {
+                        array_push($final_teachers, $available_teacher);
+                    }
+                } else {
+                    //************ If teacher has Classes In classes Table ***********
+                    $counter1 = 0;
+                    foreach ($teacherClasses as $class) {
+
+                        $classStartTime = Carbon::parse($class->start_time)->format('G:i');
+                        $classEndTime = Carbon::parse($class->end_time)->format('G:i');
+
+                        if (($start_time >= $classStartTime) && ($start_time <= $classEndTime) || ($end_time >= $classStartTime) && ($end_time <= $classEndTime)) {
+                            //    echo 'condition';
+                        } else {
+                            $counter1++;
+
+                            if ($counter1 >= count($teacherClasses)) {
+                                $flag++;
+                                // echo $flag;
+                                if ($flag == count($requestedClasses)) {
+                                    array_push($final_teachers, $class->teacher_id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        $selectedTeachers = User::whereIn('id', $final_teachers)->get();
+        $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+        return response()->json([
+            'success' => true,
+            'available_teachers' => $selectedTeachers,
+            'suggested_teachers' => $suggestedTeachers,
+        ]);
+    }
+
+    /****End*****/
+
+
 
     public function student_profile($id)
     {
-        $user = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('id', $id)->where('role_name','!=','admin' )->where('role_name','student' )
+        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('id', $id)->where('role_name', '!=', 'admin')->where('role_name', 'student')
             ->first();
-           
-            $user->joined_date=$user->created_at;
-            
-            //  $user->userMetas;
+
+        $user->joined_date = $user->created_at;
+
+        //  $user->userMetas;
 
         if (!$user) {
-           
+
             return response()->json([
-            'status' => false,
-            'message' => "User Not found",
-            ],204);
+                'status' => false,
+                'message' => "User Not found",
+            ], 204);
         }
 
-        
-          return response()->json([
-              'status' => true,
-              'user' => $user,
-            ]);
 
-
+        return response()->json([
+            'status' => true,
+            'user' => $user,
+        ]);
     }
 
 
-    public function teacher_profile($id)
+    public function teacher_profile(Request $request, $id)
     {
-       
-         $user = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('id', $id)->where('role_name','!=','admin' )->where('role_name','!=','student' )->where('role_name','teacher' )
-            ->first();
-            
-            $user->joined_date=$user->created_at;
 
-        if (!$user) {
-           
-            return response()->json([
-            'status' => false,
-            'message' => "User Not found",
-            ],204);
+        $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
+            ->withCount('teacher_students')
+            ->withCount('teacher_course')
+            ->withCount('teacher_feedbacks')
+            ->find($id);
+
+        $average_rating = 5;
+        //teacher rating
+        $teacher = User::findOrFail($id);
+        $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+        $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+        if ($total_reviews > 0) {
+            $average_rating = $rating_sum / $total_reviews;
         }
-        
-           $user->userMetas;
-           $user->teacherSpecifications;
-           $user->teacherQualifications;
 
-        
-          return response()->json([
-              'status' => true,
-              'user' => $user,
-            ]);
+        $user->average_rating = $average_rating;
+
+        // students rating
+        foreach ($user['teacher_feedbacks'] as $feedback) {
+            #for student
+            $student_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id', $feedback->sender_id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $feedback->sender_id)->count();
+            if ($total_reviews > 0) {
+                $student_rating = $rating_sum / $total_reviews;
+            }
+            $feedback->average_rating = $student_rating;
+        }
 
 
-       
-       
-       
+
+        $feedback_id_1 = 5;
+        $feedback_id_2 = 5;
+        $feedback_id_3 = 5;
+        $feedback_id_4 = 5;
+
+        $feedback_rating = [];
+
+        $user_feedbacks = $user['teacher_feedbacks'];
+        $feedback_rating_1 = $user_feedbacks->where('feedback_id', 1)->sum('rating');
+        $feedback_count_1 = $user_feedbacks->where('feedback_id', 1)->count();
+        if ($feedback_count_1) {
+            $feedback_id_1 = $feedback_rating_1 / $feedback_count_1;
+        }
+
+        $feedback_rating_2 = $user_feedbacks->where('feedback_id', 2)->sum('rating');
+        $feedback_count_2 = $user_feedbacks->where('feedback_id', 2)->count();
+        if ($feedback_count_2) {
+            $feedback_id_2 = $feedback_rating_2 / $feedback_count_2;
+        }
+        $feedback_rating_3 = $user_feedbacks->where('feedback_id', 3)->sum('rating');
+        $feedback_count_3 = $user_feedbacks->where('feedback_id', 3)->count();
+        if ($feedback_count_3) {
+            $feedback_id_3 = $feedback_rating_3 / $feedback_count_3;
+        }
+
+        $feedback_rating_4 = $user_feedbacks->where('feedback_id', 4)->sum('rating');
+        $feedback_count_4 = $user_feedbacks->where('feedback_id', 4)->count();
+        if ($feedback_count_3) {
+            $feedback_id_4 = $feedback_rating_4 / $feedback_count_4;
+        }
+
+        $user->feedback_rating = [
+            'Expert in the subject' => $feedback_id_1,
+            'Present Complex Topics clearly and easily' => $feedback_id_2,
+            'Skillfull in engaging students' => $feedback_id_3,
+            'Always on time' => $feedback_id_4,
+        ];
+
+
+
+
+        return response()->json([
+            'status' => true,
+            'user' => $user,
+        ]);
     }
 
 
     public function teacher_public_profile(Request $request)
     {
-       
-          
+
+
         $rules = [
             'id' => 'required',
         ];
 
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
-            
+            ], 400);
         }
-       
-       
-       
-         $user = User::select('id','first_name','last_name','role_name','date_of_birth','mobile', 'email',  'verified', 'avatar','bio','status', 'created_at', 'updated_at')->where('role_name','!=','admin' )->where('role_name','!=','student' )->where('role_name','teacher' )->with('spokenLanguages','teacherAvailability','teacherProgram','teacherSpecifications','teacherSubject','teacherQualifications','teacherSubject.subject','teacherSubject.field')->where('id', $request->id)->first();
-           
-        if (!$user) {
-           
-            return response()->json([
-            'status' => false,
-            'message' => "User Not found",
-            ],204);
-        }
-        
-          return response()->json([
-              'status' => true,
-              'user' => $user,
-            ]);
 
+
+
+        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', '!=', 'admin')->where('role_name', '!=', 'student')->where('role_name', 'teacher')->with('spokenLanguages', 'teacherAvailability', 'teacherProgram', 'teacherSpecifications', 'teacherSubject', 'teacherQualifications', 'teacherSubject.subject', 'teacherSubject.field')->where('id', $request->id)->first();
+
+        if (!$user) {
+
+            return response()->json([
+                'status' => false,
+                'message' => "User Not found",
+            ], 204);
+        }
+
+        return response()->json([
+            'status' => true,
+            'user' => $user,
+        ]);
     }
 
 
@@ -167,25 +373,23 @@ class UserController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $user = User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar', 'created_at', 'updated_at')->where('id', $token_user->id)->where('role_name', $token_user->role_name)
+        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'mobile', 'email',  'verified', 'avatar', 'created_at', 'updated_at')->where('id', $token_user->id)->where('role_name', $token_user->role_name)
             ->first();
 
         if (!$user) {
-           
+
             return response()->json([
-            'status' => false,
-            'message' => "User Not found",
-            ],204);
+                'status' => false,
+                'message' => "User Not found",
+            ], 204);
         }
 
-       
-        
-          return response()->json([
-              'status' => true,
-              'user' => $user,
-            ]);
 
 
+        return response()->json([
+            'status' => true,
+            'user' => $user,
+        ]);
     }
 
     public function followToggle($id)
@@ -473,7 +677,7 @@ class UserController extends Controller
                 ->whereNull('refund_at');
         })
             ->whereNotNull('sales.seller_id')
-            ->select('users.*','sales.seller_id', DB::raw('count(sales.seller_id) as counts'))
+            ->select('users.*', 'sales.seller_id', DB::raw('count(sales.seller_id) as counts'))
             ->groupBy('sales.seller_id')
             ->orderBy('counts', 'desc');
 
@@ -654,5 +858,576 @@ class UserController extends Controller
                 'message' => trans('site.user_disabled_public_message')
             ]);
         }
+    }
+
+    //*********/ Vistor: Search Teacher *********
+    public function search_teacher(Request $request, $name)
+    {
+        $result = User::select('id', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'created_at')
+            ->with('teacher_subjects', 'teacher_subjects.subject.country', 'feedbacks')
+            // ->whereHas('feedbacks',function($query){
+            //     $query->
+            // })
+            ->where('role_name', '=', 'teacher')
+            ->where('first_name', 'LIKE', "%$name%")
+            ->orWhere('last_name', 'LIKE', "%$name%")
+            ->get();
+
+
+        return response()->json([
+            'success' => true,
+            'teachers' => $result,
+        ]);
+    }
+
+    public function security_setting(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $rules = [
+            'current_password' => 'required',
+            'new_password' => 'required|confirmed',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+            return response()->json([
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+
+
+        $user = User::find($token_user->id);
+
+        $check = Hash::check($request->current_password, $user->password);
+
+        if ($check) {
+            $user->password = Hash::make($request->new_password);
+            $user->update();
+
+            // //Email and notifiaction
+            // event(new SecuritySettingEvent($user->id, $user, "Security settings updated successfully!"));
+            // dispatch(new SecuritySettingJob($user->id, $user, "Security settings updated successfully!"));
+
+            return response()->json([
+                'status' => true,
+                'message' => "Security Settings updated",
+                'user' => $user,
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => "Current Password did't matched!",
+            ]);
+        }
+    }
+
+    public function user_preference(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $rules = [
+            'preferred_language' => 'required|integer',
+            // 'upload_documents' => 'required|string',
+            // 'teacher_language' => 'required|integer',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+        $count = UserPrefrence::where('user_id', $token_user->id)->count();
+        if ($count == 0) {
+            $prefrence = new UserPrefrence();
+        } else {
+
+            $prefrence = UserPrefrence::where('user_id', $token_user->id)->first();
+        }
+
+        $prefrence->user_id = $token_user->id;
+        $prefrence->preferred_language = $request->preferred_language;
+        $prefrence->preferred_gender = $request->preferred_gender;
+        $prefrence->role_name = $token_user->role_name;
+        if ($request->teacher_language) {
+            $prefrence->teacher_language = $request->teacher_language;
+        } else {
+            $prefrence->teacher_language = null;
+        }
+
+        $prefrence->save();
+
+        //Email and notifiaction
+        event(new PrefrenceSettingEvent($token_user->id,  $token_user, "Prefrences updated successfully!"));
+        dispatch(new PrefrenceSettingJob($token_user->id, $token_user, "Prefrences updated successfully!"));
+
+        $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language')
+            ->where('user_id', $token_user->id)
+            ->first();
+
+        return response()->json([
+            'status' => true,
+            'message' => "User Prefrences Added Successfully",
+            'prefrences' => $prefrences,
+        ]);
+    }
+
+
+    public function get_user_preference(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+
+        $pref = UserPrefrence::where('user_id', $token_user->id)->first();
+
+        return response()->json([
+            'status' => true,
+            'message' => "User Prefrences",
+            'preference' => $pref,
+        ]);
+    }
+
+    //************* Progress of all Courses *************
+    public function coursesProgress(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $student = User::find($token_user->id);
+        $courses = Course::with('classes')->where('student_id', $student->id)->get();
+        $lastarray = [];
+
+        foreach ($courses as $course) {
+            $percentage = 0;
+            $classes = $course['classes'];
+
+            $completed_classes = 0;
+            $remaining_classes = 0;
+
+            foreach ($classes as $class) {
+                if ($class->status == 'completed') {
+                    $completed_classes = $completed_classes + 1;
+                }
+                if ($class->status != 'completed') {
+                    $remaining_classes = $remaining_classes + 1;
+                }
+            }
+            $total_classes = count($course['classes']);
+            if ($total_classes > 0) {
+                $percentage = ($completed_classes / $total_classes) * 100;
+            }
+
+            array_push(
+                $lastarray,
+                [
+                    'course' => $course,
+                    'percentage' => $percentage
+                ]
+            );
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Progress of all courses of Student',
+            'courses_progress' => $lastarray
+        ]);
+    }
+
+    //************* Progress of Specific Course *************
+    public function courseProgress($course_id)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $student = User::find($token_user->id);
+        $course = Course::with('classes')->where('student_id', $student->id)->where('id', $course_id)->first();
+
+        $percentage = 0;
+        $classes = $course['classes'];
+
+        $completed_classes = 0;
+        $remaining_classes = 0;
+
+        $total_classes = count($course['classes']);
+
+        foreach ($classes as $class) {
+            if ($class->status == 'completed') {
+                $completed_classes = $completed_classes + 1;
+            }
+            if ($class->status != 'completed') {
+                $remaining_classes = $remaining_classes + 1;
+            }
+        }
+
+        if ($total_classes > 0) {
+            $percentage = ($completed_classes / $total_classes) * 100;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Course Progress',
+            'course' => $course,
+            'percentage' => $percentage
+        ]);
+    }
+
+    public function filterTeacher(Request $request)
+    {
+
+        $weekdays = json_decode($request->weekdays);
+        $start_time = $request->start_time;
+        $end_time = $request->end_time;
+        // $start_date = $request->start_date;
+        // $end_date = $request->end_date;
+
+        $teachers = User::where('role_name', 'teacher')->get();
+        $teachers_before = User::select('id')->where('role_name', 'teacher')->get();
+        $available_teachers = [];
+
+        foreach ($teachers as $teacher) {
+            $availabilities = TeacherAvailability::whereIn('day', $weekdays)->where('user_id', $teacher->id)->get();
+            $counter = 0;
+            foreach ($availabilities as $availability) {
+
+                $request_from = Carbon::parse($request->start_time)->format('G:i');
+                $db_from = Carbon::parse($availability->time_from)->format('G:i');
+
+                $request_to = Carbon::parse($request->end_time)->format('G:i');
+                $db_to = Carbon::parse($availability->time_to)->format('G:i');
+                if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
+                    $counter++;
+                    if ($counter == count($weekdays)) {
+                        array_push($available_teachers, $availability->user_id);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        $after_teachers = array_unique($available_teachers);
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'all teachers',
+            'teachers_before' => $teachers_before,
+            'teachers_after' => $after_teachers,
+        ]);
+    }
+
+    public function avail_teachers(Request $request)
+    {
+        $rules = [
+            'course_id' =>  'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $rules = [
+            'course_id' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $course = Course::findOrFail($request->course_id);
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        // return $request->language_id;
+
+
+
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')->where('role_name', 'teacher')->where('verified', 1)->where('status', 'active')->get();
+
+        return response()->json([
+            'success' => true,
+            'filtered_teacher' => $filtered_teacher,
+        ]);
+
+
+
+        $filtered_teacher = User::whereHas('spokenLanguages', function ($q) use ($course) {
+            $q->where('language', $course->language_id);
+        })
+            ->whereHas('teacherProgram', function ($q) use ($course) {
+                $q->where('program_id', $course->program_id);
+            })
+            ->whereHas('teacherSubject', function ($q) use ($course) {
+                $q->where(['subject_id' => $course->subject_id, 'field_id' => $course->field_of_study]);
+            })
+            ->where('role_name', 'teacher')
+            ->get();
+
+        $requestedClasses = $course->classes->where('status', 'canceled');
+        $weekdays = [];
+        foreach ($requestedClasses as $requestedClass) {
+            array_push($weekdays, $requestedClass->day);
+        }
+
+        $uniqueWeekdays = array_unique($weekdays);
+
+        //************ Checking Teacher Availabilites ************
+        $available_teachers = [];
+        $classCounter = 0;
+        foreach ($requestedClasses as $requestedClass) {
+            $classCounter++;
+            foreach ($filtered_teacher as $teacher) {
+                $availabilities = TeacherAvailability::whereIn('day', $uniqueWeekdays)->where('user_id', $teacher->id)->get();
+                // if (isEmpty($availabilities)) {
+                //     array_push($available_teachers, $teacher);
+                // } else {
+                $counter = 0;
+                foreach ($availabilities as $availability) {
+
+                    $request_from = Carbon::parse($requestedClass->start_time)->format('G:i');
+                    $db_from = Carbon::parse($availability->time_from)->format('G:i');
+
+                    $request_to = Carbon::parse($requestedClass->end_time)->format('G:i');
+                    $db_to = Carbon::parse($availability->time_to)->format('G:i');
+
+                    if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
+                        $counter++;
+                        // echo $counter;
+                        if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
+
+                            array_push($available_teachers, $availability->user_id);
+                            break;
+                        }
+                    }
+                }
+                // }
+            }
+        }
+
+        $available_teachers = array_unique($available_teachers);
+
+        //************ Checking If Teacher is ALREADY Booked ***********
+        $final_teachers = [];
+        foreach ($available_teachers as $available_teacher) {
+            $flag = 0;
+            $nullCounter = 0;
+            foreach ($requestedClasses as $requestedClass) {
+
+                $start_time = Carbon::parse($requestedClass->start_time)->format('G:i');
+                $end_time = Carbon::parse($requestedClass->end_time)->format('G:i');
+                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->date)->get();
+                //************ If teacher has no Classes In classes Table ***********
+                if (count($teacherClasses) == 0) {
+                    $nullCounter++;
+                    if ($nullCounter == count($requestedClasses)) {
+                        array_push($final_teachers, $available_teacher);
+                    }
+                } else {
+                    //************ If teacher has Classes In Academic classes Table ***********
+                    $counter1 = 0;
+                    foreach ($teacherClasses as $class) {
+
+                        $classStartTime = Carbon::parse($class->start_time)->format('G:i');
+                        $classEndTime = Carbon::parse($class->end_time)->format('G:i');
+
+                        if (($start_time >= $classStartTime) && ($start_time <= $classEndTime) || ($end_time >= $classStartTime) && ($end_time <= $classEndTime)) {
+                            //    echo 'condition';
+                        } else {
+                            $counter1++;
+
+                            if ($counter1 >= count($teacherClasses)) {
+                                $flag++;
+                                // echo $flag;
+                                if ($flag == count($requestedClasses)) {
+                                    array_push($final_teachers, $class->teacher_id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $selectedTeachers = User::whereIn('id', $final_teachers)->get();
+        return response()->json([
+            'success' => true,
+            'filtered_teacher' => $selectedTeachers,
+        ]);
+    }
+
+    public function availableTeachers(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+        // return $request->language_id;
+        $filtered_teacher = User::whereHas('spokenLanguages', function ($q) use ($request) {
+            $q->where('language', $request->language_id);
+        })
+            ->whereHas('teacherProgram', function ($q) use ($request) {
+                $q->where('program_id', $request->program_id);
+            })
+            ->whereHas('teacherSubject', function ($q) use ($request) {
+                $q->where(['subject_id' => $request->subject_id, 'field_id' => $request->field_id]);
+            })
+            ->where('role_name', 'teacher')
+            ->get();
+
+        $requestedClasses = json_decode($request->classes);
+        $weekdays = [];
+        foreach ($requestedClasses as $requestedClass) {
+            array_push($weekdays, $requestedClass->day);
+        }
+
+        $uniqueWeekdays = array_unique($weekdays);
+
+        //************ Checking Teacher Availabilites ************
+        $available_teachers = [];
+        $classCounter = 0;
+        foreach ($requestedClasses as $requestedClass) {
+            $classCounter++;
+            foreach ($filtered_teacher as $teacher) {
+                $availabilities = TeacherAvailability::whereIn('day', $uniqueWeekdays)->where('user_id', $teacher->id)->get();
+                // if (isEmpty($availabilities)) {
+                //     array_push($available_teachers, $teacher);
+                // } else {
+                $counter = 0;
+                foreach ($availabilities as $availability) {
+
+                    $request_from = Carbon::parse($requestedClass->start_time)->format('G:i');
+                    $db_from = Carbon::parse($availability->time_from)->format('G:i');
+
+                    $request_to = Carbon::parse($requestedClass->end_time)->format('G:i');
+                    $db_to = Carbon::parse($availability->time_to)->format('G:i');
+                    if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
+                        $counter++;
+                        if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
+                            // echo $classCounter;
+                            array_push($available_teachers, $availability->user_id);
+                            break;
+                        }
+                    }
+                }
+                // }
+            }
+        }
+
+        $available_teachers = array_unique($available_teachers);
+
+        //************ Checking If Teacher is ALREADY Booked ***********
+        $final_teachers = [];
+        foreach ($available_teachers as $available_teacher) {
+            $flag = 0;
+            $nullCounter = 0;
+            foreach ($requestedClasses as $requestedClass) {
+
+                $start_time = Carbon::parse($requestedClass->start_time)->format('G:i');
+                $end_time = Carbon::parse($requestedClass->end_time)->format('G:i');
+                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->date)->get();
+                //************ If teacher has no Classes In classes Table ***********
+                if (count($teacherClasses) == 0) {
+                    $nullCounter++;
+                    if ($nullCounter == count($requestedClasses)) {
+                        array_push($final_teachers, $available_teacher);
+                    }
+                } else {
+                    //************ If teacher has Classes In classes Table ***********
+                    $counter1 = 0;
+                    foreach ($teacherClasses as $class) {
+
+                        $classStartTime = Carbon::parse($class->start_time)->format('G:i');
+                        $classEndTime = Carbon::parse($class->end_time)->format('G:i');
+
+                        if (($start_time >= $classStartTime) && ($start_time <= $classEndTime) || ($end_time >= $classStartTime) && ($end_time <= $classEndTime)) {
+                            //    echo 'condition';
+                        } else {
+                            $counter1++;
+
+                            if ($counter1 >= count($teacherClasses)) {
+                                $flag++;
+                                // echo $flag;
+                                if ($flag == count($requestedClasses)) {
+                                    array_push($final_teachers, $class->teacher_id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        $selectedTeachers = User::whereIn('id', $final_teachers)->get();
+        // $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name','teacher')->get();
+        return response()->json([
+            'success' => true,
+            'available_teachers' => $selectedTeachers,
+            // 'suggested_teachers' => $suggestedTeachers,
+        ]);
+    }
+
+    public function account_setting(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = User::find($token_user->id);
+        $user->update($request->all());
+
+
+        //Email and notifiaction
+        event(new ProfileSettingEvent($user->id, $user, "Security settings updated successfully!"));
+        dispatch(new ProfileSettingJob($user->id, $user, "Security settings updated successfully!"));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Account setting updated Successfully!',
+            'user' => $user,
+        ]);
+    }
+    public function student_get_profile(Request $request)
+    {
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $user = User::find($token_user->id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'student profile',
+            'profile' => $user,
+        ]);
     }
 }

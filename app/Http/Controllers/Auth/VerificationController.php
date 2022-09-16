@@ -43,94 +43,93 @@ class VerificationController extends Controller
 
     public function resendCode(Request $request)
     {
-        
-        
-        
-         $rules = [
+
+
+
+        $rules = [
             'email' => 'required|string|email',
-            
+
         ];
 
-        
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-    
-        
-        
+
+
+
         $verificationId = $request->email;
-        
+
         // return $verificationId;
 
-   
-            $verification = Verification::where('email', $verificationId)
-                ->whereNull('verified_at')
-                ->where('expired_at', '>', time())
-                ->first();
-                
-                
-            if (!empty($verification)) {
-                if (!empty($verification->mobile)) {
-                    
-                    // return 'mobile';
-                    
-                    $verification->sendSMSCode();
-                } else {
-                    
-                    // return 'email';
-                    
-                    $verification->sendEmailCode();
-                }
-                
-                return response()->json([
-                        'status'=>true,
-                        'message'=>'Verification Code Has Been Sent !!' ,
-                        
-                        
-                        ]);
 
-                return redirect('/verification');
-            }else{
-                $value=$verificationId;
-                $username='email';
-                
-                   $data = [];
-                 $time = time();
-                
-                 $data['email'] = $verificationId;
-                $data['code'] = $this->getNewCode();
-                $data['user_id'] = !empty($user) ? $user->id : (auth()->check() ? auth()->id() : null);
-                $data['created_at'] = $time;
-                $data['expired_at'] = $time + Verification::EXPIRE_TIME;
-            
+        $verification = Verification::where('email', $verificationId)
+            ->whereNull('verified_at')
+            ->where('expired_at', '>', time())
+            ->first();
 
-            $data['verified_at'] = null;
 
-            $verification = Verification::updateOrCreate([$username => $value], $data);
+        // if (!empty($verification)) {
+        //     if (!empty($verification->mobile)) {
 
-             $verification->sendEmailCode();
-             
-              return response()->json([
-                        'status'=>true,
-                        'message'=>'Verification Code Has Been Sent !!' ,
-                        
-                        
-                        ]);
-             
-            }
-      
-        
+        //         // return 'mobile';
+
+        //         $verification->sendSMSCode();
+        //     } else {
+
+        //         // return 'email';
+
+        //         $verification->sendEmailCode();
+        //     }
+
+        //     return response()->json([
+        //             'status'=>true,
+        //             'message'=>'Verification Code Has Been Sent !!' ,
+
+
+        //             ]);
+
+        //     return redirect('/verification');
+        // }else{
+        $value = $verificationId;
+        $username = 'email';
+
+        $data = [];
+        $time = time();
+
+        $data['email'] = $verificationId;
+        $data['code'] = $this->getNewCode();
+        $data['user_id'] = !empty($user) ? $user->id : (auth()->check() ? auth()->id() : null);
+        $data['created_at'] = $time;
+        $data['expired_at'] = $time + Verification::EXPIRE_TIME;
+
+
+        $data['verified_at'] = null;
+
+        $verification = Verification::updateOrCreate([$username => $value], $data);
+
+        $verification->sendEmailCode();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Verification Code Has Been Sent !!',
+
+
+        ]);
+
+        // }
+
+
         return 'hello';
 
         return redirect('/login');
@@ -195,12 +194,7 @@ class VerificationController extends Controller
 
     public function confirmCode(Request $request)
     {
-        
-        
-         
-        
-        
-        
+
         $value = $request->get('username');
         $code = $request->get('code');
         $username = $this->username($value);
@@ -228,30 +222,30 @@ class VerificationController extends Controller
             ],
             'username' => 'required'
         ];
-        
-        
-          $validator=Validator::make($request->all(),$rules);
 
-       
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+
+        $validator = Validator::make($request->all(), $rules);
+
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-        
+
 
 
         $authUser = auth()->check() ? auth()->user() : null;
 
         if (empty($authUser)) {
-            $authUser = User::select('id','first_name','last_name','role_name','mobile', 'email',  'verified', 'avatar')->where($username, $value)
+            $authUser = User::select('id', 'first_name', 'last_name', 'role_name', 'mobile', 'email',  'verified', 'avatar')
+                ->where($username, $value)
                 ->first();
 
             $loginController = new LoginController();
@@ -259,20 +253,34 @@ class VerificationController extends Controller
             if (!empty($authUser)) {
                 if (\Auth::loginUsingId($authUser->id)) {
 
-                     return response()->json([
-                        'status'=>true,
-                        'message'=>'Email verified Successfully!!' ,
-                        // 'user'=> $authUser,
-                        
-                        ]);
+                    $user1 = User::find($authUser->id);
+                    if ($user1->role_name == 'student') {
+                        $user1->status = 'active';
+                    }
+
+                    $user1->verified = 1;
+                    $user1->update();
+
+                    return response()->json([
+                        'status' => true,
+                        'message' => $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
+                        'return_url' => $request->return_url ?? false,
+
+                    ]);
                 }
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'user not found!!',
+
+                ], 404);
             }
 
-              return response()->json([
-                        'status'=>true,
-                        'message'=>'Email verified Successfully!!' ,
-                        
-                        ]);
+            return response()->json([
+                'status' => true,
+                'message' =>  $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
+                'return_url' => $request->return_url ?? false,
+            ]);
         }
     }
 
@@ -293,5 +301,17 @@ class VerificationController extends Controller
     private function getNewCode()
     {
         return rand(10000, 99999);
+    }
+
+
+    public function show()
+    {
+
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Email is not verified yet',
+
+        ], 401);
     }
 }

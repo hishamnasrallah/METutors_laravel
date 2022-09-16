@@ -1,5 +1,9 @@
 <?php
+
 namespace App\Http\Controllers;
+
+use App\Events\TicketResponseEvent;
+use App\Jobs\TicketResponseJob;
 use App\Models\Comment;
 use App\Mailers\AppMailer;
 use Illuminate\Support\Facades\Auth;
@@ -8,7 +12,7 @@ use App\Models\Ticket;
 use DB;
 
 use App\User;
-
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 use Symfony\Component\HttpFoundation\Response;
@@ -34,12 +38,12 @@ class CommentsController extends Controller
             return response()->json([
                 'status' => 'false',
                 'message' => "Ticket is closed you can not add comment on it",
-            ],400);
+            ], 400);
         }
 
-         $token_1 = JWTAuth::getToken();
+        $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
-        
+
         $user = $token_user;
         if ($request->hasFile('file')) {
             $imageName = time() . '.' . $request->file->getClientOriginalExtension();
@@ -54,10 +58,23 @@ class CommentsController extends Controller
             'comment' => $request->comment,
             'file' => $file,
         ]);
+
+        $tick->updated_at = Carbon::now();
+        $tick->update();
+
+        $teacher_message = "Ticket Comment added";
+        $admin_message = "Ticket Comment added";
+        $admin = User::where('role_name', 'admin')->first();
+
+        event(new TicketResponseEvent($user->id, $user, $teacher_message, $comment));
+        event(new TicketResponseEvent($admin->id, $admin, $teacher_message, $comment));
+        dispatch(new TicketResponseJob($user->id, $user, $teacher_message, $comment));
+        dispatch(new TicketResponseJob($admin->id, $admin, $teacher_message, $comment));
+
         return response()->json([
             'message' => 'success',
             'status' => "Reply has been submitted",
         ]);
-        return redirect()->back()->with("status", "Your comment has be submitted.");
+        return redirect()->back()->with("status", "Your comment has been submitted.");
     }
 }

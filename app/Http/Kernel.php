@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http;
+
 use App\Http\Middleware\AdminAuthenticate;
 use App\Http\Middleware\Impersonate;
 use App\Http\Middleware\PanelAuthenticate;
@@ -7,6 +9,7 @@ use App\Http\Middleware\Share;
 use App\Http\Middleware\UserNotAccess;
 use App\Http\Middleware\WebAuthenticate;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+
 class Kernel extends HttpKernel
 {
     /**
@@ -70,6 +73,15 @@ class Kernel extends HttpKernel
         'impersonate' => Impersonate::class,
         'share' => Share::class,
         'cors' => \App\Http\Middleware\Cors::class,
-        'auth.jwt' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class
+        'auth.jwt' => \Tymon\JWTAuth\Http\Middleware\Authenticate::class,
+
+        'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
+        'jwt.auth' => 'Tymon\JWTAuth\Middleware\GetUserFromToken',
+        'jwt.refresh' => 'Tymon\JWTAuth\Middleware\RefreshToken',
+
+        'isAdmin' => \App\Http\Middleware\isAdmin::class,
+        'isTeacher' => \App\Http\Middleware\isTeacher::class,
+        'isStudent' => \App\Http\Middleware\isStudent::class,
+        'verifyEmail' => \App\Http\Middleware\EmailVerification::class,
     ];
 }

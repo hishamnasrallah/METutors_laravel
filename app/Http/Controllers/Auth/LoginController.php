@@ -13,9 +13,13 @@ use Twilio\Rest\Client;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use \App\Mail\SendMailOtp;
+use App\Models\UserMeta;
 use Auth;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use App\Models\Verification;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
 
 class LoginController extends Controller
 {
@@ -49,141 +53,153 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
-  
-    
-    
-    public function request_otp(){
-        
+
+
+
+    public function request_otp()
+    {
+
         return 'request otp';
-        
     }
-    
+
 
     public function logout(Request $request)
     {
-        
-    try {
-      JWTAuth::invalidate(JWTAuth::getToken());
-      return response()->json([
-        'status' => 'success',
-        'msg' => 'You have successfully logged out.'
-      ]);
-    } catch (JWTException $e) {
-        JWTAuth::unsetToken();
-        // something went wrong tries to validate a invalid token
-        return response()->json([
-          'status' => 'error',
-          'msg' => 'Failed to logout, please try again.'
-      ],400);
+
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json([
+                'status' => 'success',
+                'msg' => 'You have successfully logged out.'
+            ]);
+        } catch (JWTException $e) {
+            JWTAuth::unsetToken();
+            // something went wrong tries to validate a invalid token
+            return response()->json([
+                'status' => 'error',
+                'msg' => 'Failed to logout, please try again.'
+            ], 400);
+        }
     }
-        
-    }
-        
+
     public function resendOtp(Request $request)
     {
         // return 'hello';
-        
-         $token_1 = JWTAuth::getToken();
+
+        $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-          $id=$token_user->id;
-          
+        $id = $token_user->id;
+
         //   return $id;
-         
-         $user=User::find($id);
-         
-          if($user->role_name == 'admin'){
-               
-              $new = $user->resendOtp();
-              
-              return $new;
-            
-             }  
-        
-        
-        
+
+        $user = User::find($id);
+
+        if ($user->role_name == 'admin') {
+
+            $new = $user->resendOtp();
+
+            return $new;
+        }
     }
     public function verifyOtp(Request $request)
     {
-          
+
         $rules = [
-            
             'otp' => 'required',
         ];
 
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
         // return 'hello';
-         $id=$token_user->id;
-         
-         $find=UserCode::where('id',$id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(2))->first();
-         
-         
-         if($find != null){
-             
-               $find=UserCode::where('id',$id)->where('code',$request->otp)->where('updated_at', '>=', now()->subMinutes(2))->first();
-               
-               if($find != null){
-                   
-                     return response()->json([
-                
-                'status' => true,
-                'message' => "OTP Verified",
-                ]) ;
-                   
-               }else{
-                   return response()->json([
-                
-                'status' => 'false',
-                'message' => "OTP Expired",
-                ],400) ;
-                   
-               }
-              
-               
-         }else{
-             
-              return response()->json([
-                
-                'status' => 'false',
-                'message' => "Invalid OTP",
-                ],400) ;
-             
-         }
-         
-         return $array=array(
-             'id' => $id,
-             'find' => $find,
-             );
+        $id = $token_user->id;
 
-        
-        
-        
-        
-        
-        
-        
-        
+        // return $request;
+        $find = UserCode::where('id', $id)
+            ->where('code', $request->otp)
+            ->where('updated_at', '>=', Carbon::now()->subMinutes(2))
+            ->first();
+
+
+        if ($find != null) {
+
+            $find = UserCode::where('id', $id)->where('code', $request->otp)->where('updated_at', '>=', Carbon::now()->subMinutes(2))->first();
+
+            if ($find != null) {
+
+                return response()->json([
+                    'status' => true,
+                    'message' => "OTP Verified",
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'false',
+                    'message' => "OTP Expired",
+                ], 400);
+            }
+        } else {
+
+            $find = UserCode::where('id', $id)->where('updated_at', '>=', Carbon::now()->subMinutes(2))->first();
+            if ($find != null) {
+                //Otp Attempts
+                if ($find->otp_attempts >= 3) {
+                    $find->update_at = Carbon::now()->addMinutes(2);
+
+
+                    //*********** Sending Email to Admin  ************\\
+                    $admin = User::where('role_name', 'admin')->first();
+                    $user_email = $admin->email;
+                    $custom_message = "Someone is trying to attept login";
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message);
+
+                    Mail::send('email.admin_otp', $data, function ($message) use ($to_email) {
+                        $message->to($to_email)->subject('Login Alert!');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+                    // //******** Email ends **********//
+
+                    return response()->json([
+                        'status' => false,
+                        'message' => "OTP Expired",
+                    ], 400);
+                } else {
+                    $find->otp_attempts = $find->otp_attempts + 1;
+                }
+
+                $find->update();
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => "Invalid OTP",
+            ], 400);
+        }
+
+        return $array = array(
+            'id' => $id,
+            'find' => $find,
+        );
     }
     public function login(Request $request)
     {
-       
-        
+
+
         $rules = [
             'username' => 'required|max:100',
             'password' => 'required|min:5|max:100',
@@ -192,61 +208,121 @@ class LoginController extends Controller
         if ($this->username() == 'email') {
             $rules['username'] = 'required|string|email|max:100';
         }
-        
-        $validator=Validator::make($request->all(),$rules);
-        
-        if($validator->fails())
-        {
-            $messages=$validator->messages();
-            $errors=$messages->all();
-            
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
             return response()->json([
-                
+
                 'status' => 'false',
                 'errors' => $errors,
-                ],400) ;
+            ], 400);
             // return $this->respondWithError($errors,500);
         }
-    
+
         if ($this->attemptLogin($request)) {
-            
-             $user=User::select('id','first_name','last_name','role_id','role_name','mobile', 'email',  'verified', 'avatar')->where('email',$request->username)->first();
-             
-           $credentials=array();
-        $credentials['email']=$request->username;
-        $credentials['password']=$request->password;
-        
-        $token = JWTAuth::customClaims(['user' => $user ])->attempt($credentials);
-        
-            
-             if($user->role_name == 'admin'){
-               
-              $new = $user->generateOtp($token);
-              
-              return $new;
-            
-             }  
-              if($user->role_name == 'teacher'){
-               
-                 $user=User::select('id','first_name','last_name','role_name','role_id','mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email',$request->username)->first();
-                 
-                 $token = JWTAuth::customClaims(['user' => $user ])->attempt($credentials);
-            
-             }  
-             
-              $token_result=$user->createToken('METutor')->plainTextToken;
-             
+
+            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar', 'redirect_url')->where('email', $request->username)->first();
+
+            $credentials = array();
+            $credentials['email'] = $request->username;
+            $credentials['password'] = $request->password;
+
+            $token = JWTAuth::customClaims(['user' => $user])->attempt($credentials);
+
+
+            if ($user->role_name == 'admin') {
+
+                $new = $user->generateOtp($token);
+
+                return $new;
+            }
+            if ($user->role_name == 'teacher') {
+
+                $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->username)->first();
+
+                $token = JWTAuth::customClaims(['user' => $user])->attempt($credentials);
+            }
+
+            $token_result = $user->createToken('METutor')->plainTextToken;
+
+
+
+
+
+            $username = $this->username();
+
+            $value = $request->get($username);
+
+            $verificationId = $request->username;
+
+            $verifications = Verification::where('email', $verificationId)
+                ->where('verified_at', null)
+                ->first();
+
+            if (!empty($verifications)) {
+
+
+                $value = $verificationId;
+                $username = 'email';
+
+                $data = [];
+                $time = time();
+
+                $data['email'] = $verificationId;
+                $data['code'] = $this->getNewCode();
+                $data['user_id'] = !empty($user) ? $user->id : (auth()->check() ? auth()->id() : null);
+                $data['created_at'] = $time;
+                $data['expired_at'] = $time + Verification::EXPIRE_TIME;
+                $data['verified_at'] = null;
+
+                $verification = Verification::updateOrCreate([$username => $value], $data);
+
+                $verification->sendEmailCode();
+
                 return response()->json([
-                    'status'=>true,
-                    'message'=>'User Logged in Successfully!!' ,
-                    'user'=> $user,
-                    'token'=>$token
-                    ]);
+                    'status' => false,
+                    'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
+                    'role' => $user->role->id,
+                    'verified' => $user->verified,
+                ], 400);
+            }
+
+            //Checking User Meta
+            if ($user->role_name == 'teacher') {
+                $user_meta = UserMeta::where('user_id', $user->id)->first();
+                if ($user_meta == null) {
+                    $user->user_meta = 'false';
+                } else {
+                    $user->user_meta = 'true';
+                }
+            }
+            if ($user->role_name == 'student') {
+
+                $user_meta = User::find($user->id);
+                $redirect_url = $user_meta->redirect_url;
+                if ($user_meta->redirect_url != null) {
+                    $user_meta->redirect_url = null;
+                    $user_meta->update();
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'User Logged in Successfully!!',
+                'user' => $user,
+                'token' => $token,
+                'return_url' => $redirect_url ?? false,
+
+            ]);
         }
-        
-        
-        
-         return response()->json(['status'=>false,'message'=>'Invalid credentials'],401);
+
+
+
+        return response()->json(['status' => false, 'message' => 'Invalid credentials'], 401);
 
         // return $this->sendFailedLoginResponse($request);
     }
@@ -359,5 +435,9 @@ class LoginController extends Controller
         } else {
             return redirect('/panel');
         }
+    }
+    private function getNewCode()
+    {
+        return rand(10000, 99999);
     }
 }

@@ -3,6 +3,7 @@
 namespace App;
 
 use App\UserCode;
+use App\TeacherInterviewRequest;
 use App\Models\Accounting;
 use App\Models\Badge;
 use App\Models\Meeting;
@@ -15,18 +16,23 @@ use App\Models\Follow;
 use App\Models\Sale;
 use App\Models\Section;
 use App\Models\Webinar;
+use App\Models\Ticket;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use \App\Mail\SendMailOtp;
+use App\Models\ClassRoom;
+use App\Models\Course;
 use App\Models\UserFeedback;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Devinweb\LaravelHyperpay\Traits\ManageUserTransactions;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, Notifiable;
+
+    use HasApiTokens, Notifiable, ManageUserTransactions;
 
     static $active = 'active';
     static $pending = 'pending';
@@ -71,6 +77,10 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function teacher_interview_request()
+    {
+        return $this->hasOne('App\TeacherInterviewRequest');
+    }
     public function teacher_qualification()
     {
         return $this->hasOne('App\TeachingQualification');
@@ -114,7 +124,10 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(TeacherSubject::class);
     }
 
-
+    public function country()
+    {
+        return $this->belongsTo('App\Country', 'country', 'id')->select('id', 'name');
+    }
 
 
 
@@ -143,9 +156,9 @@ class User extends Authenticatable implements JWTSubject
 
         $details  = [
             'title' => 'Two Factor authentication for MEtutors',
-            'message' => 'Your one time password for MEtutor',
+            'message' => 'Your one time password for MEtutors',
             'code' => $code,
-            'ignoremessage' => "If you didnt submit this request, please ignore it.",
+            'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
         \Mail::to($this->email)->send(new SendMailOtp($details));
 
@@ -162,14 +175,17 @@ class User extends Authenticatable implements JWTSubject
         $code = rand(1000, 9999);
         UserCode::updateOrCreate(
             ['user_id' => $this->id],
-            ['code' => $code]
+            [
+                'code' => $code,
+                'otp_attempts' => 0
+            ]
         );
 
         $details  = [
             'title' => 'Two Factor authentication for MEtutors',
-            'message' => 'Your one time password for MEtutor',
+            'message' => 'Your one time password for MEtutors',
             'code' => $code,
-            'ignoremessage' => "If you didnt submit this request, please ignore it.",
+            'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
         \Mail::to($this->email)->send(new SendMailOtp($details));
 
@@ -187,14 +203,17 @@ class User extends Authenticatable implements JWTSubject
         $code = rand(1000, 9999);
         UserCode::updateOrCreate(
             ['user_id' => $this->id],
-            ['code' => $code]
+            [
+                'code' => $code,
+                'otp_attempts' => 0
+            ]
         );
 
         $details  = [
             'title' => 'Two Factor authentication for MEtutors',
-            'message' => 'Your one time password for MEtutor',
+            'message' => 'Your one time password for MEtutors',
             'code' => $code,
-            'ignoremessage' => "If you didnt submit this request, please ignore it.",
+            'ignoremessage' => "If you haven't submitted this request, please ignore it.",
         ];
         \Mail::to($this->email)->send(new SendMailOtp($details));
 
@@ -282,39 +301,13 @@ class User extends Authenticatable implements JWTSubject
         return '/users/' . $this->id . '/profile';
     }
 
-    public function getUserGroup()
-    {
-        if (empty($this->user_group)) {
-            if (!empty($this->userGroup) and !empty($this->userGroup->group) and $this->userGroup->group->status == 'active') {
-                $this->user_group = $this->userGroup->group;
-            }
-        }
-
-        return $this->user_group;
-    }
-
-
     public static function generatePassword($password)
     {
         return password_hash($password, PASSWORD_BCRYPT);
     }
 
-    public function meeting()
-    {
-        return $this->hasOne('App\Models\Meeting', 'creator_id', 'id');
-    }
 
-    public function hasMeeting()
-    {
-        return Meeting::where('disabled', false)
-            ->where('creator_id', $this->id)
-            ->first();
-    }
 
-    public function ReserveMeetings()
-    {
-        return $this->hasMany('App\Models\ReserveMeeting', 'user_id', 'id');
-    }
 
     public function followers()
     {
@@ -326,31 +319,16 @@ class User extends Authenticatable implements JWTSubject
         return Follow::where('follower', $this->id)->where('status', Follow::$accepted)->get();
     }
 
-    public function webinars()
-    {
-        return $this->hasMany('App\Models\Webinar', 'creator_id', 'id')
-            ->orWhere('teacher_id', $this->id);
-    }
 
-    public function getActiveWebinars($just_count = false)
-    {
-        $webinars = Webinar::where('status', 'active')
-            ->where(function ($query) {
-                $query->where('creator_id', $this->id)
-                    ->orWhere('teacher_id', $this->id);
-            })
-            ->orderBy('created_at', 'desc');
 
-        if ($just_count) {
-            return $webinars->count();
-        }
-
-        return $webinars->get();
-    }
 
     public function userMetas()
     {
         return $this->hasMany('App\Models\UserMeta', 'user_id', 'id');
+    }
+    public function tickets()
+    {
+        return $this->hasMany('App\Models\Ticket', 'user_id', 'id');
     }
 
     public function teacherInterviewRequests()
@@ -360,12 +338,12 @@ class User extends Authenticatable implements JWTSubject
 
     public function teacherSpecifications()
     {
-        return $this->hasMany('App\TeachingSpecification');
+        return $this->hasOne('App\TeachingSpecification');
     }
 
     public function teacherQualifications()
     {
-        return $this->hasMany('App\TeachingQualification');
+        return $this->hasOne('App\TeachingQualification');
     }
 
     public function teacherDocuments()
@@ -375,7 +353,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function spokenLanguages()
     {
-        return $this->hasMany('App\SpokenLanguage');
+        return $this->hasMany(SpokenLanguage::class);
     }
 
     public function carts()
@@ -398,368 +376,59 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany('App\Models\UserBadge', 'user_id', 'id');
     }
 
-    public function supports()
-    {
-        return $this->hasMany('App\Models\Support', 'user_id', 'id');
-    }
-
-    public function occupations()
-    {
-        return $this->hasMany('App\Models\UserOccupation', 'user_id', 'id');
-    }
-
-    public function organization()
-    {
-        return $this->hasOne($this, 'id', 'organ_id');
-    }
 
 
-    public function getOrganizationTeachers()
-    {
-        return $this->hasMany($this, 'organ_id', 'id')->where('role_name', Role::$teacher);
-    }
 
-    public function getOrganizationStudents()
-    {
-        return $this->hasMany($this, 'organ_id', 'id')->where('role_name', Role::$user);
-    }
 
-    public function zoomApi()
-    {
-        return $this->hasOne('App\Models\UserZoomApi', 'user_id', 'id');
-    }
+
+
+
 
     public function feedbacks()
     {
-        return $this->hasMany(UserFeedback::class, 'reciever_id', 'id');
+        return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
     }
 
-    public function rates()
-    {
-        $webinars = $this->webinars()
-            ->where('status', 'active')
-            ->get();
 
-        $rate = 0;
 
-        if (!empty($webinars)) {
-            $rates = 0;
-            $count = 0;
-
-            foreach ($webinars as $webinar) {
-                $webinarRate = $webinar->getRate();
-
-                if (!empty($webinarRate) and $webinarRate > 0) {
-                    $count += 1;
-                    $rates += $webinarRate;
-                }
-            }
-
-            if ($rates > 0) {
-                if ($count < 1) {
-                    $count = 1;
-                }
-
-                $rate = number_format($rates / $count, 2);
-            }
-        }
-
-        return $rate;
-    }
-
-    public function reviewsCount()
-    {
-        $webinars = $this->webinars;
-        $count = 0;
-
-        if (!empty($webinars)) {
-            foreach ($webinars as $webinar) {
-                $count += $webinar->reviews->count();
-            }
-        }
-
-        return $count;
-    }
 
     public function getBadges($customs = true, $getNext = false)
     {
         return Badge::getUserBadges($this, $customs, $getNext);
     }
 
-    public function getCommission()
+    public function courses()
     {
-        $commission = 0;
-        $financialSettings = getFinancialSettings();
-
-        if (!empty($financialSettings) and !empty($financialSettings['commission'])) {
-            $commission = (int)$financialSettings['commission'];
-        }
-
-        $getUserGroup = $this->getUserGroup();
-        if (!empty($getUserGroup) and isset($getUserGroup->commission)) {
-            $commission = $getUserGroup->commission;
-        }
-
-        if (!empty($this->commission)) {
-            $commission = $this->commission;
-        }
-
-        return $commission;
+        return $this->hasMany(ClassRoom::class, 'student_id', 'id');
     }
 
-    public function getIncome()
+    public function teacher_courses()
     {
-        $totalIncome = Accounting::where('user_id', $this->id)
-            ->where('type_account', Accounting::$income)
-            ->where('type', Accounting::$addiction)
-            ->where('system', false)
-            ->where('tax', false)
-            ->sum('amount');
-
-        return $totalIncome;
+        return $this->hasMany(ClassRoom::class, 'teacher_id', 'id');
     }
 
-    public function getPayout()
+
+    public function teacher_students()
     {
-        $credit = Accounting::where('user_id', $this->id)
-            ->where('type_account', Accounting::$income)
-            ->where('type', Accounting::$addiction)
-            ->where('system', false)
-            ->where('tax', false)
-            ->sum('amount');
-
-        $debit = Accounting::where('user_id', $this->id)
-            ->where('type_account', Accounting::$income)
-            ->where('type', Accounting::$deduction)
-            ->where('system', false)
-            ->where('tax', false)
-            ->sum('amount');
-
-        return $credit - $debit;
+        return $this->hasMany(ClassRoom::class, 'teacher_id', 'id');
     }
 
-    public function getAccountingCharge()
+    public function teacher_course()
     {
-        $query = Accounting::where('user_id', $this->id)
-            ->where('type_account', Accounting::$asset)
-            ->where('system', false)
-            ->where('tax', false);
-
-        $additions = deepClone($query)->where('type', Accounting::$addiction)
-            ->sum('amount');
-
-        $deductions = deepClone($query)->where('type', Accounting::$deduction)
-            ->sum('amount');
-
-        $charge = $additions - $deductions;
-        return $charge > 0 ? $charge : 0;
+        return $this->hasMany(Course::class, 'teacher_id', 'id');
     }
 
-    public function getAccountingBalance()
+    public function course()
     {
-        $additions = Accounting::where('user_id', $this->id)
-            ->where('type', Accounting::$addiction)
-            ->where('system', false)
-            ->where('tax', false)
-            ->sum('amount');
-
-        $deductions = Accounting::where('user_id', $this->id)
-            ->where('type', Accounting::$deduction)
-            ->where('system', false)
-            ->where('tax', false)
-            ->sum('amount');
-
-        $balance = $additions - $deductions;
-        return $balance > 0 ? $balance : 0;
+        return $this->hasMany(Course::class, 'teacher_id', 'id');
     }
 
-    public function getPurchaseAmounts()
+    public function student_courses()
     {
-        return Sale::where('buyer_id', $this->id)
-            ->sum('amount');
+        return $this->hasMany(Course::class, 'student_id', 'id');
     }
-
-    public function getSaleAmounts()
+    public function teacher_feedbacks()
     {
-        return Sale::where('seller_id', $this->id)
-            ->sum('amount');
-    }
-
-    public function sales()
-    {
-        $webinarIds = Webinar::where('creator_id', $this->id)->pluck('id')->toArray();
-
-        return Sale::whereIn('webinar_id', $webinarIds)->sum('amount');
-    }
-
-    public function salesCount()
-    {
-        $webinarIds = $this->webinars()->pluck('id')->toArray();
-
-        return Sale::whereIn('webinar_id', $webinarIds)->count();
-    }
-
-    public function getUnReadNotifications()
-    {
-        $notifications = Notification::where(function ($query) {
-            $query->where(function ($query) {
-                $query->where('user_id', $this->id)
-                    ->where('type', 'single');
-            })->orWhere(function ($query) {
-                if (!$this->isAdmin()) {
-                    $query->whereNull('user_id')
-                        ->whereNull('group_id')
-                        ->where('type', 'all_users');
-                }
-            });
-        })->doesntHave('notificationStatus')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $userGroup = $this->userGroup()->first();
-        if (!empty($userGroup)) {
-            $groupNotifications = Notification::where('group_id', $userGroup->group_id)
-                ->where('type', 'group')
-                ->doesntHave('notificationStatus')
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            if (!empty($groupNotifications) and !$groupNotifications->isEmpty()) {
-                $notifications = $notifications->merge($groupNotifications);
-            }
-        }
-
-        if ($this->isUser()) {
-            $studentsNotifications = Notification::whereNull('user_id')
-                ->whereNull('group_id')
-                ->where('type', 'students')
-                ->doesntHave('notificationStatus')
-                ->orderBy('created_at', 'desc')
-                ->get();
-            if (!empty($studentsNotifications) and !$studentsNotifications->isEmpty()) {
-                $notifications = $notifications->merge($studentsNotifications);
-            }
-        }
-
-        if ($this->isTeacher()) {
-            $instructorNotifications = Notification::whereNull('user_id')
-                ->whereNull('group_id')
-                ->where('type', 'instructors')
-                ->doesntHave('notificationStatus')
-                ->orderBy('created_at', 'desc')
-                ->get();
-            if (!empty($instructorNotifications) and !$instructorNotifications->isEmpty()) {
-                $notifications = $notifications->merge($instructorNotifications);
-            }
-        }
-
-        if ($this->isOrganization()) {
-            $organNotifications = Notification::whereNull('user_id')
-                ->whereNull('group_id')
-                ->where('type', 'organizations')
-                ->doesntHave('notificationStatus')
-                ->orderBy('created_at', 'desc')
-                ->get();
-            if (!empty($organNotifications) and !$organNotifications->isEmpty()) {
-                $notifications = $notifications->merge($organNotifications);
-            }
-        }
-
-        return $notifications;
-    }
-
-    public function getUnreadNoticeboards()
-    {
-        $noticeboards = Noticeboard::where(function ($query) {
-            $query->whereNotNull('organ_id')
-                ->where('organ_id', $this->organ_id)
-                ->where(function ($query) {
-                    if ($this->isOrganization()) {
-                        $query->where('type', 'organizations');
-                    } else {
-                        $type = 'students';
-
-                        if ($this->isTeacher()) {
-                            $type = 'instructors';
-                        }
-
-                        $query->whereIn('type', ['students_and_instructors', $type]);
-                    }
-                });
-        })->orWhere(function ($query) {
-            $type = ['all'];
-
-            if ($this->isUser()) {
-                $type = array_merge($type, ['students', 'students_and_instructors']);
-            } elseif ($this->isTeacher()) {
-                $type = array_merge($type, ['instructors', 'students_and_instructors']);
-            } elseif ($this->isOrganization()) {
-                $type = array_merge($type, ['organizations']);
-            }
-
-            $query->whereNull('organ_id')
-                ->whereIn('type', $type);
-        })->orderBy('created_at', 'desc')
-            ->get();
-
-
-        /*
-        ->whereDoesntHave('noticeboardStatus', function ($qu) {
-            $qu->where('user_id', $this->id);
-        })
-        */
-
-        return $noticeboards;
-    }
-
-    public function getPurchasedCoursesIds()
-    {
-        $webinarIds = [];
-
-        $sales = Sale::where('buyer_id', $this->id)
-            ->whereNotNull('webinar_id')
-            ->where('type', 'webinar')
-            ->whereNull('refund_at')
-            ->get();
-
-        foreach ($sales as $sale) {
-            if ($sale->payment_method == Sale::$subscribe) {
-                $subscribe = $sale->getUsedSubscribe($sale->buyer_id, $sale->webinar_id);
-
-                if (!empty($subscribe)) {
-                    $subscribeSale = Sale::where('buyer_id', $this->id)
-                        ->where('type', Sale::$subscribe)
-                        ->where('subscribe_id', $subscribe->id)
-                        ->whereNull('refund_at')
-                        ->first();
-
-                    if (!empty($subscribeSale)) {
-                        $usedDays = (int)diffTimestampDay(time(), $subscribeSale->created_at);
-                        if ($usedDays <= $subscribe->days) {
-                            $webinarIds[] = $sale->webinar_id;
-                        }
-                    }
-                }
-            } else {
-                $webinarIds[] = $sale->webinar_id;
-            }
-        }
-
-        return $webinarIds;
-    }
-
-    public function getActiveQuizzesResults($group_by_quiz = false, $status = null)
-    {
-        $query = QuizzesResult::where('user_id', $this->id);
-
-        if (!empty($status)) {
-            $query->where('status', $status);
-        }
-
-        if ($group_by_quiz) {
-            $query->groupBy('quiz_id');
-        }
-
-        return $query->get();
+        return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
     }
 }
