@@ -317,7 +317,7 @@ class ClassController extends Controller
         }
 
 
-        $course = Course::with('subject', 'language', 'field', 'teacher', 'program')->find($course->id);
+        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
 
         // Adding Course Code
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
@@ -1261,12 +1261,12 @@ class ClassController extends Controller
                 $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')
+                $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')
                     ->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)
                     ->orderBy('id', 'desc')->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
+                $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
 
                 $progress = 0;
                 foreach ($active_courses as $course) {
@@ -1317,10 +1317,10 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+                    $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
 
                     $progress = 0;
                     foreach ($active_courses as $course) {
@@ -1371,10 +1371,10 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
                     $progress = 0;
                     foreach ($active_courses as $course) {
@@ -1428,10 +1428,10 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $active_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
+                $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->get();
 
                 $progress = 0;
                 foreach ($active_courses as $course) {
@@ -1477,10 +1477,10 @@ class ClassController extends Controller
         } else {
 
             $program = Program::where('code', $request->program)->first();
-            $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id', 'desc')->get();
-            $active_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id', 'desc')->get();
-            $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
-            $completed_courses = Course::with('subject', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
+            $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'pending')->orderBy('id', 'desc')->get();
+            $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['active', 'inprogress'])->orderBy('id', 'desc')->get();
+            $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
+            $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->where($userrole, $token_user->id)->where('status', 'completed')->get();
 
             $progress = 0;
             foreach ($active_courses as $course) {
@@ -1571,8 +1571,8 @@ class ClassController extends Controller
         $user_id = $token_user->id;
         $current_date = Carbon::today()->format('Y-m-d');
 
-        $course = Course::with('subject', 'language', 'program')->find($course_id);
-        $corse = Course::with('subject', 'language', 'program', 'classes')->find($course_id);
+        $course = Course::with('subject.country', 'language', 'program')->find($course_id);
+        $corse = Course::with('subject.country', 'language', 'program', 'classes')->find($course_id);
 
         //************ If class date and time passed then roll call attendence ************
         // return $corse['classes'];

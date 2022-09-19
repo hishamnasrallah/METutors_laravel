@@ -672,10 +672,10 @@ class ClassController extends Controller
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher.teacher_qualification', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
+                $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher.teacher_qualification', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
                 $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
 
 
@@ -777,10 +777,10 @@ class ClassController extends Controller
 
                     $fieldOfStudies =  FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
+                    $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
                     $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
 
 
@@ -880,10 +880,10 @@ class ClassController extends Controller
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
+                    $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
                     $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
@@ -987,10 +987,10 @@ class ClassController extends Controller
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
+                $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
                 $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
@@ -1087,9 +1087,9 @@ class ClassController extends Controller
 
             $program = Program::where('code', $request->program)->first();
 
-            $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
-            $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
-            $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
+            $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
+            $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
+            $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
             $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')
                 ->where('user_id', $token_user->id)
                 ->where('role_name', $token_user->role_name)
