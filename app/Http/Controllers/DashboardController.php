@@ -96,6 +96,7 @@ class DashboardController extends Controller
                 ->with('course', 'course.subject.country', 'course.student', 'course.program', 'attendence')
                 ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'asc')->get();
+
             //checking if class has completed
             $currentTime = Carbon::now()->format('H:i:s');
             foreach ($todays_classes as $class) {
@@ -110,7 +111,7 @@ class DashboardController extends Controller
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->whereBetween('created_at', [$endDate, $current_date])
                 ->where('receiver_id', $user_id)
-                // ->groupBy('')
+                ->orderBy('id','desc')
                 ->get();
             $last_feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->whereBetween('created_at', [$compareDate, $endDate])
@@ -197,6 +198,7 @@ class DashboardController extends Controller
                 ->orderBy('start_time', 'asc')->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->where('receiver_id', $user_id)
+                ->orderBy('id','desc')
                 // ->where('course_id', '183')
                 ->get();
 

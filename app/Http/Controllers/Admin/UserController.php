@@ -21,6 +21,7 @@ use App\Models\UserBadge;
 use App\Models\UserOccupation;
 use App\Models\Webinar;
 use App\Models\UserMeta;
+use App\TeacherDocument;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,7 @@ class UserController extends Controller
 {
     public function approve_document(Request $request, $id)
     {
-        $user_meta = UserMeta::with('user')->find($id);
+        $user_meta = TeacherDocument::with('user')->find($id);
 
         if ($user_meta != null) {
             $user_meta->status = 'approved';
@@ -93,7 +94,7 @@ class UserController extends Controller
     }
     public function reject_document(Request $request, $id)
     {
-        $user_meta = UserMeta::with('user')->find($id);
+        $user_meta = TeacherDocument::with('user')->find($id);
 
         if ($user_meta != null) {
             $user_meta->status = 'rejected';

@@ -209,7 +209,7 @@ class TeacherController extends Controller
         $teacher = User::find($token_user->id);
 
         $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student', 'attendence')
+            ->with('course', 'course.subject.country', 'course.student', 'attendence')
             ->where('start_date', $current_date)
             ->where('teacher_id', $teacher->id)
             ->get();

@@ -20,6 +20,7 @@ use App\Models\Category;
 use App\Models\Newsletter;
 use App\Models\Role;
 use App\Models\UserMeta;
+use App\TeacherDocument;
 use App\Models\UserOccupation;
 use App\Models\UserZoomApi;
 
@@ -798,7 +799,7 @@ class UserController extends Controller
                 }
             }
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -949,7 +950,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1020,7 +1021,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1104,9 +1105,25 @@ class UserController extends Controller
 
                     $teaching_quali->video = $imageName;
                 }
-                $teaching_quali->save();
 
+             $teaching_quali->save();
 
+              if ($request->has('documents')) {
+
+                   $documents=TeacherDocument::where('user_id', $token_user->id)->delete();
+                    $documents = $request->documents;
+
+                    foreach ($documents as $document) { 
+                        
+                        $doc = new TeacherDocument(); 
+                        $doc->user_id = $token_user->id;
+                        $doc->original_name = $document['originalName']; 
+                        $doc->size = $document['size'];
+                        $doc->url = $document['url'];
+                        $doc->status = "pending";
+                        $doc->save();
+                    }
+                }
 
 
                 $user = User::find($token_user->id);
@@ -1123,7 +1140,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1176,9 +1193,25 @@ class UserController extends Controller
                     $imageName = $request->video;
                     $teaching_quali->video = $imageName;
                 }
+
                 $teaching_quali->update();
 
+                 if ($request->has('documents')) { 
 
+                   $documents=TeacherDocument::where('user_id', $token_user->id)->delete();
+                    $documents = $request->documents;
+ 
+                    foreach ($documents as $document) {
+                        
+                        $doc = new TeacherDocument();
+                        $doc->user_id = $token_user->id;
+                        $doc->original_name = $document['originalName']; 
+                        $doc->size = $document['size'];
+                        $doc->url = $document['url'];
+                        $doc->status = "pending";
+                        $doc->save();
+                    }
+                }
 
 
                 $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id', $token_user->id)->first();
@@ -1189,7 +1222,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1276,7 +1309,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1363,7 +1396,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1461,7 +1494,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -2497,7 +2530,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -2649,7 +2682,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -2761,7 +2794,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')

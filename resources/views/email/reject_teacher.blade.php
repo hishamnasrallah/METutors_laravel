@@ -14,7 +14,7 @@
                                     your application has not been successful at this time. </p>
                                 <p>We would like to thank you for your time during the application process and would like to
                                     encourage you to resubmit your application in the future. In case you have any queries,
-                                    please do not hesitate to contact us at @php echo 'https://metutors.com/contact';@endphp .
+                                    please do not hesitate to contact us at @php echo 'https://metutors.com/contact';@endphp.
                                 </p>
                                 <p>Regards,</p>
                                 <p>Talent Acquisition Team</p>

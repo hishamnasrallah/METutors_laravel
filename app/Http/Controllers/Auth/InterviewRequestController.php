@@ -26,24 +26,26 @@ class InterviewRequestController extends Controller
   public function interview_requests_details(Request $request, $id)
   {
 
-    $interviewRequests = null;
+    $interviewRequest = null;
 
     if (isset($id)) {
-      $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userMetas', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacherAvailability', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
-        ->where('id', $id)->first();
+      $interviewRequest = TeacherInterviewRequest::with('user', 'user.country', 'user.userDocuments', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacherAvailability', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
+        ->where('id', $id)
+        ->first();
 
       $availability_days = [];
-      foreach ($interviewRequests['user']['teacherAvailability'] as $availability)
+      foreach ($interviewRequest['user']['teacherAvailability'] as $availability)
         if (!(in_array($availability->day, $availability_days))) {
           array_push($availability_days, $availability->day);
         }
+        // return $availability_days;
 
-      $interviewRequests->availability_days = $availability_days;
+      $interviewRequest->availability_days = $availability_days;
     }
 
     return response()->json([
       'status' => true,
-      'interview_request' => $interviewRequests,
+      'interview_request' => $interviewRequest,
 
     ]);
   }

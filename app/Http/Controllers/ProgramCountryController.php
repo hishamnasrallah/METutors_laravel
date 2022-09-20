@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Newsletter;
 use App\Models\Role;
 use App\Models\UserMeta;
+use App\TeacherDocument;
 use App\Models\UserOccupation;
 use App\Models\UserZoomApi;
 use App\Models\LevelOfEducation;
