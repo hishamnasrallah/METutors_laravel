@@ -828,7 +828,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully',
+                'message' => 'Profile updated successfully',
                 'user' => $user,
             ]);
 
@@ -1433,25 +1433,13 @@ class UserController extends Controller
         }
         if ($request->step == 5) {
 
-
+            $subjec = TeacherSubject::where('user_id', $token_user->id)->first();
+            if($subjec == null){
+                 $subje = TeacherSubject::where('user_id', $token_user->id)->delete();
+            }
             $teacher_subjects = json_decode(json_encode($request->subjects));
 
-
-
             foreach ($teacher_subjects as $subj) {
-
-
-
-                $sub = TeacherSubject::where('user_id', $token_user->id)->where('program_id', $subj->program_id)->where('field_id', $subj->field_id)->where('subject_id', $subj->subject_id)->first();
-
-
-                if (isset($subj->program_id) && $subj->program_id == 3) {
-
-                    $sub = TeacherSubject::where('user_id', $token_user->id)->where('program_id', $subj->program_id)->where('country_id', $subj->country_id)->where('grade', $subj->grade)->where('field_id', $subj->field_id)->where('subject_id', $subj->subject_id)->first();
-                }
-
-
-                if ($sub == null) {
 
                     $teacher_sub = new TeacherSubject();
                     $teacher_sub->user_id = $token_user->id;
@@ -1464,28 +1452,11 @@ class UserController extends Controller
                     $teacher_sub->subject_id = $subj->subject_id;
                     $teacher_sub->hourly_price = $subj->hourly_price;
                     $teacher_sub->save();
-                } else {
-
-                    $sub->user_id = $token_user->id;
-                    $sub->program_id = $subj->program_id;
-                    $sub->field_id = $subj->field_id;
-                    if ($subj->program_id == 3) {
-                        $sub->country_id = $subj->country_id;
-                        $sub->grade = $subj->grade;
-                    }
-                    $sub->subject_id = $subj->subject_id;
-                    $sub->hourly_price = $subj->hourly_price;
-                    $sub->update();
-                }
             }
-
-
 
             $user = User::find($token_user->id);
             $user->profile_completed_step = 5;
             $user->update();
-
-
 
             $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id', $token_user->id)->first();
 
@@ -1841,8 +1812,8 @@ class UserController extends Controller
         $id = $request->user_id;
 
         $user = User::find($id);
-
-        $user_meta = UserMeta::where('user_id', $id)->where('name', 'documents')->get();
+ 
+        $user_meta = TeacherDocument::where('user_id', $id)->get();
 
         $user->documents = $user_meta;
 

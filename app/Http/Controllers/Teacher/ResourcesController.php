@@ -105,14 +105,14 @@ class ResourcesController extends Controller
 
             //************* Resource files ends **********\\
 
-            $file_size = "26849";
+            $file_size = $request->size;
             $file_name = $request->file->getClientOriginalName();
         }
 
         $array = array(
             'id' => $image->id ?? '',
             'url' => $image_url ?? '',
-            'size' => number_format($file_size / 1048576, 2) . "MB" ?? '',
+            'size' => $file_size,
             'original_name' => $file_name
         );
 
