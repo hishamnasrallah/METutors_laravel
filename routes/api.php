@@ -262,7 +262,7 @@ Route::group(['namespace' => 'Web', 'middleware' => ['impersonate', 'share']], f
 
     Route::group(['prefix' => 'admin'], function () {
 
-        Route::get('/{id}/profile', 'UserController@admin_profile');
+        Route::get('/{id}/proe', 'UserController@admin_profile');
     });
 
     Route::group(['prefix' => 'student'], function () {

@@ -694,7 +694,7 @@ class ClassController extends Controller
                     }
 
                     $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -713,7 +713,7 @@ class ClassController extends Controller
                     }
 
                     $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -732,7 +732,7 @@ class ClassController extends Controller
                     }
 
                     $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -751,7 +751,7 @@ class ClassController extends Controller
                     }
 
                     $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
 
@@ -799,7 +799,7 @@ class ClassController extends Controller
                         }
 
                         $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -818,7 +818,7 @@ class ClassController extends Controller
                         }
 
                         $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -837,7 +837,7 @@ class ClassController extends Controller
                         }
 
                         $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -856,7 +856,7 @@ class ClassController extends Controller
                         }
                         // $lastActivity_course->course->teacher;
                         $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
@@ -902,7 +902,7 @@ class ClassController extends Controller
                         }
 
                         $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -921,7 +921,7 @@ class ClassController extends Controller
                         }
 
                         $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -940,7 +940,7 @@ class ClassController extends Controller
                         }
 
                         $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -959,7 +959,7 @@ class ClassController extends Controller
                         }
 
                         $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
@@ -1009,7 +1009,7 @@ class ClassController extends Controller
                     }
 
                     $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -1028,7 +1028,7 @@ class ClassController extends Controller
                     }
 
                     $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -1047,7 +1047,7 @@ class ClassController extends Controller
                     }
 
                     $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -1066,7 +1066,7 @@ class ClassController extends Controller
                     }
 
                     $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
 
@@ -1114,7 +1114,7 @@ class ClassController extends Controller
                 }
 
                 $course['teacher']->average_rating = $average_rating;
-                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
 
@@ -1133,7 +1133,7 @@ class ClassController extends Controller
                 }
 
                 $course['teacher']->average_rating = $average_rating;
-                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
 
@@ -1152,7 +1152,7 @@ class ClassController extends Controller
                 }
 
                 $course['teacher']->average_rating = $average_rating;
-                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
 
@@ -1171,7 +1171,7 @@ class ClassController extends Controller
                 }
 
                 $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($lastActivity_course->course['teacher']['teacher_qualification']);
             }
 
@@ -1339,7 +1339,7 @@ class ClassController extends Controller
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->paginate(3);
+            ->paginate($request->per_page ?? 3);
 
         $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
             ->where($userrole, $user_id)
@@ -1361,7 +1361,7 @@ class ClassController extends Controller
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->paginate(3);
+            ->paginate($request->per_page ?? 3);
 
         $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
             ->where($userrole, $user_id)

@@ -2455,10 +2455,10 @@ class UserController extends Controller
             $user->city = $request->city;
 
 
-            if ($request->middle_name) {
+            // if ($request->middle_name) {
 
                 $user->middle_name = $request->middle_name;
-            }
+            // }
             if ($request->address2) {
 
                 $user->address2 = $request->address2;

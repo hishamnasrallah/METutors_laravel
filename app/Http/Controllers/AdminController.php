@@ -1458,7 +1458,7 @@ class AdminController extends Controller
             ->whereIn('id', $interview)
             ->count();
 
-        $inactive_teachers = User::where('status', 'inactive')
+         $inactive_teachers = User::where('status', 'inactive')
             ->where('role_name', 'teacher')
             ->where('admin_approval', 'approved')
             ->whereIn('id', $interview)
@@ -1723,6 +1723,7 @@ class AdminController extends Controller
         $courses = Course::all();
         $running_courses = $courses->whereIn('status', ['pending', 'active', 'inprogress'])->whereIn('teacher_id', $pluckedteachers);
         $running_teachers = $running_courses->unique('teacher_id');
+
         $runing_teachers = [];
         $engaged_teachers = [];
         foreach ($running_teachers as $teacher) {
@@ -1766,7 +1767,7 @@ class AdminController extends Controller
                 'total' => count($teachers),
                 'available' => count($available_teachers),
                 'engaged' => count($engaged_teachers),
-                // 'inactive' => count($inactive_teachers),
+                'inactive' => count($inactive_teachers),
                 'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
             ]);

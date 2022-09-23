@@ -380,6 +380,7 @@ class TeacherController extends Controller
         $rejected->user_id = $token_user->id;
         $rejected->user_id = $token_user->id;
         $rejected->reason = $request->reason;
+        $rejected->status = 'declined_by_teacher';
         $rejected->save();
 
         $classes = AcademicClass::where('course_id', $course->id)->where('teacher_id', $user->id)->get();

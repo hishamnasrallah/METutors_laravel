@@ -42,6 +42,7 @@ use App\Jobs\CourseBookingJob;
 use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
 use App\Models\LastActivity;
+use App\Models\RejectedCourse;
 use App\TeacherAvailability;
 use App\TeacherProgram;
 use App\TeacherSubject;
@@ -1266,7 +1267,13 @@ class ClassController extends Controller
                     ->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')
+                    ->whereIn('id', $classroom)
+                    ->where('status', 'completed')
+                    ->where('program_id', $program->id)
+                    ->get();
+
+
 
                 $progress = 0;
                 foreach ($active_courses as $course) {
@@ -1280,6 +1287,20 @@ class ClassController extends Controller
                     $completed_classes = $course->classes->where('status', 'completed')->count();
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
+                }
+
+                //adding rejected courses to completed courses
+                $total_rejected_courses = RejectedCourse::whereHas('course',function($q) use($program){
+                    $q->where('program_id', $program->id);
+                })
+                ->with('course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')
+                ->where('user_id', $token_user->id)
+                ->get();
+
+                $rejected_courses = [];
+                foreach ($total_rejected_courses as $rejected_course) {
+                    $rejected_course['course']['status'] = $rejected_course->status;
+                    $completed_courses[] = $rejected_course['course'];
                 }
 
                 $progress = 0;
@@ -1320,7 +1341,15 @@ class ClassController extends Controller
                     $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'pending'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
                     $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->get();
+
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'classes')
+                        ->whereIn('id', $classroom)
+                        ->where('status', 'completed')
+                        ->where('program_id', $program->id)
+                        ->where('field_of_study', $field_of_study->id)
+                        ->get();
+
+
 
                     $progress = 0;
                     foreach ($active_courses as $course) {
@@ -1335,6 +1364,19 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+                    }
+
+                    //adding rejected courses to completed courses
+                    $total_rejected_courses = RejectedCourse::whereHas('course',function($q) use($program,$field_of_study){
+                        $q->where('program_id', $program->id)->where('field_of_study', $field_of_study->id);
+                    })
+                    ->with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')
+                    ->where('user_id', $token_user->id)
+                    ->get();
+                    $rejected_courses = [];
+                    foreach ($total_rejected_courses as $rejected_course) {
+                        $rejected_course['course']['status'] = $rejected_course->status;
+                        $completed_courses[] = $rejected_course['course'];
                     }
 
                     $progress = 0;
@@ -1374,7 +1416,12 @@ class ClassController extends Controller
                     $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')
+                    ->whereIn('id', $classroom)
+                    ->where('status', 'completed')
+                    ->where('program_id', $program->id)
+                    ->where('country_id', $country->id)
+                    ->get();
 
                     $progress = 0;
                     foreach ($active_courses as $course) {
@@ -1388,6 +1435,17 @@ class ClassController extends Controller
                         $completed_classes = $course->classes->where('status', 'completed')->count();
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
+                    }
+
+                    //adding rejected courses to completed courses
+                    $total_rejected_courses = RejectedCourse::whereHas('course',function($q) use($program,$country){
+                        $q->where('program_id', $program->id)->where('country_id', $country->id);
+                    })
+                    ->with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')->where('user_id', $token_user->id)->get();
+                    $rejected_courses = [];
+                    foreach ($total_rejected_courses as $rejected_course) {
+                        $rejected_course['course']['status'] = $rejected_course->status;
+                        $completed_courses[] = $rejected_course['course'];
                     }
 
                     $progress = 0;
@@ -1447,6 +1505,14 @@ class ClassController extends Controller
                     $course->progress = round($progress);
                 }
 
+                //adding rejected courses to completed courses
+                $total_rejected_courses = RejectedCourse::with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')->where('user_id', $token_user->id)->get();
+                $rejected_courses = [];
+                foreach ($total_rejected_courses as $rejected_course) {
+                    $rejected_course['course']['status'] = $rejected_course->status;
+                    $completed_courses[] = $rejected_course['course'];
+                }
+
                 $progress = 0;
                 foreach ($completed_courses as $course) {
                     $completed_classes = $course->classes->where('status', 'completed')->count();
@@ -1496,12 +1562,22 @@ class ClassController extends Controller
                 $course->progress = round($progress);
             }
 
+            //adding rejected courses to completed courses
+            $total_rejected_courses = RejectedCourse::with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')->where('user_id', $token_user->id)->get();
+            $rejected_courses = [];
+            foreach ($total_rejected_courses as $rejected_course) {
+                $rejected_course['course']['status'] = $rejected_course->status;
+                $completed_courses[] = $rejected_course['course'];
+            }
+
             $progress = 0;
             foreach ($completed_courses as $course) {
                 $completed_classes = $course->classes->where('status', 'completed')->count();
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
             }
+
+
 
             return response()->json([
                 'success' => true,
@@ -1510,6 +1586,7 @@ class ClassController extends Controller
                 'active_courses' => $active_courses,
                 'cancelled_courses' => $cancelled_courses,
                 'completed_courses' => $completed_courses,
+                // 'rejected_courses' =>$rejected_courses
             ]);
         }
     }
@@ -1646,7 +1723,7 @@ class ClassController extends Controller
             }])
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->paginate(3);
+            ->paginate($request->per_page ?? 3);
 
         $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
             ->where($userrole, $user_id)
@@ -1668,7 +1745,7 @@ class ClassController extends Controller
             ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->paginate(3);
+            ->paginate($request->per_page ?? 3);
 
         $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
             ->where($userrole, $user_id)

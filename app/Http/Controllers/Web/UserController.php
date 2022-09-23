@@ -48,6 +48,8 @@ class UserController extends Controller
     public function filteredTeacher(Request $request)
     {
 
+        return json_decode($request->class_rooms);
+
         // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
         //     ->where('role_name', 'teacher')
         //     ->where('verified', 1)
@@ -208,8 +210,35 @@ class UserController extends Controller
         }
 
 
-        $selectedTeachers = User::whereIn('id', $final_teachers)->get();
+        $selectedTeachers = User::with('teacher_qualification')->whereIn('id', $final_teachers)->get();
+        foreach ($selectedTeachers as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $teacher->average_rating = $average_rating;
+        }
+
         $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+
+        foreach ($suggestedTeachers as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $teacher->average_rating = $average_rating;
+        }
+
         return response()->json([
             'success' => true,
             'available_teachers' => $selectedTeachers,

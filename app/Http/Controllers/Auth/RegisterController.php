@@ -159,9 +159,7 @@ class RegisterController extends Controller
     public function registeration(Request $request)
     {
 
-
         $rules = [
-
             'first_name' => 'required|min:3|max:100',
             'last_name' => 'required|min:3|max:100',
             'country_code' => 'required',
