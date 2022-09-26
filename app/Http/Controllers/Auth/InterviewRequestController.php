@@ -26,10 +26,10 @@ class InterviewRequestController extends Controller
   public function interview_requests_details(Request $request, $id)
   {
 
-    $interviewRequest = null;
+    $interviewRequest = null;        
 
     if (isset($id)) {
-      $interviewRequest = TeacherInterviewRequest::with('user', 'user.country', 'user.userDocuments', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacherAvailability', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
+      $interviewRequest = TeacherInterviewRequest::with('user', 'user.country', 'user.userResume','user.userDegrees','user.userCertificates', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacherAvailability', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
         ->where('id', $id)
         ->first();
 

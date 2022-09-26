@@ -552,8 +552,7 @@ class AdminController extends Controller
 
 
 
-        // $teachers = Course::where('teacher_id', '!=', null)->pluck('teacher_id')->unique();
-        $teachers = TeacherInterviewRequest::where('user_id', '!=', null)->where('status','approved')->pluck('user_id');
+        $teachers = Course::where('teacher_id', '!=', null)->pluck('teacher_id')->unique();
         $tutors = [];
 
 
@@ -577,66 +576,60 @@ class AdminController extends Controller
                 // ->orderBy('start_time')
                 ->get();
 
-            if (count($classes) > 0) {
-                $completed_class = AcademicClass::where('status', 'completed')->where('teacher_id', $teacher)->count();
-                $pending_classes = AcademicClass::where('status', '!=', 'completed')->where('teacher_id', $teacher)->count();
-                $Teacher->completed_class = $completed_class;
-                $Teacher->pending_classes = $pending_classes;
-                // $Teacher->classes = $classes;
 
-                //getting per day classes
-                foreach ($classes as $class) {
-                    switch ($class->day) {
-                        case ('2'):
-                            array_push($monday_classes, $class);
-                            break;
-                        case ('3'):
-                            array_push($tuesday_classes, $class);
-                            break;
-                        case ('4'):
-                            array_push($wednesday_classes, $class);
-                            break;
-                        case ('5'):
-                            array_push($thursday_classes, $class);
-                            break;
-                        case ('6'):
-                            array_push($friday_classes, $class);
-                            break;
-                        case ('7'):
-                            break;
-                            array_push($saturday_classes, $class);
-                        default:
-                            array_push($sunday_classes, $class);
-                    }
+            $completed_class = AcademicClass::where('status', 'completed')->where('teacher_id', $teacher)->count();
+            $pending_classes = AcademicClass::where('status', '!=', 'completed')->where('teacher_id', $teacher)->count();
+            $Teacher->completed_class = $completed_class;
+            $Teacher->pending_classes = $pending_classes;
+            // $Teacher->classes = $classes;
+
+            //getting per day classes
+            foreach ($classes as $class) {
+                switch ($class->day) {
+                    case ('2'):
+                        array_push($monday_classes, $class);
+                        break;
+                    case ('3'):
+                        array_push($tuesday_classes, $class);
+                        break;
+                    case ('4'):
+                        array_push($wednesday_classes, $class);
+                        break;
+                    case ('5'):
+                        array_push($thursday_classes, $class);
+                        break;
+                    case ('6'):
+                        array_push($friday_classes, $class);
+                        break;
+                    case ('7'):
+                        break;
+                        array_push($saturday_classes, $class);
+                    default:
+                        array_push($sunday_classes, $class);
                 }
-
-                $scheduled_classes = [
-                    'monday' => $monday_classes,
-                    'tuesday' => $tuesday_classes,
-                    'wednesday' => $wednesday_classes,
-                    'thursday' => $thursday_classes,
-                    'friday' => $friday_classes,
-                    'saturday' => $saturday_classes,
-                    'sunday' => $sunday_classes,
-                ];
-            } else {
-                $scheduled_classes = [
-                    'monday' => $monday_classes,
-                    'tuesday' => $tuesday_classes,
-                    'wednesday' => $wednesday_classes,
-                    'thursday' => $thursday_classes,
-                    'friday' => $friday_classes,
-                    'saturday' => $saturday_classes,
-                    'sunday' => $sunday_classes,
-                ];
             }
 
-            //Pushing classes array to scheduled_classes object
-            $Teacher->scheduled_classes = $scheduled_classes;
+            $scheduled_classes = [
+                'monday' => $monday_classes,
+                'tuesday' => $tuesday_classes,
+                'wednesday' => $wednesday_classes,
+                'thursday' => $thursday_classes,
+                'friday' => $friday_classes,
+                'saturday' => $saturday_classes,
+                'sunday' => $sunday_classes,
+            ];
 
-            // if (count($classes) > 0) {
-            array_push($tutors, $Teacher);
-            // }
+            $Teacher->scheduled_classes = $scheduled_classes;
+            // $Teacher->tuesday = $tuesday_classes;
+            // $Teacher->wednesday = $wednesday_classes;
+            // $Teacher->thursday = $thursday_classes;
+            // $Teacher->friday = $friday_classes;
+            // $Teacher->saturday = $saturday_classes;
+            // $Teacher->sunday = $sunday_classes;
+
+            if (count($classes) > 0) {
+                array_push($tutors, $Teacher);
+            }
         }
 
 
@@ -1446,7 +1439,7 @@ class AdminController extends Controller
 
         $interview = TeacherInterviewRequest::pluck("user_id");
         // if (isset($request->per_page)) {
-        $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->orderBy('id', 'desc')->get();
+        $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->orderBy('id','desc')->get();
         // } else {
         //     $teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')->whereIn('id', $interview)->paginate(10);
         // }
@@ -1458,7 +1451,7 @@ class AdminController extends Controller
             ->whereIn('id', $interview)
             ->count();
 
-         $inactive_teachers = User::where('status', 'inactive')
+        $inactive_teachers = User::where('status', 'inactive')
             ->where('role_name', 'teacher')
             ->where('admin_approval', 'approved')
             ->whereIn('id', $interview)
@@ -1500,7 +1493,7 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->orderBy('id', 'desc')->get();
+                })->orderBy('id','desc')->get();
         }
 
 
@@ -1534,13 +1527,13 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->orderBy('id', 'desc')
+                })->orderBy('id','desc')
                 ->get();
         } else {
 
             $teachers = User::with('teacher_interview_request')
                 ->where('role_name', 'teacher')
-                ->where('status', 'rejected')->orderBy('id', 'desc')
+                ->where('status', 'rejected')->orderBy('id','desc')
                 ->get();
         }
 
@@ -1560,7 +1553,7 @@ class AdminController extends Controller
 
         $teachers = User::with('teacher_interview_request')
             ->where('role_name', 'teacher')
-            ->where('status', 'suspended')->orderBy('id', 'desc')
+            ->where('status', 'suspended')->orderBy('id','desc')
             ->get();
         // } else {
 
@@ -1593,7 +1586,7 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->orderBy('id', 'desc')
+                })->orderBy('id','desc')
                 ->get();
 
             $rejected_teachers = User::with('teacher_interview_request')
@@ -1606,19 +1599,17 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->orderBy('id', 'desc')
+                })->orderBy('id','desc')
                 ->get();
         } else {
 
             $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
-                ->whereIn('id', $interview)
-                ->orderBy('id', 'desc')
+                ->whereIn('id', $interview)->orderBy('id','desc')
                 ->get();
 
-            $rejected_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject','teacher_interview_request')
+            $rejected_teachers = User::with('teacher_interview_request')
                 ->where('role_name', 'teacher')
-                ->where('status', 'rejected')
-                ->orderBy('id', 'desc')
+                ->where('status', 'rejected')->orderBy('id','desc')
                 ->get();
         }
 
@@ -1650,13 +1641,13 @@ class AdminController extends Controller
                         ->orWhere('status', 'LIKE', "%$request->search%")
                         ->orWhere('middle_name', 'LIKE', "%$request->search%")
                         ->orWhere('nationality', 'LIKE', "%$request->search%");
-                })->orderBy('id', 'desc')
+                })->orderBy('id','desc')
                 ->get();
         } else {
 
             $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                 ->where('role_name', 'teacher')
-                ->whereIn('status', ['active', 'inactive'])->orderBy('id', 'desc')
+                ->whereIn('status', ['active', 'inactive'])->orderBy('id','desc')
                 ->get();
         }
 
@@ -1679,12 +1670,12 @@ class AdminController extends Controller
                             ->orWhere('status', 'LIKE', "%$request->search%")
                             ->orWhere('middle_name', 'LIKE', "%$request->search%")
                             ->orWhere('nationality', 'LIKE', "%$request->search%");
-                    })->orderBy('id', 'desc')
+                    })->orderBy('id','desc')
                     ->get();
             } else {
                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
-                    ->where('status', 'active')->orderBy('id', 'desc')
+                    ->where('status', 'active')->orderBy('id','desc')
                     ->get();
             }
 
@@ -1705,12 +1696,12 @@ class AdminController extends Controller
                             ->orWhere('status', 'LIKE', "%$request->search%")
                             ->orWhere('middle_name', 'LIKE', "%$request->search%")
                             ->orWhere('nationality', 'LIKE', "%$request->search%");
-                    })->orderBy('id', 'desc')
+                    })->orderBy('id','desc')
                     ->get();
             } else {
                 $teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject')
                     ->where('role_name', 'teacher')
-                    ->where('status', 'inactive')->orderBy('id', 'desc')
+                    ->where('status', 'inactive')->orderBy('id','desc')
                     ->get();
             }
 
@@ -1723,7 +1714,6 @@ class AdminController extends Controller
         $courses = Course::all();
         $running_courses = $courses->whereIn('status', ['pending', 'active', 'inprogress'])->whereIn('teacher_id', $pluckedteachers);
         $running_teachers = $running_courses->unique('teacher_id');
-
         $runing_teachers = [];
         $engaged_teachers = [];
         foreach ($running_teachers as $teacher) {
@@ -1739,7 +1729,7 @@ class AdminController extends Controller
             }
         }
 
-        $inactive_teachers = User::where('role_name', 'teacher')->where('status', 'inactive')->orderBy('id', 'desc')->get();
+        $inactive_teachers = User::where('role_name', 'teacher')->where('status', 'inactive')->orderBy('id','desc')->get();
 
         //calculating the ratings
         foreach ($teachers as $teacher) {
@@ -1767,7 +1757,7 @@ class AdminController extends Controller
                 'total' => count($teachers),
                 'available' => count($available_teachers),
                 'engaged' => count($engaged_teachers),
-                'inactive' => count($inactive_teachers),
+                // 'inactive' => count($inactive_teachers),
                 'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
             ]);
@@ -3901,21 +3891,10 @@ class AdminController extends Controller
 
         if (isset($id)) {
 
-            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userDocuments', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')->where('id', $id)->first();
+            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userResume','user.userDegrees','user.userCertificates', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')->where('id', $id)->first();
         }
 
-        $teacher_profile = User::with('availabilityDays', 'country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
-            ->where('id', $id)
-            ->first();
-
-        $availabilities = [];
-        foreach ($teacher_profile['availabilityDays'] as $availability) {
-            if (!(in_array($availability->day, $availabilities))) {
-                $availabilities[] = $availability->day;
-            }
-        }
-        $teacher_profile->availability_days =  $availabilities;
-        unset($teacher_profile['availabilityDays']);
+        $teacher_profile = User::with('country', 'userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')->where('id', $id)->first();
 
         return response()->json([
             'status' => true,
@@ -4048,7 +4027,7 @@ class AdminController extends Controller
         $teacher_ids = TeacherSubject::where('status', 'approved')
             ->pluck('user_id')
             ->unique();
-        $teachers = User::with('country')->whereIn('id', $teacher_ids)->where('admin_approval', 'approved')->limit(3)->get();
+        $teachers = User::with('country','teacherQualifications')->whereIn('id', $teacher_ids)->where('admin_approval', 'approved')->limit(3)->get();
         foreach ($teachers as $teacher) {
             //  $teacher;
             $courses_count = $courses->where('teacher_id', $teacher->id)->count();
@@ -4151,14 +4130,12 @@ class AdminController extends Controller
     {
         $courses = Course::select('id', 'course_code', 'course_name', 'subject_id', 'student_id',  'teacher_id', 'program_id', 'country_id', 'created_at')
             ->with('program', 'program_country')
-            ->where('course_code','!=', '')
             ->paginate($request->per_page ?? 10);
 
         //search implementation
         if ($request->has('search')) {
             $courses = Course::select('id', 'course_code', 'course_name', 'subject_id', 'student_id',  'teacher_id', 'program_id', 'country_id', 'created_at')
                 ->with('program', 'program_country')
-                ->where('course_code','!=', '')
                 ->where(function ($query) use ($request) {
                     $query->where('course_code', $request->search)
                         ->orWhere('course_name', 'LIKE', "%$request->search%");
@@ -4168,18 +4145,15 @@ class AdminController extends Controller
 
         //calculating min max prices
         foreach ($courses as  $course) {
-            // return $course;
             $teacher_subjects = TeacherSubject::where(['subject_id' => $course->subject_id, 'program_id' => $course->program_id])->get();
             $subjects = Subject::where(['id' => $course->subject_id, 'program_id' => $course->program_id])->get();
 
             $course->price_per_hour = $course->subject->price_per_hour;
             unset($course->subject);
-            // echo  $teacher_subjects;
-            $course->min_hourly_rate_ask =  $teacher_subjects->min('hourly_price');
-            $course->max_hourly_rate_ask =  $teacher_subjects->max('hourly_price');
+            $course->min_hourly_rate_ask =   $teacher_subjects->min('hourly_price');
+            $course->max_hourly_rate_ask = $teacher_subjects->max('hourly_price');
             $course->min_hourly_rate_actual = $subjects->min('price_per_hour');
             $course->max_hourly_rate_actual = $subjects->max('price_per_hour');
-            
         }
 
 

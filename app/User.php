@@ -327,6 +327,18 @@ class User extends Authenticatable implements JWTSubject
 
 
 
+    public function userCertificates()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','certificates');
+    }
+    public function userDegrees()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','degrees');
+    }
+    public function userResume()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','resume');
+    }
     public function userDocuments()
     {
         return $this->hasMany('App\TeacherDocument', 'user_id', 'id');

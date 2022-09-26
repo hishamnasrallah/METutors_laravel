@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Web;
 
 use App\Events\PrefrenceSettingEvent;
@@ -19,7 +18,10 @@ use App\Models\ReserveMeeting;
 use App\Models\Sale;
 use App\Models\UserOccupation;
 use App\Models\Webinar;
+use App\Program;
 use App\User;
+use App\Subject;
+use App\TeacherSubject;
 use App\Models\Role;
 use App\Models\Follow;
 use App\Models\Meeting;
@@ -48,7 +50,65 @@ class UserController extends Controller
     public function filteredTeacher(Request $request)
     {
 
-        return json_decode($request->class_rooms);
+        // return json_decode($request->class_rooms);
+
+         $featured_teachers = [];
+        $teacher_ids = TeacherSubject::where('status', 'approved')
+            ->pluck('user_id')
+            ->unique();
+        $teachers = User::with('country','teacherQualifications')->whereIn('id', $teacher_ids)->where('admin_approval', 'approved')->limit(3)->get();
+        foreach ($teachers as $teacher) {
+            //  $teacher;
+            $courses_count = $courses->where('teacher_id', $teacher->id)->count();
+            $students_count = $courses->where('teacher_id', $teacher->id)->pluck('student_id')->unique('student_id')->count();
+            $teacher_programs = TeacherSubject::where('user_id', $teacher->id)
+                ->where('status', 'approved')
+                ->pluck('program_id')
+                ->unique();
+
+            $programs = Program::whereIn('id', $teacher_programs)->get();
+            $classes = AcademicClass::where('teacher_id',  $teacher->id)->where('status', 'completed')->count();
+            $teacher->courses_count = $courses_count;
+            $teacher->classes_taught = $classes;
+
+
+            //-------rating--------
+            $average_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id',  $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id',  $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+
+            $reviews = UserFeedback::where('receiver_id',  $teacher->id)->get();
+            $reviews_count = $reviews->groupBy('sender_id')->count();
+            //--------------------------
+
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count  = $reviews_count;
+            $teacher->teacher_students_count  = $students_count;
+            array_push($featured_teachers, $teacher);
+            $teacher->programs = $programs;
+        }
+
+
+        $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(4);
+        $teachers_list = [];
+        foreach ($featured_teachers as $featured_teacher) {
+            $subjects = TeacherSubject::where('user_id', $featured_teacher->id)
+                ->where('status', 'approved')
+                ->pluck('subject_id')
+                ->unique();
+
+            $featured_teacher->subjects = Subject::whereIn('id', $subjects)->get();
+            array_push($teachers_list, $featured_teacher);
+        }
+
+         return response()->json([
+            'success' => true,
+            'available_teachers' => $teachers_list,
+            'suggested_teachers' => $teachers_list,
+        ]);
 
         // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
         //     ->where('role_name', 'teacher')
@@ -278,7 +338,7 @@ class UserController extends Controller
     public function teacher_profile(Request $request, $id)
     {
 
-        $user = \App\User::with('country', 'userDocuments', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
+        $user = \App\User::with('country', 'userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
             ->withCount('teacher_students')
             ->withCount('teacher_course')
             ->withCount('teacher_feedbacks')
