@@ -1249,10 +1249,21 @@ class ClassController extends Controller
         $todays_date = Carbon::now()->format('d-M-Y [l]');
 
         $user_id = $token_user->id;
-        $current_date = Carbon::today()->format('Y-m-d');
+        $current_date = Carbon::today()->format('Y-m-d g:i A');
 
         $course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->find($course_id);
-        // return $course->field_of_study;
+        
+        //converting utc time to local
+        $ip = request()->getClientIp();
+        $user = \Location::get($ip);
+
+        #using utc date convert date to user date
+        $user_date = Carbon::createFromFormat('Y-m-d H:i A',$current_date, 'UTC');
+        $user_date->setTimezone($user->timezone);
+
+        # check the user date
+        // $localtime = $user_date->format('Y-m-d g:i A');
+        $localtime = $user_date->format('Y-m-d');
 
         //Add or update course to Last Activity
         $last_activity = LastActivity::updateOrCreate([
@@ -1319,9 +1330,9 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->where('start_date', $current_date)
+            ->where('start_date', $localtime)
             ->with('course')
-            ->where($userrole, $user_id)
+            // ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->orderBy('start_time', 'desc')
             ->get();
@@ -1335,13 +1346,13 @@ class ClassController extends Controller
                 $q->where('role_name', 'teacher');
             }])
             ->with('teacher')
-            ->where('start_date', '>', $current_date)
+            ->where('start_date', '>', $localtime)
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->paginate($request->per_page ?? 3);
 
-        $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
+        $total_upcomingClasses = AcademicClass::where('start_date', '>', $localtime)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
@@ -1357,13 +1368,13 @@ class ClassController extends Controller
             // ->whereHas('attendence', function ($query) use ($user_id) {
             //     $query->where(['user_id' => $user_id]);
             // })
-            ->where('start_date', '<', $current_date)
+            ->where('start_date', '<', $localtime)
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->paginate($request->per_page ?? 3);
 
-        $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
+        $total_pastClasses = AcademicClass::where('start_date', '<', $localtime)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
@@ -1381,7 +1392,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'todays_date' =>  $todays_date,
+            'todays_date' =>  $localtime,
             'total_previousClasses' => $total_pastClasses,
             'total_upcomingClasses' => $total_upcomingClasses,
             'remaining_classes' => $remaining_classes,

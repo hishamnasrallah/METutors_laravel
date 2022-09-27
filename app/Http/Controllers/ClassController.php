@@ -41,6 +41,7 @@ use App\Jobs\ClassStartedJob;
 use App\Jobs\CourseBookingJob;
 use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
+use App\Models\HighlightedTopic;
 use App\Models\LastActivity;
 use App\Models\RejectedCourse;
 use App\TeacherAvailability;
@@ -76,6 +77,7 @@ class ClassController extends Controller
             'end_time' =>  'required',
             'class_type' =>  'required',
             'classes' =>  'required',
+            // 'highlighted_topics' =>  'required',
 
         ];
 
@@ -351,6 +353,17 @@ class ClassController extends Controller
         $classRoom->student_id = $token_user->id;
         $classRoom->status = 'payment_pending';
         $classRoom->save();
+
+        //Adding Highlighted topic data
+        if ($request->has('highlighted_topics')) {
+            foreach (json_decode($request->highlighted_topics) as $topic) {
+                $topic = new HighlightedTopic();
+                $topic->name = $request->name;
+                $topic->confidence_scale = $request->confidence_scale;
+                $topic->course_id = $course->id;
+                $topic->save();
+            }
+        }
 
         $user = User::find($token_user->id);
         if ($request->has('teacher_id')) {
@@ -1290,12 +1303,12 @@ class ClassController extends Controller
                 }
 
                 //adding rejected courses to completed courses
-                $total_rejected_courses = RejectedCourse::whereHas('course',function($q) use($program){
+                $total_rejected_courses = RejectedCourse::whereHas('course', function ($q) use ($program) {
                     $q->where('program_id', $program->id);
                 })
-                ->with('course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')
-                ->where('user_id', $token_user->id)
-                ->get();
+                    ->with('course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')
+                    ->where('user_id', $token_user->id)
+                    ->get();
 
                 $rejected_courses = [];
                 foreach ($total_rejected_courses as $rejected_course) {
@@ -1367,12 +1380,12 @@ class ClassController extends Controller
                     }
 
                     //adding rejected courses to completed courses
-                    $total_rejected_courses = RejectedCourse::whereHas('course',function($q) use($program,$field_of_study){
+                    $total_rejected_courses = RejectedCourse::whereHas('course', function ($q) use ($program, $field_of_study) {
                         $q->where('program_id', $program->id)->where('field_of_study', $field_of_study->id);
                     })
-                    ->with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')
-                    ->where('user_id', $token_user->id)
-                    ->get();
+                        ->with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')
+                        ->where('user_id', $token_user->id)
+                        ->get();
                     $rejected_courses = [];
                     foreach ($total_rejected_courses as $rejected_course) {
                         $rejected_course['course']['status'] = $rejected_course->status;
@@ -1417,11 +1430,11 @@ class ClassController extends Controller
                     $active_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $cancelled_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
                     $completed_courses = Course::with('subject.country', 'language', 'program', 'student', 'country', 'classes')
-                    ->whereIn('id', $classroom)
-                    ->where('status', 'completed')
-                    ->where('program_id', $program->id)
-                    ->where('country_id', $country->id)
-                    ->get();
+                        ->whereIn('id', $classroom)
+                        ->where('status', 'completed')
+                        ->where('program_id', $program->id)
+                        ->where('country_id', $country->id)
+                        ->get();
 
                     $progress = 0;
                     foreach ($active_courses as $course) {
@@ -1438,10 +1451,10 @@ class ClassController extends Controller
                     }
 
                     //adding rejected courses to completed courses
-                    $total_rejected_courses = RejectedCourse::whereHas('course',function($q) use($program,$country){
+                    $total_rejected_courses = RejectedCourse::whereHas('course', function ($q) use ($program, $country) {
                         $q->where('program_id', $program->id)->where('country_id', $country->id);
                     })
-                    ->with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')->where('user_id', $token_user->id)->get();
+                        ->with('course', 'course.language', 'course.subject', 'course.student', 'course.program', 'course.classes')->where('user_id', $token_user->id)->get();
                     $rejected_courses = [];
                     foreach ($total_rejected_courses as $rejected_course) {
                         $rejected_course['course']['status'] = $rejected_course->status;
@@ -1648,7 +1661,7 @@ class ClassController extends Controller
         $user_id = $token_user->id;
         $current_date = Carbon::today()->format('Y-m-d');
 
-        $course = Course::with('subject.country', 'language', 'program')->find($course_id);
+        $course = Course::with('subject.country', 'language', 'program', 'participants.user')->find($course_id);
         $corse = Course::with('subject.country', 'language', 'program', 'classes')->find($course_id);
 
         //************ If class date and time passed then roll call attendence ************

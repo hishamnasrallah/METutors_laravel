@@ -241,16 +241,43 @@ class TestController extends Controller
 
     public function test()
     {
-        // $course = Course::findOrFail($id);
-        $iso_date = Carbon::now()->addHours(12)->toISOString();
-        $current_date = Carbon::now();
-        $current_date = Carbon::parse('2022-08-24T18:34:39.915206Z')->format('H:i');
-       
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification')
+            ->where('role_name', 'teacher')
+            ->where('verified', 1)
+            ->where('status', 'active')->where('id', '!=', 1212)
+            ->get();
+
+
+        $rating_total = 0;
+        foreach ($filtered_teacher as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+            $reviews = $reviews->groupBy('sender_id');
+            // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+            
+            foreach($reviews as $review){
+                $rating_sum = $review->sum('rating');
+                $review_count = count($review);
+                $sub_average_rating = $rating_sum / $review_count;
+                $rating_total =  $rating_total + $sub_average_rating;
+            }
+
+            if ( count($reviews) > 0) {
+                $average_rating = $rating_total / count($reviews);
+            }
+            
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count = count($reviews);
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Action done successfully!',
-            'iso_date' => $iso_date,
-            'current_date' => $current_date,
+            'filtered_teacher' => $filtered_teacher,
         ]);
     }
 }

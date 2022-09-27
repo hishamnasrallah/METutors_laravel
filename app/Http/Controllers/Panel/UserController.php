@@ -872,8 +872,8 @@ class UserController extends Controller
             $rules['teaching_experience_online'] = 'required|string';
             $rules['video'] = 'required';
             $rules['resume'] = 'required';
-            $rules['degrees'] = 'required|string';
-            $rules['certificates'] = 'required|string';
+            $rules['degrees'] = 'required';
+            // $rules['certificates'] = 'required';
 
         }
 
@@ -1114,14 +1114,14 @@ class UserController extends Controller
 
                     foreach ($resume as $res) {
 
-                        $res = new TeacherDocument();
-                        $res->user_id = $token_user->id;
-                        $res->original_name = $document['originalName'];
-                        $res->size = $document['size'];
-                        $res->url = $document['url'];
-                        $res->status = "pending";
-                        $res->document = "resume";
-                        $res->save();
+                        $resu = new TeacherDocument();
+                        $resu->user_id = $token_user->id;
+                        $resu->original_name = $res['originalName'];
+                        $resu->size = $res['size'];
+                        $resu->url = $res['url'];
+                        $resu->status = "pending";
+                        $resu->document = "resume";
+                        $resu->save();
                     }
                 }
 
@@ -1132,14 +1132,14 @@ class UserController extends Controller
 
                     foreach ($degrees as $deg) {
 
-                        $deg = new TeacherDocument();
-                        $deg->user_id = $token_user->id;
-                        $deg->original_name = $document['originalName'];
-                        $deg->size = $document['size'];
-                        $deg->url = $document['url'];
-                        $deg->status = "pending";
-                        $deg->document = "degrees";
-                        $deg->save();
+                        $degr = new TeacherDocument();
+                        $degr->user_id = $token_user->id;
+                        $degr->original_name = $deg['originalName'];
+                        $degr->size = $deg['size'];
+                        $degr->url = $deg['url'];
+                        $degr->status = "pending";
+                        $degr->document = "degrees";
+                        $degr->save();
                     }
                 }
 
@@ -1151,14 +1151,14 @@ class UserController extends Controller
 
                     foreach ($certificates as $cert) {
 
-                        $cert = new TeacherDocument();
-                        $cert->user_id = $token_user->id;
-                        $cert->original_name = $document['originalName'];
-                        $cert->size = $document['size'];
-                        $cert->url = $document['url'];
-                        $cert->status = "pending";
-                        $cert->document = "certificates";
-                        $cert->save();
+                        $certi = new TeacherDocument();
+                        $certi->user_id = $token_user->id;
+                        $certi->original_name = $cert['originalName'];
+                        $certi->size = $cert['size'];
+                        $certi->url = $cert['url'];
+                        $certi->status = "pending";
+                        $certi->document = "certificates";
+                        $certi->save();
                     }
                 }
 
@@ -1239,14 +1239,14 @@ class UserController extends Controller
 
                     foreach ($resume as $res) {
 
-                        $res = new TeacherDocument();
-                        $res->user_id = $token_user->id;
-                        $res->original_name = $document['originalName'];
-                        $res->size = $document['size'];
-                        $res->url = $document['url'];
-                        $res->status = "pending";
-                        $res->document = "resume";
-                        $res->save();
+                        $resu = new TeacherDocument();
+                        $resu->user_id = $token_user->id;
+                        $resu->original_name = $res['originalName'];
+                        $resu->size = $res['size'];
+                        $resu->url = $res['url'];
+                        $resu->status = "pending";
+                        $resu->document = "resume";
+                        $resu->save();
                     }
                 }
 
@@ -1257,14 +1257,14 @@ class UserController extends Controller
 
                     foreach ($degrees as $deg) {
 
-                        $deg = new TeacherDocument();
-                        $deg->user_id = $token_user->id;
-                        $deg->original_name = $document['originalName'];
-                        $deg->size = $document['size'];
-                        $deg->url = $document['url'];
-                        $deg->status = "pending";
-                        $deg->document = "degrees";
-                        $deg->save();
+                        $degr = new TeacherDocument();
+                        $degr->user_id = $token_user->id;
+                        $degr->original_name = $deg['originalName'];
+                        $degr->size = $deg['size'];
+                        $degr->url = $deg['url'];
+                        $degr->status = "pending";
+                        $degr->document = "degrees";
+                        $degr->save();
                     }
                 }
 
@@ -1276,14 +1276,14 @@ class UserController extends Controller
 
                     foreach ($certificates as $cert) {
 
-                        $cert = new TeacherDocument();
-                        $cert->user_id = $token_user->id;
-                        $cert->original_name = $document['originalName'];
-                        $cert->size = $document['size'];
-                        $cert->url = $document['url'];
-                        $cert->status = "pending";
-                        $cert->document = "certificates";
-                        $cert->save();
+                        $certi = new TeacherDocument();
+                        $certi->user_id = $token_user->id;
+                        $certi->original_name = $cert['originalName'];
+                        $certi->size = $cert['size'];
+                        $certi->url = $cert['url'];
+                        $certi->status = "pending";
+                        $certi->document = "certificates";
+                        $certi->save();
                     }
                 }
 
@@ -1886,16 +1886,20 @@ class UserController extends Controller
 
         $user = User::find($id);
 
-        $user_meta = TeacherDocument::where('user_id', $id)->get();
+        $user_resume = TeacherDocument::where('user_id', $id)->where("document","resume")->get();
+        $user_degrees = TeacherDocument::where('user_id', $id)->where("document","degrees")->get();
+        $user_certificates = TeacherDocument::where('user_id', $id)->where("document","certificates")->get();
 
-        $user->documents = $user_meta;
+        $user->user_resume = $user_resume;
+        $user->user_degrees = $user_degrees;
+        $user->user_certificates = $user_certificates;
 
 
         return response()->json([
 
             'status' => true,
             'message' => 'user documents',
-            'user_documents' => $user_meta,
+            'user' => $user,
 
         ]);
     }

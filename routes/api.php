@@ -380,6 +380,7 @@ Route::get('teacher-profile', 'Web\UserController@teacher_public_profile');
 
 
 
+
 //**************** classes routes ****************
 Route::get('class-attendees/{class_id}', 'TeacherController@classAttendees');
 Route::get('todays-classes', 'TeacherController@todaysClasses');
@@ -577,3 +578,7 @@ Route::get('payment/details', 'PaymentController@payment_details');
 Route::Post('payment/{payment_id}/refund', 'PaymentController@refund');
 Route::Post('payment/refund2', 'PaymentController@refund2');
 Route::get('test', 'TestController@test');
+
+//**************** classes routes ****************
+Route::resource('highlighted-topic', 'HighlightedTopicController');
+Route::post('highlighted-topic/{course_id}', 'HighlightedTopicController@update');

@@ -8,6 +8,8 @@ use App\Jobs\InterviewRequestJob;
 use App\Models\Verification;
 use App\User;
 use App\TeacherInterviewRequest;
+use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -38,7 +40,7 @@ class InterviewRequestController extends Controller
         if (!(in_array($availability->day, $availability_days))) {
           array_push($availability_days, $availability->day);
         }
-        // return $availability_days;
+      // return $availability_days;
 
       $interviewRequest->availability_days = $availability_days;
     }
@@ -87,6 +89,24 @@ class InterviewRequestController extends Controller
 
     $validator = Validator::make($request->all(), $rules);
 
+    // $date = Carbon::parse($request->date_for_interview)->format('Y-m-d');
+    // $time = Carbon::parse($request->time_for_interview)->format('H:i:s');
+
+    // $time_object = DateTime::createFromFormat("Y-m-d H:i:s", ($date . ' ' . $time));
+    // $time_string = Carbon::parse($time_object);
+    
+    // $current_time = Carbon::now();
+    // $diff= $time_string->diff($current_time);
+    // return $diff;
+
+    // if ($current_time->diff($current_time) < 24) {
+    //   return response()->json([
+    //     'status' => false,
+    //     'errors' => 'You can schedule your interview after 24 hours from now',
+    //   ], 400);
+    // } 
+    // return Carbon::parse($time_object);
+
     if ($validator->fails()) {
       $messages = $validator->messages();
       $errors = $messages->all();
@@ -98,6 +118,8 @@ class InterviewRequestController extends Controller
       ], 400);
       // return $this->respondWithError($errors,500);
     }
+
+
 
     $user = User::find($token_user->id);
 

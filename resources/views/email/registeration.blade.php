@@ -23,6 +23,33 @@
                             </div>
                         @endif
 
+                        @if ($user->role_name == 'student')
+                            <div class="card-body">
+                                <p>Hi <b> {{ $user->first_name }},</b> </p>
+                                <p>Welcome to MEtutors!</p>
+                                <p> You have successfully registered on MEtutors and have been assigned your SIN student
+                                    identification
+                                    number
+                                    <b>{{ $user->id_number }}</b>.
+                                </p>
+                                <p>You can log in to your profile on this link @php echo 'https://metutors.com/student/dashboard' @endphp</p>
+
+
+
+                                <p>Regards,</p>
+                                <p>Talent Acquisition Team</p>
+                            </div>
+                        @endif
+
+                        {{-- "Subject: You are registered on MEtutors
+
+                        Hi STUDENT'S FIRST NAME,
+                        You have successfully registered on MEtutors and have been assigned your SIN student identification
+                        number XXX. You can log in to your profile on this link https://studentlogin.
+
+                        Regards,
+                        MEtutors Success Team" --}}
+
                         @if ($user->role_name == 'admin')
                             <div class="card-body">
                                 <p>Hi <b>HR</b>, </p>
