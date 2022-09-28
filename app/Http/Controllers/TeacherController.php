@@ -175,7 +175,11 @@ class TeacherController extends Controller
 
         $teacher = User::find($token_user->id);
 
-        $reviews = UserFeedback::with('sender', 'course', 'feedback')->where('receiver_id', $teacher->id)->where('course_id', $course_id)->get();
+        $reviews = UserFeedback::with('sender', 'course', 'feedback')
+        ->where('receiver_id', $teacher->id)
+        ->where('course_id', $course_id)
+        ->get();
+        
         return response()->json([
             'success' => true,
             'message' => 'Course Reviews!',

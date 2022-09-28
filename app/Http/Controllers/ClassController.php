@@ -52,6 +52,8 @@ use Devinweb\LaravelHyperpay\Facades\LaravelHyperpay;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use PragmaRX\Countries\Package\Countries;
+use stdClass;
 
 class ClassController extends Controller
 {
@@ -1266,13 +1268,13 @@ class ClassController extends Controller
         }
 
 
-        $classroom = ClassRoom::where($userrole, $token_user->id)->pluck('course_id');
+        $classroom = ClassRoom::where($userrole, $token_user->id)->where('status','!=','payment_pending')->pluck('course_id');
 
         if (count($request->all()) >= 1) {
 
             if (count($request->all()) == 1) {
                 $program = Program::findOrFail($request->program);
-                $countries = Country::select('id', 'name', 'emojiU')->get();
+                // $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
                 $newly_assigned_courses = Course::with('subject.country', 'language', 'program', 'student', 'student', 'classes')
@@ -1334,7 +1336,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    'countries' => $countries,
+                    // 'countries' => $countries,
                     'newly_assigned_courses' => $newly_assigned_courses,
                     'active_courses' => $active_courses,
                     'cancelled_courses' => $cancelled_courses,
@@ -1347,7 +1349,7 @@ class ClassController extends Controller
                 if ($request->has('field_of_study')) {
                     $program = Program::find($request->program);
                     $field_of_study = FieldOfStudy::find($request->field_of_study);
-                    $countries = Country::select('id', 'name', 'emojiU')->get();
+                    // $countries = Country::select('id', 'name', 'emojiU')->get();
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
@@ -1410,7 +1412,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        'countries' => $countries,
+                        // 'countries' => $countries,
                         'newly_assigned_courses' => $newly_assigned_courses,
                         'active_courses' => $active_courses,
                         'cancelled_courses' => $cancelled_courses,
@@ -1422,7 +1424,20 @@ class ClassController extends Controller
                 if ($request->has('country')) {
                     $program = Program::find($request->program);
                     $country = Country::find($request->country);
-                    $countries = Country::select('id', 'name', 'emojiU')->get();
+
+                    //finding the course countries
+                    $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                    $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+                    $Countries = Countries::all();
+                    $course_countries = [];
+                    foreach ($countries as $country) {
+                        $Country = $Countries->where('name.common', $country->name)->first();
+                        $course_country = new stdClass();
+                        $course_country->name = $Country->name->common;
+                        $course_country->flag =  $Country->flag['flag-icon'];
+                        array_push($course_countries, $course_country);
+                    }
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
@@ -1479,7 +1494,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        'countries' => $countries,
+                        'countries' => $course_countries,
                         'newly_assigned_courses' => $newly_assigned_courses,
                         'active_courses' => $active_courses,
                         'cancelled_courses' => $cancelled_courses,
@@ -1494,7 +1509,20 @@ class ClassController extends Controller
                 $program = Program::find($request->program);
                 $field_of_study = FieldOfStudy::find($request->field_of_study);
                 $country = Country::find($request->country);
-                $countries = Country::select('id', 'name', 'emojiU')->get();
+
+                //finding the course countries
+                $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+                $Countries = Countries::all();
+                $course_countries = [];
+                foreach ($countries as $country) {
+                    $Country = $Countries->where('name.common', $country->name)->first();
+                    $course_country = new stdClass();
+                    $course_country->name = $Country->name->common;
+                    $course_country->flag =  $Country->flag['flag-icon'];
+                    array_push($course_countries, $course_country);
+                }
 
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
@@ -1545,7 +1573,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    'countries' => $countries,
+                    'countries' => $course_countries,
                     'newly_assigned_courses' => $newly_assigned_courses,
                     'active_courses' => $active_courses,
                     'cancelled_courses' => $cancelled_courses,

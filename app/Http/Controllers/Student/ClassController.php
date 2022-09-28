@@ -39,6 +39,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use JWTAuth;
+use PragmaRX\Countries\Package\Countries;
+use stdClass;
 
 class ClassController extends Controller
 {
@@ -647,7 +649,7 @@ class ClassController extends Controller
 
 
 
-        $classroom = ClassRoom::where($userrole, $token_user->id)->pluck('course_id');
+        $classroom = ClassRoom::where($userrole, $token_user->id)->where('status','!=','payment_pending')->pluck('course_id');
 
         if ($token_user->role_name == 'teacher') {
             $courses = Course::where('teacher_id', $token_user->id)->get();
@@ -668,7 +670,7 @@ class ClassController extends Controller
 
             if (count($request->all()) == 1) {
                 $program = Program::find($request->program);
-                $countries = Country::select('id', 'name', 'emojiU')->get();
+                // $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
 
@@ -693,7 +695,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
@@ -712,7 +714,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
@@ -731,7 +733,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
@@ -750,7 +752,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
@@ -760,7 +762,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    'countries' =>  $countries,
+                    // 'countries' =>  $countries,
                     'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                     'active_courses' =>  $active_courses,
                     'cancelled_courses' =>  $cancelled_courses,
@@ -773,7 +775,7 @@ class ClassController extends Controller
                 if ($request->has('field_of_study')) {
                     $program = Program::find($request->program);
                     $field_of_study = FieldOfStudy::find($request->field_of_study);
-                    $countries = Country::select('id', 'name', 'emojiU')->get();
+                    // $countries = Country::select('id', 'name', 'emojiU')->get();
 
                     $fieldOfStudies =  FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
@@ -798,7 +800,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
@@ -817,7 +819,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
@@ -836,7 +838,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
@@ -855,7 +857,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
                         // $lastActivity_course->course->teacher;
-                        $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
@@ -864,7 +866,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        'countries' =>  $countries,
+                        // 'countries' =>  $countries,
                         'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                         'active_courses' =>  $active_courses,
                         'cancelled_courses' =>  $cancelled_courses,
@@ -876,7 +878,20 @@ class ClassController extends Controller
                 if ($request->has('country')) {
                     $program = Program::find($request->program);
                     $country = Country::find($request->country);
-                    $countries = Country::select('id', 'name', 'emojiU')->get();
+
+                    //finding the course countries
+                    $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                    $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+                    $Countries = Countries::all();
+                    $course_countries = [];
+                    foreach ($countries as $country) {
+                        $Country = $Countries->where('name.common', $country->name)->first();
+                        $course_country = new stdClass();
+                        $course_country->name = $Country->name->common;
+                        $course_country->flag =  $Country->flag['flag-icon'];
+                        array_push($course_countries, $course_country);
+                    }
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
@@ -901,7 +916,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
@@ -920,7 +935,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
@@ -939,7 +954,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
@@ -958,7 +973,7 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                         $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
@@ -967,7 +982,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        'countries' =>  $countries,
+                        'countries' =>  $course_countries,
                         'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                         'active_courses' =>  $active_courses,
                         'cancelled_courses' =>  $cancelled_courses,
@@ -982,7 +997,20 @@ class ClassController extends Controller
                 $program = Program::find($request->program);
                 $field_of_study = FieldOfStudy::find($request->field_of_study);
                 $country = Country::find($request->country);
-                $countries = Country::select('id', 'name', 'emojiU')->get();
+
+                //finding the course countries
+                $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+                $Countries = Countries::all();
+                $course_countries = [];
+                foreach ($countries as $country) {
+                    $Country = $Countries->where('name.common', $country->name)->first();
+                    $course_country = new stdClass();
+                    $course_country->name = $Country->name->common;
+                    $course_country->flag =  $Country->flag['flag-icon'];
+                    array_push($course_countries, $course_country);
+                }
 
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
@@ -1008,7 +1036,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
@@ -1027,7 +1055,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
@@ -1046,7 +1074,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
@@ -1065,7 +1093,7 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                     $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
@@ -1075,7 +1103,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    'countries' =>  $countries,
+                    'countries' =>  $course_countries,
                     'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                     'active_courses' =>  $active_courses,
                     'cancelled_courses' =>  $cancelled_courses,
@@ -1113,7 +1141,7 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $course['teacher']->average_rating = $average_rating;
+                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                 $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
@@ -1132,7 +1160,7 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $course['teacher']->average_rating = $average_rating;
+                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                 $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
@@ -1151,7 +1179,7 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $course['teacher']->average_rating = $average_rating;
+                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                 $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
@@ -1170,7 +1198,7 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $lastActivity_course->course['teacher']->average_rating = $average_rating;
+                $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
                 $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($lastActivity_course->course['teacher']['teacher_qualification']);
             }
@@ -1249,21 +1277,21 @@ class ClassController extends Controller
         $todays_date = Carbon::now()->format('d-M-Y [l]');
 
         $user_id = $token_user->id;
-        $current_date = Carbon::today()->format('Y-m-d g:i A');
+        $current_date = Carbon::today()->format('Y-m-d');
 
         $course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->find($course_id);
-        
-        //converting utc time to local
-        $ip = request()->getClientIp();
-        $user = \Location::get($ip);
 
-        #using utc date convert date to user date
-        $user_date = Carbon::createFromFormat('Y-m-d H:i A',$current_date, 'UTC');
-        $user_date->setTimezone($user->timezone);
+        // //converting utc time to local
+        // $ip = request()->getClientIp();
+        // $user = \Location::get($ip);
 
-        # check the user date
-        // $localtime = $user_date->format('Y-m-d g:i A');
-        $localtime = $user_date->format('Y-m-d');
+        // #using utc date convert date to user date
+        // $user_date = Carbon::createFromFormat('Y-m-d H:i A', $current_date, 'UTC');
+        // $user_date->setTimezone($user->timezone);
+
+        // # check the user date
+        // // $localtime = $user_date->format('Y-m-d g:i A');
+        // $localtime = $user_date->format('Y-m-d');
 
         //Add or update course to Last Activity
         $last_activity = LastActivity::updateOrCreate([
@@ -1330,7 +1358,7 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->where('start_date', $localtime)
+            ->where('start_date', $current_date)
             ->with('course')
             // ->where($userrole, $user_id)
             ->where('course_id', $course->id)
@@ -1346,13 +1374,13 @@ class ClassController extends Controller
                 $q->where('role_name', 'teacher');
             }])
             ->with('teacher')
-            ->where('start_date', '>', $localtime)
+            ->where('start_date', '>', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->paginate($request->per_page ?? 3);
 
-        $total_upcomingClasses = AcademicClass::where('start_date', '>', $localtime)
+        $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
@@ -1368,13 +1396,13 @@ class ClassController extends Controller
             // ->whereHas('attendence', function ($query) use ($user_id) {
             //     $query->where(['user_id' => $user_id]);
             // })
-            ->where('start_date', '<', $localtime)
+            ->where('start_date', '<', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->paginate($request->per_page ?? 3);
 
-        $total_pastClasses = AcademicClass::where('start_date', '<', $localtime)
+        $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
@@ -1392,7 +1420,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'todays_date' =>  $localtime,
+            'todays_date' =>  $current_date,
             'total_previousClasses' => $total_pastClasses,
             'total_upcomingClasses' => $total_upcomingClasses,
             'remaining_classes' => $remaining_classes,

@@ -8,7 +8,7 @@
                     <div class="card">
                         <div class="card-body">
                             @php
-                               $invoice_data = json_decode($invoiceData);
+                               $invoice_data = json_decode(json_encode($invoiceData));
                             @endphp
                             {{-- <p>{{$invoice_data->date}}</p> --}}
                             <p>Hi </p>

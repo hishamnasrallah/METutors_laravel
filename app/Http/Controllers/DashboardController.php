@@ -404,6 +404,7 @@ class DashboardController extends Controller
 
         $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
             ->where('receiver_id', $user_id)
+            ->orderBy('id','desc')
             ->get();
 
         $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);

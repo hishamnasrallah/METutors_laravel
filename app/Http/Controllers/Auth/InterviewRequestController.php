@@ -40,8 +40,7 @@ class InterviewRequestController extends Controller
         if (!(in_array($availability->day, $availability_days))) {
           array_push($availability_days, $availability->day);
         }
-      // return $availability_days;
-
+     
       $interviewRequest->availability_days = $availability_days;
     }
 

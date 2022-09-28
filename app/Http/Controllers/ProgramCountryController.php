@@ -175,7 +175,6 @@ class ProgramCountryController extends Controller
         }
 
         $countries = Countries::all();
-        // return $request->name;
         $country = $countries->where('name.common', $request->name)->first();
 
         $program_country->name = $country->name->common;

@@ -333,8 +333,6 @@ Route::get('teacher/kudos-points', 'DashboardController@kudos_detail');
 Route::post('invoice-mail', 'DashboardController@invoice_mail');
 Route::get('classes-dashboard', 'DashboardController@classes_dashboard');
 
-
-
 Route::get('students/profile', 'ClassController@student_profile');
 Route::Post('teacher/update-profile', 'DashboardController@update_teacherProfile');
 Route::Post('newsletter', 'FaqController@newsletter');
