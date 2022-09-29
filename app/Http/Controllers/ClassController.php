@@ -1268,7 +1268,22 @@ class ClassController extends Controller
         }
 
 
-        $classroom = ClassRoom::where($userrole, $token_user->id)->where('status','!=','payment_pending')->pluck('course_id');
+        $classroom = ClassRoom::where($userrole, $token_user->id)->where('status', '!=', 'payment_pending')->pluck('course_id');
+
+        //finding the course countries
+        $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+        $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+        $Countries = Countries::all();
+        $course_countries = [];
+        foreach ($countries as $country) {
+            $Country = $Countries->where('name.common', $country->name)->first();
+            $course_country = new stdClass();
+            $course_country->name = $Country->name->common;
+            $course_country->flag =  $Country->flag['flag-icon'];
+            array_push($course_countries, $course_country);
+        }
+        // course countries ended
 
         if (count($request->all()) >= 1) {
 
@@ -1336,7 +1351,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    // 'countries' => $countries,
+                    'countries' => $course_countries,
                     'newly_assigned_courses' => $newly_assigned_courses,
                     'active_courses' => $active_courses,
                     'cancelled_courses' => $cancelled_courses,
@@ -1412,7 +1427,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        // 'countries' => $countries,
+                        'countries' => $course_countries,
                         'newly_assigned_courses' => $newly_assigned_courses,
                         'active_courses' => $active_courses,
                         'cancelled_courses' => $cancelled_courses,
@@ -1425,19 +1440,19 @@ class ClassController extends Controller
                     $program = Program::find($request->program);
                     $country = Country::find($request->country);
 
-                    //finding the course countries
-                    $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
-                    $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+                    // //finding the course countries
+                    // $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                    // $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
 
-                    $Countries = Countries::all();
-                    $course_countries = [];
-                    foreach ($countries as $country) {
-                        $Country = $Countries->where('name.common', $country->name)->first();
-                        $course_country = new stdClass();
-                        $course_country->name = $Country->name->common;
-                        $course_country->flag =  $Country->flag['flag-icon'];
-                        array_push($course_countries, $course_country);
-                    }
+                    // $Countries = Countries::all();
+                    // $course_countries = [];
+                    // foreach ($countries as $country) {
+                    //     $Country = $Countries->where('name.common', $country->name)->first();
+                    //     $course_country = new stdClass();
+                    //     $course_country->name = $Country->name->common;
+                    //     $course_country->flag =  $Country->flag['flag-icon'];
+                    //     array_push($course_countries, $course_country);
+                    // }
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
@@ -1510,19 +1525,19 @@ class ClassController extends Controller
                 $field_of_study = FieldOfStudy::find($request->field_of_study);
                 $country = Country::find($request->country);
 
-                //finding the course countries
-                $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
-                $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+                // //finding the course countries
+                // $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                // $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
 
-                $Countries = Countries::all();
-                $course_countries = [];
-                foreach ($countries as $country) {
-                    $Country = $Countries->where('name.common', $country->name)->first();
-                    $course_country = new stdClass();
-                    $course_country->name = $Country->name->common;
-                    $course_country->flag =  $Country->flag['flag-icon'];
-                    array_push($course_countries, $course_country);
-                }
+                // $Countries = Countries::all();
+                // $course_countries = [];
+                // foreach ($countries as $country) {
+                //     $Country = $Countries->where('name.common', $country->name)->first();
+                //     $course_country = new stdClass();
+                //     $course_country->name = $Country->name->common;
+                //     $course_country->flag =  $Country->flag['flag-icon'];
+                //     array_push($course_countries, $course_country);
+                // }
 
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
@@ -1627,7 +1642,7 @@ class ClassController extends Controller
                 'active_courses' => $active_courses,
                 'cancelled_courses' => $cancelled_courses,
                 'completed_courses' => $completed_courses,
-                // 'rejected_courses' =>$rejected_courses
+                'countries' => $course_countries,
             ]);
         }
     }

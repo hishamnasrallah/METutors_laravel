@@ -65,8 +65,8 @@ class UserController extends Controller
         // ]);
 
 
-        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
-            ->with('teacher_qualification')
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio','country', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification','country')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
             ->where('status', 'active')->where('id', '!=', 1212)
@@ -98,8 +98,8 @@ class UserController extends Controller
             $teacher->reviews_count = count($reviews);
         }
 
-        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
-            ->with('teacher_qualification')
+        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio','country', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification','country')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
             ->where('status', 'active')->where('id', 1212)
@@ -288,7 +288,7 @@ class UserController extends Controller
         }
 
 
-        $selectedTeachers = User::with('teacher_qualification')->whereIn('id', $final_teachers)->get();
+        $selectedTeachers = User::with('teacher_qualification','country')->whereIn('id', $final_teachers)->get();
         foreach ($selectedTeachers as $teacher) {
             $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
             $teacher->students_taught = count($students);
@@ -303,7 +303,7 @@ class UserController extends Controller
             $teacher->reviews_count = $total_reviews;
         }
 
-        $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+        $suggestedTeachers = User::with('teacher_qualification','country')->whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
 
         foreach ($suggestedTeachers as $teacher) {
             $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();

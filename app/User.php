@@ -135,9 +135,6 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
-
-
-
     static function getAdmin()
     {
         $role = Role::where('name', Role::$admin)->first();

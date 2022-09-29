@@ -1734,22 +1734,25 @@ class UserController extends Controller
                 // });
                 //********* Sending Email ends **********
 
-                //********* Sending Email to teacher **********
-                $user_email = $user->email;
-                $custom_message = "Teacher Registerd Successfully";
-                $to_email = $user_email;
-
-                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
-
-                Mail::send('email.registeration', $data, function ($message) use ($to_email) {
-
-                    $message->to($to_email)->subject('Welcome to MEtutors');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-                });
 
 
+                // //********* Sending Email to teacher **********
+                // $user_email = $user->email;
+                // $custom_message = "Teacher Registerd Successfully";
+                // $to_email = $user_email;
 
-                //********* Sending Email ends **********
+                // $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
+
+                // Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+
+                //     $message->to($to_email)->subject('Welcome to MEtutors');
+                //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                // });
+
+                // //********* Sending Email ends **********
+
+
+                
 
 
                 // // Emails and notifications for registeration

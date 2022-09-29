@@ -32,7 +32,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     //**************** Student routes starts****************
 
-    Route::get('student/dashboard', 'Student\DashboardController@dashboard');
+    Route::get('student/dashboard', 'Student\DashboardController@dashboard'); 
     Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
 
     Route::get('student/classroom', 'Student\ClassController@courses');
@@ -580,3 +580,5 @@ Route::get('test', 'TestController@test');
 //**************** classes routes ****************
 Route::resource('highlighted-topic', 'HighlightedTopicController');
 Route::post('highlighted-topic/{course_id}', 'HighlightedTopicController@update');
+
+//**************** classes routes ****************
