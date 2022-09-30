@@ -358,7 +358,7 @@ class UserController extends Controller
     public function teacher_profile(Request $request, $id)
     {
 
-        $user = \App\User::with('country', 'userResume', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
+        $user = \App\User::with('country', 'userResume','userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
             ->withCount('teacher_students')
             ->withCount('teacher_course')
             ->withCount('teacher_feedbacks')

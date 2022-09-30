@@ -3911,12 +3911,12 @@ class AdminController extends Controller
 
         if (isset($id)) {
 
-            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userResume', 'user.userDegrees', 'user.userCertificates', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
+            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userResume','user.userSignature', 'user.userDegrees', 'user.userCertificates', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
                 ->where('id', $id)
                 ->first();
         }
 
-        $teacher_profile = User::with('teacherAvailability', 'country', 'userResume', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+        $teacher_profile = User::with('teacherAvailability', 'country', 'userResume','userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
             ->where('id', $id)
             ->first();
 

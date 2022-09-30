@@ -23,6 +23,10 @@ class TeacherInterviewRequest extends Model
     {
         return $this->hasMany('App\TeacherDocument', 'user_id', 'user_id')->where('document','resume');
     }
+    public function UserSignature()
+    {
+        return $this->hasMany('App\Models\UserSignature', 'user_id', 'user_id');
+    }
     public function userDocuments()
     {
         return $this->hasMany('App\TeacherDocument', 'user_id', 'user_id');

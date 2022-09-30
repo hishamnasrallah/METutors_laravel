@@ -359,11 +359,11 @@ class ClassController extends Controller
         //Adding Highlighted topic data
         if ($request->has('highlighted_topics')) {
             foreach (json_decode($request->highlighted_topics) as $topic) {
-                $topic = new HighlightedTopic();
-                $topic->name = $request->name;
-                $topic->confidence_scale = $request->confidence_scale;
-                $topic->course_id = $course->id;
-                $topic->save();
+                $topicc = new HighlightedTopic();
+                $topicc->name = $topic->name;
+                $topicc->confidence_scale = $topic->knowledge_scale;
+                $topicc->course_id = $course->id;
+                $topicc->save();
             }
         }
 

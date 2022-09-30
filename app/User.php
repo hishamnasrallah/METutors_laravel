@@ -340,6 +340,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany('App\TeacherDocument', 'user_id', 'id');
     }
+    public function userSignature()
+    {
+        return $this->hasMany('App\Models\UserSignature', 'user_id', 'id');
+    }
     public function userMetas()
     {
         return $this->hasMany('App\Models\UserMeta', 'user_id', 'id');

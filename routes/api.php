@@ -304,6 +304,7 @@ Route::post('teacher/upload-documents', 'Panel\UserController@upload_documents')
 
 Route::post('teacher/upload-documents2', 'Panel\UserController@upload_documents2');
 
+Route::post('teacher/signature', 'Panel\UserController@teacher_signature');
 Route::post('teacher/complete-account', 'Panel\UserController@teacher_complete_account');
 Route::post('teacher/update-rates', 'Panel\UserController@update_rates');
 
