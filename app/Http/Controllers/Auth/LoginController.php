@@ -14,6 +14,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use \App\Mail\SendMailOtp;
 use App\Models\UserMeta;
+use App\TeacherDocument;
 use Auth;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -293,7 +294,7 @@ class LoginController extends Controller
 
             //Checking User Meta
             if ($user->role_name == 'teacher') {
-                $user_meta = UserMeta::where('user_id', $user->id)->first();
+                $user_meta = TeacherDocument::where('user_id', $user->id)->first();
                 if ($user_meta == null) {
                     $user->user_meta = 'false';
                 } else {

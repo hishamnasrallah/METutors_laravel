@@ -19,7 +19,10 @@ use App\Models\ReserveMeeting;
 use App\Models\Sale;
 use App\Models\UserOccupation;
 use App\Models\Webinar;
+use App\Program;
 use App\User;
+use App\Subject;
+use App\TeacherSubject;
 use App\Models\Role;
 use App\Models\Follow;
 use App\Models\Meeting;
@@ -48,6 +51,8 @@ class UserController extends Controller
     public function filteredTeacher(Request $request)
     {
 
+        // return json_decode($request->class_rooms);
+
         // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
         //     ->where('role_name', 'teacher')
         //     ->where('verified', 1)
@@ -60,18 +65,70 @@ class UserController extends Controller
         // ]);
 
 
-        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio','country', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification','country')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
             ->where('status', 'active')->where('id', '!=', 1212)
             ->get();
 
 
-        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'status', 'created_at', 'updated_at')
+        $rating_total = 0;
+        foreach ($filtered_teacher as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+            $reviews = $reviews->groupBy('sender_id');
+            // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+
+            foreach ($reviews as $review) {
+                $rating_sum = $review->sum('rating');
+                $review_count = count($review);
+                $sub_average_rating = $rating_sum / $review_count;
+                $rating_total =  $rating_total + $sub_average_rating;
+            }
+
+            if (count($reviews) > 0) {
+                $average_rating = $rating_total / count($reviews);
+            }
+
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count = count($reviews);
+        }
+
+        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio','country', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification','country')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
             ->where('status', 'active')->where('id', 1212)
             ->get();
+
+        $rating_total = 0;
+        foreach ($suggestedTeachers as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+            $reviews = $reviews->groupBy('sender_id');
+            // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+
+            foreach ($reviews as $review) {
+                $rating_sum = $review->sum('rating');
+                $review_count = count($review);
+                $sub_average_rating = $rating_sum / $review_count;
+                $rating_total =  $rating_total + $sub_average_rating;
+            }
+
+            if (count($reviews) > 0) {
+                $average_rating = $rating_total / count($reviews);
+            }
+
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count = count($reviews);
+        }
 
         return response()->json([
             'success' => true,
@@ -81,7 +138,11 @@ class UserController extends Controller
 
 
         $rules = [
-            'classes' => 'required',
+            'class_rooms' => 'required',
+            'language_id' => 'required',
+            'program_id' => 'required',
+            'subject_id' => 'required',
+
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -101,34 +162,53 @@ class UserController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
+        // (function ($qe) use ($start_date, $end_date) {
+        //     $qe->whereBetween('availability_start_date', [$start_date, $end_date])->orWhereBetween('availability_end_date', [$start_date, $end_date]);
+        // });
+
         // return $request->classes;
         $start_date = Carbon::parse($request->start_date);
-        $end_date = Carbon::parse($request->end_date);
+        $end_date = Carbon::parse('2022-09-29T12:30:00.000Z'); //$request->end_date
         $filtered_teacher = User::whereHas('spokenLanguages', function ($q) use ($request) {
-            $q->where('language', $request->language_id);
+            $q->where('language', 1); // $request->language_id
         })
-            ->whereHas('teacherProgram', function ($q) use ($request) {
-                $q->where('program_id', $request->program_id);
-            })
+            // ->whereHas('teacherProgram', function ($q) use ($request) {
+            //     $q->where('program_id', 2); //$request->program_id
+            // })
             ->whereHas('teacherSubject', function ($q) use ($request) {
-                $q->where(['subject_id' => $request->subject_id, 'field_id' => $request->field_id]);
+                $q->where(['subject_id' => 25, 'field_id' => 8, 'program_id' => 2,]); //25,8,2 $request->subject_id      $request->field_id
             })
             ->whereHas('teacher_specification', function ($q) use ($request, $start_date, $end_date) {
-                $q->where('availability_end_date', '<=',  $end_date);
-                // (function ($qe) use ($start_date, $end_date) {
-                //     $qe->whereBetween('availability_start_date', [$start_date, $end_date])->orWhereBetween('availability_end_date', [$start_date, $end_date]);
-                // });
+                $q->where('availability_end_date', '>=',  $end_date);
             })
             ->where('role_name', 'teacher')
             ->get();
 
 
 
-        $requestedClasses = json_decode(json_encode($request->classes));
+        $requestedClasses = json_decode($request->class_rooms);
         $weekdays = [];
         foreach ($requestedClasses as $requestedClass) {
-            array_push($weekdays, $requestedClass->day);
+            $day = Carbon::parse($requestedClass->start)->format('l');
+
+            //converting days to integers
+            if ($day == 'Sunday') {
+                array_push($weekdays, 1);
+            } elseif ($day == 'Monday') {
+                array_push($weekdays, 2);
+            } elseif ($day == 'Tuesday') {
+                array_push($weekdays, 3);
+            } elseif ($day == 'Wednesday') {
+                array_push($weekdays, 4);
+            } elseif ($day == 'Thursday') {
+                array_push($weekdays, 5);
+            } elseif ($day == 'Friday') {
+                array_push($weekdays, 6);
+            } else {
+                array_push($weekdays, 7);
+            }
         }
+        // return $weekdays;
 
         $uniqueWeekdays = array_unique($weekdays);
 
@@ -136,30 +216,30 @@ class UserController extends Controller
         $available_teachers = [];
         $classCounter = 0;
         foreach ($requestedClasses as $requestedClass) {
+            // return $requestedClass;
             $classCounter++;
             foreach ($filtered_teacher as $teacher) {
                 $availabilities = TeacherAvailability::whereIn('day', $uniqueWeekdays)->where('user_id', $teacher->id)->get();
-                // if (isEmpty($availabilities)) {
-                //     array_push($available_teachers, $teacher);
-                // } else {
+
                 $counter = 0;
                 foreach ($availabilities as $availability) {
-
-                    $request_from = Carbon::parse($requestedClass->start_time)->format('G:i');
+                    // echo 'availability';
+                    $request_from = Carbon::parse($requestedClass->start)->format('G:i');
                     $db_from = Carbon::parse($availability->time_from)->format('G:i');
 
-                    $request_to = Carbon::parse($requestedClass->end_time)->format('G:i');
+                    $request_to = Carbon::parse($requestedClass->end)->format('G:i');
                     $db_to = Carbon::parse($availability->time_to)->format('G:i');
+
+                    //if availability date matches with class date
                     if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
                         $counter++;
+                        //if teacher is available at every class and requested classes is equal to classCount
                         if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
-                            // echo $classCounter;
                             array_push($available_teachers, $availability->user_id);
                             break;
                         }
                     }
                 }
-                // }
             }
         }
 
@@ -172,9 +252,9 @@ class UserController extends Controller
             $nullCounter = 0;
             foreach ($requestedClasses as $requestedClass) {
 
-                $start_time = Carbon::parse($requestedClass->start_time)->format('G:i');
-                $end_time = Carbon::parse($requestedClass->end_time)->format('G:i');
-                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->date)->get();
+                $start_time = Carbon::parse($requestedClass->start)->format('G:i');
+                $end_time = Carbon::parse($requestedClass->end)->format('G:i');
+                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->start)->get();
                 //************ If teacher has no Classes In classes Table ***********
                 if (count($teacherClasses) == 0) {
                     $nullCounter++;
@@ -208,8 +288,37 @@ class UserController extends Controller
         }
 
 
-        $selectedTeachers = User::whereIn('id', $final_teachers)->get();
-        $suggestedTeachers = User::whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+        $selectedTeachers = User::with('teacher_qualification','country')->whereIn('id', $final_teachers)->get();
+        foreach ($selectedTeachers as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count = $total_reviews;
+        }
+
+        $suggestedTeachers = User::with('teacher_qualification','country')->whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+
+        foreach ($suggestedTeachers as $teacher) {
+            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+            $teacher->students_taught = count($students);
+
+            $average_rating = 5.0;
+            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $teacher->average_rating = $average_rating;
+            $teacher->reviews_count = $total_reviews;
+        }
+
         return response()->json([
             'success' => true,
             'available_teachers' => $selectedTeachers,
@@ -228,7 +337,7 @@ class UserController extends Controller
 
         $user->joined_date = $user->created_at;
 
-        //  $user->userMetas;
+        //  $user->userDocuments;
 
         if (!$user) {
 
@@ -249,7 +358,7 @@ class UserController extends Controller
     public function teacher_profile(Request $request, $id)
     {
 
-        $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
+        $user = \App\User::with('country', 'userResume','userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
             ->withCount('teacher_students')
             ->withCount('teacher_course')
             ->withCount('teacher_feedbacks')

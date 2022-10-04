@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Verification;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
@@ -261,9 +262,33 @@ class VerificationController extends Controller
                     $user1->verified = 1;
                     $user1->update();
 
+
+                    if ($user1->role_name == 'teacher') {
+                        //********* Sending Email to teacher **********
+                        $user_email = $user1->email;
+                        $custom_message = "Teacher Registerd Successfully";
+                        $to_email = $user_email;
+
+                        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user1);
+
+                        Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+
+                            $message->to($to_email)->subject('Welcome to MEtutors');
+                            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                        });
+
+                        //********* Sending Email ends **********
+                    }
+
+
+
+
+
+
                     return response()->json([
                         'status' => true,
-                        'message' => $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
+                        // 'message' => $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
+                        'message' => 'Email verified Successfully! Please login to continue',
                         'return_url' => $request->return_url ?? false,
 
                     ]);

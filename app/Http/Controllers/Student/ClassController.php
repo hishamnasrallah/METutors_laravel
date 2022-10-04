@@ -39,6 +39,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use JWTAuth;
+use PragmaRX\Countries\Package\Countries;
+use stdClass;
 
 class ClassController extends Controller
 {
@@ -647,7 +649,22 @@ class ClassController extends Controller
 
 
 
-        $classroom = ClassRoom::where($userrole, $token_user->id)->pluck('course_id');
+        $classroom = ClassRoom::where($userrole, $token_user->id)->where('status','!=','payment_pending')->pluck('course_id');
+
+        //finding the course countries
+        $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+        $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+        $Countries = Countries::all();
+        $course_countries = [];
+        foreach ($countries as $country) {
+            $Country = $Countries->where('name.common', $country->name)->first();
+            $course_country = new stdClass();
+            $course_country->name = $Country->name->common;
+            $course_country->flag =  $Country->flag['flag-icon'];
+            array_push($course_countries, $course_country);
+        }
+        //finding the course countries end
 
         if ($token_user->role_name == 'teacher') {
             $courses = Course::where('teacher_id', $token_user->id)->get();
@@ -668,15 +685,15 @@ class ClassController extends Controller
 
             if (count($request->all()) == 1) {
                 $program = Program::find($request->program);
-                $countries = Country::select('id', 'name', 'emojiU')->get();
+                // $countries = Country::select('id', 'name', 'emojiU')->get();
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher.teacher_qualification', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
-                // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
-                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
+                $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher.teacher_qualification', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->orderBy('updated_at', 'desc')->first();
+                $lastActivity_course = LastActivity::with('course.classes', 'course.subject.country', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->latest('updated_at')->first();
 
 
                 $progress = 0;
@@ -693,8 +710,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -712,8 +729,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -731,8 +748,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -750,8 +767,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
 
@@ -760,7 +777,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    'countries' =>  $countries,
+                    'countries' =>  $course_countries,
                     'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                     'active_courses' =>  $active_courses,
                     'cancelled_courses' =>  $cancelled_courses,
@@ -773,15 +790,15 @@ class ClassController extends Controller
                 if ($request->has('field_of_study')) {
                     $program = Program::find($request->program);
                     $field_of_study = FieldOfStudy::find($request->field_of_study);
-                    $countries = Country::select('id', 'name', 'emojiU')->get();
+                    // $countries = Country::select('id', 'name', 'emojiU')->get();
 
                     $fieldOfStudies =  FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
-                    // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
-                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
+                    $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('id', 'desc')->get();
+                    // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->orderBy('updated_at', 'desc')->first();
+                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject.country', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('field_of_study_id', $field_of_study->id)->first();
 
 
                     $progress = 0;
@@ -798,8 +815,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -817,8 +834,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -836,8 +853,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -855,8 +872,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
                         // $lastActivity_course->course->teacher;
-                        $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
@@ -864,7 +881,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        'countries' =>  $countries,
+                        'countries' =>  $course_countries,
                         'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                         'active_courses' =>  $active_courses,
                         'cancelled_courses' =>  $cancelled_courses,
@@ -876,15 +893,28 @@ class ClassController extends Controller
                 if ($request->has('country')) {
                     $program = Program::find($request->program);
                     $country = Country::find($request->country);
-                    $countries = Country::select('id', 'name', 'emojiU')->get();
+
+                    // //finding the course countries
+                    // $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                    // $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+                    // $Countries = Countries::all();
+                    // $course_countries = [];
+                    // foreach ($countries as $country) {
+                    //     $Country = $Countries->where('name.common', $country->name)->first();
+                    //     $course_country = new stdClass();
+                    //     $course_country->name = $Country->name->common;
+                    //     $course_country->flag =  $Country->flag['flag-icon'];
+                    //     array_push($course_countries, $course_country);
+                    // }
 
                     $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                    $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                    // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
-                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
+                    $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                    // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
+                    $lastActivity_course = LastActivity::with('course.classes', 'course.subject.country', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('program_id', $program->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
                     $progress = 0;
@@ -901,8 +931,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -920,8 +950,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -939,8 +969,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $course['teacher']->average_rating = $average_rating;
-                        $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($course['teacher']['teacher_qualification']);
                     }
 
@@ -958,8 +988,8 @@ class ClassController extends Controller
                             $average_rating = $rating_sum / $total_reviews;
                         }
 
-                        $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                         unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
@@ -967,7 +997,7 @@ class ClassController extends Controller
                         'success' => true,
                         'programs' => $programs,
                         'field_of_studies' => $fieldOfStudies,
-                        'countries' =>  $countries,
+                        'countries' =>  $course_countries,
                         'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                         'active_courses' =>  $active_courses,
                         'cancelled_courses' =>  $cancelled_courses,
@@ -982,16 +1012,29 @@ class ClassController extends Controller
                 $program = Program::find($request->program);
                 $field_of_study = FieldOfStudy::find($request->field_of_study);
                 $country = Country::find($request->country);
-                $countries = Country::select('id', 'name', 'emojiU')->get();
+
+                // //finding the course countries
+                // $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+                // $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+
+                // $Countries = Countries::all();
+                // $course_countries = [];
+                // foreach ($countries as $country) {
+                //     $Country = $Countries->where('name.common', $country->name)->first();
+                //     $course_country = new stdClass();
+                //     $course_country->name = $Country->name->common;
+                //     $course_country->flag =  $Country->flag['flag-icon'];
+                //     array_push($course_countries, $course_country);
+                // }
 
 
                 $fieldOfStudies = FieldOfStudy::whereIn('id', $course_field_of_studies)->where('program_id', $program->id)->where('country_id', $country->id)->get();
 
-                $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
-                // $lastActivity_course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
-                $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
+                $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'country', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->where('field_of_study', $field_of_study->id)->where('country_id', $country->id)->orderBy('id', 'desc')->get();
+                // $lastActivity_course = Course::with('subject.country', 'language', 'program', 'teacher', 'classes')->whereIn('id', $classroom)->orderBy('updated_at', 'desc')->first();
+                $lastActivity_course = LastActivity::with('course.classes', 'course.subject.country', 'course.language', 'course.program', 'course.teacher.teacher_qualification')->where('user_id', $token_user->id)->where('role_name', $token_user->role_name)->where('field_of_study_id', $field_of_study->id)->where('country_id', $country->id)->latest('updated_at')->first();
 
 
                 $progress = 0;
@@ -1008,8 +1051,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -1027,8 +1070,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -1046,8 +1089,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $course['teacher']->average_rating = $average_rating;
-                    $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($course['teacher']['teacher_qualification']);
                 }
 
@@ -1065,8 +1108,8 @@ class ClassController extends Controller
                         $average_rating = $rating_sum / $total_reviews;
                     }
 
-                    $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                     unset($lastActivity_course->course['teacher']['teacher_qualification']);
                 }
 
@@ -1075,7 +1118,7 @@ class ClassController extends Controller
                     'success' => true,
                     'programs' => $programs,
                     'field_of_studies' => $fieldOfStudies,
-                    'countries' =>  $countries,
+                    'countries' =>  $course_countries,
                     'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                     'active_courses' =>  $active_courses,
                     'cancelled_courses' =>  $cancelled_courses,
@@ -1087,10 +1130,10 @@ class ClassController extends Controller
 
             $program = Program::where('code', $request->program)->first();
 
-            $active_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
-            $cancelled_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
-            $completed_courses = Course::with('subject', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
-            $lastActivity_course = LastActivity::with('course.classes', 'course.subject', 'course.language', 'course.program', 'course.teacher.teacher_qualification')
+            $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
+            $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
+            $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
+            $lastActivity_course = LastActivity::with('course.classes', 'course.subject.country', 'course.language', 'course.program', 'course.teacher.teacher_qualification')
                 ->where('user_id', $token_user->id)
                 ->where('role_name', $token_user->role_name)
                 ->latest('updated_at')
@@ -1113,8 +1156,8 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $course['teacher']->average_rating = $average_rating;
-                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
 
@@ -1132,8 +1175,8 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $course['teacher']->average_rating = $average_rating;
-                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
 
@@ -1151,8 +1194,8 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $course['teacher']->average_rating = $average_rating;
-                $course['teacher']->tag_line = $course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $course['teacher']['teacher_qualification'][0]->degree_field;
+                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($course['teacher']['teacher_qualification']);
             }
 
@@ -1170,8 +1213,8 @@ class ClassController extends Controller
                     $average_rating = $rating_sum / $total_reviews;
                 }
 
-                $lastActivity_course->course['teacher']->average_rating = $average_rating;
-                $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_level . ' in ' . $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
                 unset($lastActivity_course->course['teacher']['teacher_qualification']);
             }
 
@@ -1182,6 +1225,7 @@ class ClassController extends Controller
                 'programs' => $programs,
                 'lastActivity_course' => $lastActivity_course != null ? [$lastActivity_course->course] : [],
                 'active_courses' =>  $active_courses,
+                'countries' =>  $course_countries,
                 'cancelled_courses' =>  $cancelled_courses,
                 'completed_courses' => $completed_courses,
             ]);
@@ -1213,14 +1257,14 @@ class ClassController extends Controller
         $user = User::find($user_id);
         // return $user->role_name;
         if ($user->role_name == "student") {
-            $classes = AcademicClass::with('teacher', 'course', 'course.subject')->where('student_id', $user->id)->get();
+            $classes = AcademicClass::with('teacher', 'course', 'course.subject.country')->where('student_id', $user->id)->get();
             return response()->json([
                 'success' => true,
                 'classes' => $classes,
             ]);
         }
         if ($user->role_name == "teacher") {
-            $classes = AcademicClass::with('student', 'course', 'course.subject')->where('teacher_id', $user->id)->get();
+            $classes = AcademicClass::with('student', 'course', 'course.subject.country')->where('teacher_id', $user->id)->get();
             return response()->json([
                 'success' => true,
                 'classes' => $classes,
@@ -1251,8 +1295,19 @@ class ClassController extends Controller
         $user_id = $token_user->id;
         $current_date = Carbon::today()->format('Y-m-d');
 
-        $course = Course::with('subject', 'language', 'program', 'teacher', 'classes')->find($course_id);
-        // return $course->field_of_study;
+        $course = Course::with('field','subject', 'language', 'program', 'teacher','teacher.user_qualification', 'classes')->find($course_id);
+
+        // // //converting utc time to local
+        // $ip = request()->getClientIp();
+        // $user = \Location::get($ip);
+
+        // #using utc date convert date to user date
+        // $user_date = Carbon::createFromFormat('Y-m-d H:i A', $current_date, 'UTC');
+        // $user_date->setTimezone($user->timezone);
+
+        // # check the user date
+        // // $localtime = $user_date->format('Y-m-d g:i A');
+        // $localtime = $user_date->format('Y-m-d');
 
         //Add or update course to Last Activity
         $last_activity = LastActivity::updateOrCreate([
@@ -1311,8 +1366,8 @@ class ClassController extends Controller
         }
         // ************************************************
 
-        $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status', 'teacher_id')
-            ->with('course', 'course.teacher', 'course.subject', 'course.student', 'teacher')
+        $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id",'class_type', 'duration', 'day', 'status', 'teacher_id')
+            ->with('course','course.field', 'teacher.user_qualification', 'course.subject.country', 'course.student', 'teacher')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])
@@ -1321,33 +1376,33 @@ class ClassController extends Controller
             }])
             ->where('start_date', $current_date)
             ->with('course')
-            ->where($userrole, $user_id)
+            // ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->orderBy('start_time', 'desc')
             ->get();
 
-        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status', 'teacher_id')
-            // ->with('course', 'course.teacher', 'course.subject', 'course.student')
+        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id",'class_type', 'duration', 'day', 'status', 'teacher_id')
+            // ->with('course', 'course.teacher', 'course.subject.country', 'course.student')
             ->with('student_attendence', function ($q) {
                 $q->where('role_name', 'student');
             })
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->with('teacher')
+            ->with('teacher','course.field','teacher.user_qualification')
             ->where('start_date', '>', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->get();
+            ->paginate($request->per_page ?? 3);
 
         $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
 
-        $past_classes = AcademicClass::select('id', 'class_id', 'teacher_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'teacher', 'course.subject', 'course.student')
+        $past_classes = AcademicClass::select('id', 'class_id', 'teacher_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id",'class_type', 'duration', 'day', 'status')
+            ->with('course','course.field', 'teacher.user_qualification', 'course.subject.country', 'course.student')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])
@@ -1361,7 +1416,7 @@ class ClassController extends Controller
             // ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->get();
+            ->paginate($request->per_page ?? 3);
 
         $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
             ->where($userrole, $user_id)

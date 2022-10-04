@@ -105,14 +105,74 @@ class ResourcesController extends Controller
 
             //************* Resource files ends **********\\
 
-            $file_size = "26849";
+            $file_size = $request->size;
             $file_name = $request->file->getClientOriginalName();
         }
 
         $array = array(
             'id' => $image->id ?? '',
             'url' => $image_url ?? '',
-            'size' => number_format($file_size / 1048576, 2) . "MB" ?? '',
+            'size' => $file_size,
+            'original_name' => $file_name
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'files uploaded!',
+            'file' => [$array],
+
+        ]);
+    }
+    public function onboarding(Request $request)
+    {
+        $rules = [
+
+            'file' => 'required',
+            'size' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        if ($request->hasFile('file')) {
+            //************* Resource files **********\\
+            $resource_files = array();
+
+             if (file_exists(public_path() . '/uploads/onboarding/onboarding.pdf')) {
+                    unlink(public_path() . '/uploads/onboarding/onboarding.pdf');
+             }
+            $imageName = 'onboarding' . '.' . $request->file->getClientOriginalExtension();
+            $request->file->move(public_path('uploads/onboarding'), $imageName);
+
+            $image = new Images();
+            $image->filename = $imageName;
+            $image->original_name = $request->file->getClientOriginalName();
+
+            $image->url = $request->root() . '/uploads/onboarding/' . $imageName;
+            $image_url = $request->root() . '/uploads/onboarding/' . $imageName;
+
+            $image->save();
+
+
+            //************* Resource files ends **********\\
+
+            $file_size = $request->size;
+            $file_name = $request->file->getClientOriginalName();
+        }
+
+        $array = array(
+            'id' => $image->id ?? '',
+            'url' => $image_url ?? '',
+            'size' => $file_size,
             'original_name' => $file_name
         );
 

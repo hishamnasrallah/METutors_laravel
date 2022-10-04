@@ -739,14 +739,14 @@ class ClassController extends Controller
         $user = User::find($user_id);
         // return $user->role_name;
         if ($user->role_name == "student") {
-            $classes = AcademicClass::with('teacher', 'course', 'course.subject')->where('student_id', $user->id)->get();
+            $classes = AcademicClass::with('teacher', 'course', 'course.subject.country')->where('student_id', $user->id)->get();
             return response()->json([
                 'success' => true,
                 'classes' => $classes,
             ]);
         }
         if ($user->role_name == "teacher") {
-            $classes = AcademicClass::with('student', 'course', 'course.subject')->where('teacher_id', $user->id)->get();
+            $classes = AcademicClass::with('student', 'course', 'course.subject.country')->where('teacher_id', $user->id)->get();
             return response()->json([
                 'success' => true,
                 'classes' => $classes,
@@ -811,7 +811,7 @@ class ClassController extends Controller
         // ************************************************
 
         $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student')
+            ->with('course', 'course.subject.country', 'course.student')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])
@@ -826,7 +826,7 @@ class ClassController extends Controller
             ->get();
 
         $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student')
+            ->with('course', 'course.subject.country', 'course.student')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])
@@ -845,7 +845,7 @@ class ClassController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student')
+            ->with('course', 'course.subject.country', 'course.student')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])

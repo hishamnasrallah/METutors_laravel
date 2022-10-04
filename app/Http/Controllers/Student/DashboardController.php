@@ -65,13 +65,13 @@ class DashboardController extends Controller
 
 
             $course_details = [];
-            $completed_courses = Course::with('subject', 'student', 'program', 'classes', 'feedbacks')
+            $completed_courses = Course::with('subject.country', 'student', 'program', 'classes', 'feedbacks')
                 ->where('status', 'completed')
                 ->whereBetween('created_at', [$endDate, $current_date])
                 ->where($userrole, $user_id)
                 ->get();
             // return count($completed_courses);
-            $last_completed_courses = Course::with('subject', 'student', 'program', 'classes', 'feedbacks')
+            $last_completed_courses = Course::with('subject.country', 'student', 'program', 'classes', 'feedbacks')
                 ->where('status', 'completed')
                 ->whereBetween('created_at', [$compareDate, $endDate])
                 ->where($userrole, $user_id)
@@ -112,7 +112,7 @@ class DashboardController extends Controller
                 ]);
             }
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status', 'teacher_id')
-                ->with('teacher', 'course', 'course.subject', 'course.student', 'course.teacher', 'course.program')
+                ->with('teacher', 'course', 'course.subject.country', 'course.student', 'course.teacher', 'course.program')
                 ->where('start_date', $current_date)->where($userrole, $user_id)
                 ->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'desc')
@@ -202,7 +202,7 @@ class DashboardController extends Controller
         } else {
 
             $course_details = [];
-            $completed_courses = Course::with('subject', 'student', 'program', 'classes', 'feedbacks')->where('status', 'completed')->where($userrole, $user_id)->get();
+            $completed_courses = Course::with('subject.country', 'student', 'program', 'classes', 'feedbacks')->where('status', 'completed')->where($userrole, $user_id)->get();
             foreach ($completed_courses as $course) {
                 $completed_classes = 0;
                 $remaining_classes = 0;
@@ -229,7 +229,7 @@ class DashboardController extends Controller
                     'total_rating' => $total_rating,
                 ]);
             }
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'teacher', 'course.subject', 'course.student', 'course.teacher', 'course.program')
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'teacher', 'course.subject.country', 'course.student', 'course.teacher', 'course.program')
                 ->where('start_date', $current_date)->where($userrole, $user_id)
                 ->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'asc')
@@ -317,14 +317,14 @@ class DashboardController extends Controller
 
 
         $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
             ->get();
 
         $upcoming_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', '>', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
@@ -335,7 +335,7 @@ class DashboardController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', '<', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)

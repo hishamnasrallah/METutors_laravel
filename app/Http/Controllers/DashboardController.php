@@ -83,7 +83,7 @@ class DashboardController extends Controller
             }
             // return $endDate . ' - ' . $current_date;
 
-            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
+            $newly_assigned_courses = Course::with('subject.country', 'student', 'program', 'classes')
                 ->whereBetween('created_at', [$endDate, $current_date])
                 // ->where('created_at', '>=', $endDate)
                 // ->where('created_at', '<=', $current_date)
@@ -93,9 +93,10 @@ class DashboardController extends Controller
                 ->get();
 
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")
-                ->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')
+                ->with('course', 'course.subject.country', 'course.student', 'course.program', 'attendence')
                 ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'asc')->get();
+
             //checking if class has completed
             $currentTime = Carbon::now()->format('H:i:s');
             foreach ($todays_classes as $class) {
@@ -110,7 +111,7 @@ class DashboardController extends Controller
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->whereBetween('created_at', [$endDate, $current_date])
                 ->where('receiver_id', $user_id)
-                // ->groupBy('')
+                ->orderBy('id','desc')
                 ->get();
             $last_feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->whereBetween('created_at', [$compareDate, $endDate])
@@ -192,17 +193,18 @@ class DashboardController extends Controller
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')
-                ->with('course', 'course.subject', 'course.student', 'course.program')
+                ->with('course', 'course.subject.country', 'course.student', 'course.program')
                 ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'asc')->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->where('receiver_id', $user_id)
+                ->orderBy('id','desc')
                 // ->where('course_id', '183')
                 ->get();
 
 
 
-            $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
+            $newly_assigned_courses = Course::with('subject.country', 'student', 'program', 'classes')
                 ->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
             $total_newly_courses = Course::where('teacher_id', $user_id)->where('status', 'pending')->count();
@@ -293,14 +295,14 @@ class DashboardController extends Controller
 
 
         $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
             ->get();
 
         $upcoming_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', '>', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
@@ -311,7 +313,7 @@ class DashboardController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', '<', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
@@ -402,6 +404,7 @@ class DashboardController extends Controller
 
         $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
             ->where('receiver_id', $user_id)
+            ->orderBy('id','desc')
             ->get();
 
         $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);

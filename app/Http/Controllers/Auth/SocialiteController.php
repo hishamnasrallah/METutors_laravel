@@ -17,6 +17,7 @@ use Twilio\Rest\Client;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use \App\Mail\SendMailOtp;
+use Illuminate\Support\Facades\Mail;
 use JWTAuth;
 
 
@@ -102,6 +103,20 @@ class SocialiteController extends Controller
 
                     $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+                    //********* Sending Email to User **********
+                    $user_email = $user->email;
+                    $custom_message = "User Registerd Successfully";
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
+
+                    Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+
+                        $message->to($to_email)->subject('Welcome to MEtutors');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+
+                    //********* Sending Email ends **********
 
                     return response()->json([
                         'status' => true,
@@ -118,10 +133,15 @@ class SocialiteController extends Controller
                         $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();
                     }
 
+                    if($user->role_name != $request->role){
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'This email is already registered with us for another role',
+                        ],400);
+                    }
 
 
                     $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
-
 
                     return response()->json([
                         'status' => true,
@@ -231,6 +251,21 @@ class SocialiteController extends Controller
 
                     $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
+                    //********* Sending Email to user **********
+                    $user_email = $user->email;
+                    $custom_message = "User Registerd Successfully";
+                    $to_email = $user_email;
+
+                    $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
+
+                    Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+
+                        $message->to($to_email)->subject('Welcome to MEtutors');
+                        $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                    });
+
+                    //********* Sending Email ends **********
+
                     return response()->json([
                         'status' => true,
                         'message' => 'User Logged in Successfully!!',
@@ -239,14 +274,13 @@ class SocialiteController extends Controller
                     ]);
                 } else {
 
-                    $user = User::select('id', 'first_name', 'last_name','role_id', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
+                    $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
 
                     if ($user->role_id != $request->role) {
 
                         return response()->json([
-                            'status' => true,
+                            'status' => false,
                             'message' => 'This email is already registered with us for another role.',
-
                         ], 400);
                     }
 
@@ -300,7 +334,6 @@ class SocialiteController extends Controller
 
     public function check_googleId(Request $request)
     {
-
 
         $rules = [
 

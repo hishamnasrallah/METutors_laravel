@@ -20,6 +20,7 @@ use App\Models\Category;
 use App\Models\Newsletter;
 use App\Models\Role;
 use App\Models\UserMeta;
+use App\TeacherDocument;
 use App\Models\UserOccupation;
 use App\Models\UserZoomApi;
 
@@ -30,6 +31,7 @@ use App\Models\Feedback;
 
 use App\Models\UserFeedback;
 use App\Models\UserPrefrence;
+use App\Models\UserSignature;
 
 use App\User;
 use App\TeacherAvailability;
@@ -51,6 +53,52 @@ use stdClass;
 class UserController extends Controller
 {
 
+
+
+    public function teacher_signature(Request $request)
+    {
+        $rules = [
+
+            'document' => 'required',
+            'url' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $signature=UserSignature::where('user_id',$token_user->id)->where('document',$request->document)->get();
+        if(count($signature) == 0){
+            $sig=new UserSignature();
+            $sig->document=$request->document;
+            $sig->url=$request->url;
+            $sig->user_id=$token_user->id;
+            $sig->save();
+        }else{
+            $sig=UserSignature::find($signature[0]->id);
+             $sig->document=$request->document;
+             $sig->url=$request->url;
+             $sig->user_id=$token_user->id;
+             $sig->update();
+        }
+
+         return response()->json([
+                'status' => 'true',
+                'message' => "Signature Submitted Successfully",
+            ]);
+
+    }
 
 
     public function change_avatar(Request $request)
@@ -783,7 +831,7 @@ class UserController extends Controller
     {
          $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
-        
+
 
             $teacher_subjects = json_decode(json_encode($request->subjects));
 
@@ -798,7 +846,7 @@ class UserController extends Controller
                 }
             }
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -827,7 +875,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully',
+                'message' => 'Profile details updated successfully',
                 'user' => $user,
             ]);
 
@@ -870,7 +918,9 @@ class UserController extends Controller
             $rules['teaching_experience'] = 'required|string';
             $rules['teaching_experience_online'] = 'required|string';
             $rules['video'] = 'required';
-            // $rules['current_title'] = 'required|string';
+            $rules['resume'] = 'required';
+            $rules['degrees'] = 'required';
+            // $rules['certificates'] = 'required';
 
         }
 
@@ -928,11 +978,11 @@ class UserController extends Controller
             $user->city = $request->city;
 
 
-            if ($request->middle_name) {
+            if ($request->middle_name || $request->middle_name == "") {
 
                 $user->middle_name = $request->middle_name;
             }
-            if ($request->address2) {
+            if ($request->address2 || $request->address2 == "") {
 
                 $user->address2 = $request->address2;
             }
@@ -949,7 +999,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1020,7 +1070,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1063,15 +1113,12 @@ class UserController extends Controller
 
             foreach ($languages as $language) {
 
-
                 $lang = new SpokenLanguage();
                 $lang->user_id = $token_user->id;
                 $lang->language = $language->language_id;
                 $lang->level = $language->level;
                 $lang->save();
             }
-
-
 
             $ling = SpokenLanguage::where('user_id', $token_user->id)->first();
             if ($ling == null) {
@@ -1104,9 +1151,63 @@ class UserController extends Controller
 
                     $teaching_quali->video = $imageName;
                 }
-                $teaching_quali->save();
+
+             $teaching_quali->save();
+
+              if ($request->has('resume')) {
+
+                   $resume=TeacherDocument::where('user_id', $token_user->id)->where('document','resume')->delete();
+                    $resume = $request->resume;
+
+                    foreach ($resume as $res) {
+
+                        $resu = new TeacherDocument();
+                        $resu->user_id = $token_user->id;
+                        $resu->original_name = $res['originalName'];
+                        $resu->size = $res['size'];
+                        $resu->url = $res['url'];
+                        $resu->status = "pending";
+                        $resu->document = "resume";
+                        $resu->save();
+                    }
+                }
+
+                if ($request->has('degrees')) {
+
+                   $degrees=TeacherDocument::where('user_id', $token_user->id)->where('document','degrees')->delete();
+                    $degrees = $request->degrees;
+
+                    foreach ($degrees as $deg) {
+
+                        $degr = new TeacherDocument();
+                        $degr->user_id = $token_user->id;
+                        $degr->original_name = $deg['originalName'];
+                        $degr->size = $deg['size'];
+                        $degr->url = $deg['url'];
+                        $degr->status = "pending";
+                        $degr->document = "degrees";
+                        $degr->save();
+                    }
+                }
 
 
+                if ($request->has('certificates')) {
+
+                   $certificates=TeacherDocument::where('user_id', $token_user->id)->where('document','certificates')->delete();
+                    $certificates = $request->certificates;
+
+                    foreach ($certificates as $cert) {
+
+                        $certi = new TeacherDocument();
+                        $certi->user_id = $token_user->id;
+                        $certi->original_name = $cert['originalName'];
+                        $certi->size = $cert['size'];
+                        $certi->url = $cert['url'];
+                        $certi->status = "pending";
+                        $certi->document = "certificates";
+                        $certi->save();
+                    }
+                }
 
 
                 $user = User::find($token_user->id);
@@ -1123,7 +1224,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1176,10 +1277,62 @@ class UserController extends Controller
                     $imageName = $request->video;
                     $teaching_quali->video = $imageName;
                 }
+
                 $teaching_quali->update();
+              if ($request->has('resume')) {
+
+                   $resume=TeacherDocument::where('user_id', $token_user->id)->where('document','resume')->delete();
+                    $resume = $request->resume;
+
+                    foreach ($resume as $res) {
+
+                        $resu = new TeacherDocument();
+                        $resu->user_id = $token_user->id;
+                        $resu->original_name = $res['originalName'];
+                        $resu->size = $res['size'];
+                        $resu->url = $res['url'];
+                        $resu->status = "pending";
+                        $resu->document = "resume";
+                        $resu->save();
+                    }
+                }
+
+                if ($request->has('degrees')) {
+
+                   $degrees=TeacherDocument::where('user_id', $token_user->id)->where('document','degrees')->delete();
+                    $degrees = $request->degrees;
+
+                    foreach ($degrees as $deg) {
+
+                        $degr = new TeacherDocument();
+                        $degr->user_id = $token_user->id;
+                        $degr->original_name = $deg['originalName'];
+                        $degr->size = $deg['size'];
+                        $degr->url = $deg['url'];
+                        $degr->status = "pending";
+                        $degr->document = "degrees";
+                        $degr->save();
+                    }
+                }
 
 
+                if ($request->has('certificates')) {
 
+                   $certificates=TeacherDocument::where('user_id', $token_user->id)->where('document','certificates')->delete();
+                    $certificates = $request->certificates;
+
+                    foreach ($certificates as $cert) {
+
+                        $certi = new TeacherDocument();
+                        $certi->user_id = $token_user->id;
+                        $certi->original_name = $cert['originalName'];
+                        $certi->size = $cert['size'];
+                        $certi->url = $cert['url'];
+                        $certi->status = "pending";
+                        $certi->document = "certificates";
+                        $certi->save();
+                    }
+                }
 
                 $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id', $token_user->id)->first();
 
@@ -1189,7 +1342,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1276,7 +1429,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1363,7 +1516,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1400,25 +1553,13 @@ class UserController extends Controller
         }
         if ($request->step == 5) {
 
-
+            $subjec = TeacherSubject::where('user_id', $token_user->id)->first();
+            if($subjec == null){
+                 $subje = TeacherSubject::where('user_id', $token_user->id)->delete();
+            }
             $teacher_subjects = json_decode(json_encode($request->subjects));
 
-
-
             foreach ($teacher_subjects as $subj) {
-
-
-
-                $sub = TeacherSubject::where('user_id', $token_user->id)->where('program_id', $subj->program_id)->where('field_id', $subj->field_id)->where('subject_id', $subj->subject_id)->first();
-
-
-                if (isset($subj->program_id) && $subj->program_id == 3) {
-
-                    $sub = TeacherSubject::where('user_id', $token_user->id)->where('program_id', $subj->program_id)->where('country_id', $subj->country_id)->where('grade', $subj->grade)->where('field_id', $subj->field_id)->where('subject_id', $subj->subject_id)->first();
-                }
-
-
-                if ($sub == null) {
 
                     $teacher_sub = new TeacherSubject();
                     $teacher_sub->user_id = $token_user->id;
@@ -1431,28 +1572,11 @@ class UserController extends Controller
                     $teacher_sub->subject_id = $subj->subject_id;
                     $teacher_sub->hourly_price = $subj->hourly_price;
                     $teacher_sub->save();
-                } else {
-
-                    $sub->user_id = $token_user->id;
-                    $sub->program_id = $subj->program_id;
-                    $sub->field_id = $subj->field_id;
-                    if ($subj->program_id == 3) {
-                        $sub->country_id = $subj->country_id;
-                        $sub->grade = $subj->grade;
-                    }
-                    $sub->subject_id = $subj->subject_id;
-                    $sub->hourly_price = $subj->hourly_price;
-                    $sub->update();
-                }
             }
-
-
 
             $user = User::find($token_user->id);
             $user->profile_completed_step = 5;
             $user->update();
-
-
 
             $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id', $token_user->id)->first();
 
@@ -1461,7 +1585,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -1657,22 +1781,25 @@ class UserController extends Controller
                 // });
                 //********* Sending Email ends **********
 
-                //********* Sending Email to teacher **********
-                $user_email = $user->email;
-                $custom_message = "Teacher Registerd Successfully";
-                $to_email = $user_email;
-
-                $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
-
-                Mail::send('email.registeration', $data, function ($message) use ($to_email) {
-
-                    $message->to($to_email)->subject('Welcome to MEtutors');
-                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-                });
 
 
+                // //********* Sending Email to teacher **********
+                // $user_email = $user->email;
+                // $custom_message = "Teacher Registerd Successfully";
+                // $to_email = $user_email;
 
-                //********* Sending Email ends **********
+                // $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'user' => $user);
+
+                // Mail::send('email.registeration', $data, function ($message) use ($to_email) {
+
+                //     $message->to($to_email)->subject('Welcome to MEtutors');
+                //     $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                // });
+
+                // //********* Sending Email ends **********
+
+
+                
 
 
                 // // Emails and notifications for registeration
@@ -1809,16 +1936,20 @@ class UserController extends Controller
 
         $user = User::find($id);
 
-        $user_meta = UserMeta::where('user_id', $id)->where('name', 'documents')->get();
+        $user_resume = TeacherDocument::where('user_id', $id)->where("document","resume")->get();
+        $user_degrees = TeacherDocument::where('user_id', $id)->where("document","degrees")->get();
+        $user_certificates = TeacherDocument::where('user_id', $id)->where("document","certificates")->get();
 
-        $user->documents = $user_meta;
+        $user->user_resume = $user_resume;
+        $user->user_degrees = $user_degrees;
+        $user->user_certificates = $user_certificates;
 
 
         return response()->json([
 
             'status' => true,
             'message' => 'user documents',
-            'user_documents' => $user_meta,
+            'user' => $user,
 
         ]);
     }
@@ -2451,11 +2582,11 @@ class UserController extends Controller
             $user->city = $request->city;
 
 
-            if ($request->middle_name) {
+            if ($request->middle_name || $request->middle_name == "") {
 
                 $user->middle_name = $request->middle_name;
             }
-            if ($request->address2) {
+            if ($request->address2 || $request->address2 == "") {
 
                 $user->address2 = $request->address2;
             }
@@ -2497,7 +2628,7 @@ class UserController extends Controller
             $token_1 = JWTAuth::getToken();
             $token_user = JWTAuth::toUser($token_1);
 
-            $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+            $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                 ->find($token_user->id);
 
             $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -2588,7 +2719,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully!'
+                'message' => 'Profile details updated successfully'
 
             ]);
         }
@@ -2649,7 +2780,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -2761,7 +2892,7 @@ class UserController extends Controller
                 $token_1 = JWTAuth::getToken();
                 $token_user = JWTAuth::toUser($token_1);
 
-                $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+                $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
                     ->find($token_user->id);
 
                 $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')
@@ -2904,7 +3035,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully!'
+                'message' => 'Profile details updated successfully'
 
             ]);
         }

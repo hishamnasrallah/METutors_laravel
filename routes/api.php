@@ -32,7 +32,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     //**************** Student routes starts****************
 
-    Route::get('student/dashboard', 'Student\DashboardController@dashboard');
+    Route::get('student/dashboard', 'Student\DashboardController@dashboard'); 
     Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
 
     Route::get('student/classroom', 'Student\ClassController@courses');
@@ -99,6 +99,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     //**************** Resources routes ****************
     Route::post('upload', 'Teacher\ResourcesController@uploadFiles');
+    Route::post('onboarding', 'Teacher\ResourcesController@onboarding');
     Route::delete('file/{id}', 'Teacher\ResourcesController@deleteFile');
     Route::get('teacher/resources/{course_id}', 'Teacher\ResourcesController@classResources');
     Route::post('teacher/resource/update/{resource_id}', 'Teacher\ResourcesController@updateResource');
@@ -262,7 +263,7 @@ Route::group(['namespace' => 'Web', 'middleware' => ['impersonate', 'share']], f
 
     Route::group(['prefix' => 'admin'], function () {
 
-        Route::get('/{id}/profile', 'UserController@admin_profile');
+        Route::get('/{id}/proe', 'UserController@admin_profile');
     });
 
     Route::group(['prefix' => 'student'], function () {
@@ -304,6 +305,7 @@ Route::post('teacher/upload-documents', 'Panel\UserController@upload_documents')
 
 Route::post('teacher/upload-documents2', 'Panel\UserController@upload_documents2');
 
+Route::post('teacher/signature', 'Panel\UserController@teacher_signature');
 Route::post('teacher/complete-account', 'Panel\UserController@teacher_complete_account');
 Route::post('teacher/update-rates', 'Panel\UserController@update_rates');
 
@@ -332,8 +334,6 @@ Route::get('teacher-dashboard', 'DashboardController@teacher_dashboard');
 Route::get('teacher/kudos-points', 'DashboardController@kudos_detail');
 Route::post('invoice-mail', 'DashboardController@invoice_mail');
 Route::get('classes-dashboard', 'DashboardController@classes_dashboard');
-
-
 
 Route::get('students/profile', 'ClassController@student_profile');
 Route::Post('teacher/update-profile', 'DashboardController@update_teacherProfile');
@@ -377,6 +377,7 @@ Route::get('student/preference', 'Web\UserController@get_user_preference');
 Route::post('teacher-performance', 'AdminController@teacher_performance');
 Route::get('teachers/teacher-detail/{$teacher_id}', 'FeedbackController@teacher_details');
 Route::get('teacher-profile', 'Web\UserController@teacher_public_profile');
+
 
 
 
@@ -577,3 +578,9 @@ Route::get('payment/details', 'PaymentController@payment_details');
 Route::Post('payment/{payment_id}/refund', 'PaymentController@refund');
 Route::Post('payment/refund2', 'PaymentController@refund2');
 Route::get('test', 'TestController@test');
+
+//**************** classes routes ****************
+Route::resource('highlighted-topic', 'HighlightedTopicController');
+Route::post('highlighted-topic/{course_id}', 'HighlightedTopicController@update');
+
+//**************** classes routes ****************

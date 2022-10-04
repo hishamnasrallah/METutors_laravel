@@ -175,7 +175,11 @@ class TeacherController extends Controller
 
         $teacher = User::find($token_user->id);
 
-        $reviews = UserFeedback::with('sender', 'course', 'feedback')->where('receiver_id', $teacher->id)->where('course_id', $course_id)->get();
+        $reviews = UserFeedback::with('sender', 'course', 'feedback')
+        ->where('receiver_id', $teacher->id)
+        ->where('course_id', $course_id)
+        ->get();
+        
         return response()->json([
             'success' => true,
             'message' => 'Course Reviews!',
@@ -209,7 +213,7 @@ class TeacherController extends Controller
         $teacher = User::find($token_user->id);
 
         $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject', 'course.student', 'attendence')
+            ->with('course', 'course.subject.country', 'course.student', 'attendence')
             ->where('start_date', $current_date)
             ->where('teacher_id', $teacher->id)
             ->get();
@@ -380,6 +384,7 @@ class TeacherController extends Controller
         $rejected->user_id = $token_user->id;
         $rejected->user_id = $token_user->id;
         $rejected->reason = $request->reason;
+        $rejected->status = 'declined_by_teacher';
         $rejected->save();
 
         $classes = AcademicClass::where('course_id', $course->id)->where('teacher_id', $user->id)->get();

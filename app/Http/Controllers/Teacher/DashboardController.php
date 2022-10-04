@@ -57,7 +57,7 @@ class DashboardController extends Controller
             $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes',)
                 ->whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->get();
 
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject', 'course.student', 'course.program', 'attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")->with('course', 'course.subject.country', 'course.student', 'course.program', 'attendence')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             //checking if class has completed
             $currentTime = Carbon::now()->format('H:i:s');
             foreach ($todays_classes as $class) {
@@ -93,7 +93,7 @@ class DashboardController extends Controller
 
             $total_courses = Course::where('teacher_id', $user_id)->count();
             $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
-            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'course.subject', 'course.student', 'course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
+            $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'course.subject.country', 'course.student', 'course.program')->where('start_date', $current_date)->where('teacher_id', $user_id)->get();
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')->where('receiver_id', $user_id)->get();
 
             $newly_assigned_courses = Course::with('subject', 'student', 'program', 'classes')
@@ -168,14 +168,14 @@ class DashboardController extends Controller
 
 
         $todays_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
             ->get();
 
         $upcoming_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', '>', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
@@ -186,7 +186,7 @@ class DashboardController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration')
-            ->with('course', 'course.subject')
+            ->with('course', 'course.subject.country')
             ->where('start_date', '<', $current_date)
             ->with('course')
             ->where('teacher_id', $teacher_id)
@@ -255,7 +255,7 @@ class DashboardController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $user = \App\User::with('country', 'userMetas', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+        $user = \App\User::with('country', 'userSignature','userResume','userDegrees','userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
             ->find($token_user->id);
 
         $prefrences = UserPrefrence::select('id', 'user_id', 'role_name', 'preferred_gender', 'teacher_language', 'efficiency')

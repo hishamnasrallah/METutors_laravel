@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Newsletter;
 use App\Models\Role;
 use App\Models\UserMeta;
+use App\TeacherDocument;
 use App\Models\UserOccupation;
 use App\Models\UserZoomApi;
 use App\Models\LevelOfEducation;
@@ -174,7 +175,6 @@ class ProgramCountryController extends Controller
         }
 
         $countries = Countries::all();
-        // return $request->name;
         $country = $countries->where('name.common', $request->name)->first();
 
         $program_country->name = $country->name->common;

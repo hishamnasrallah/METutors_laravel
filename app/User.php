@@ -112,6 +112,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(TeacherAvailability::class);
     }
 
+    public function availabilityDays()
+    {
+        return $this->hasMany(TeacherAvailability::class);
+    }
+
     public function teacherProgram()
     {
         return $this->hasMany(TeacherProgram::class);
@@ -128,9 +133,6 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo('App\Country', 'country', 'id')->select('id', 'name');
     }
-
-
-
 
 
     static function getAdmin()
@@ -322,6 +324,26 @@ class User extends Authenticatable implements JWTSubject
 
 
 
+    public function userCertificates()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','certificates');
+    }
+    public function userDegrees()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','degrees');
+    }
+    public function userResume()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','resume');
+    }
+    public function userDocuments()
+    {
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id');
+    }
+    public function userSignature()
+    {
+        return $this->hasMany('App\Models\UserSignature', 'user_id', 'id');
+    }
     public function userMetas()
     {
         return $this->hasMany('App\Models\UserMeta', 'user_id', 'id');
