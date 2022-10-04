@@ -176,7 +176,7 @@ class UserController extends Controller
             //     $q->where('program_id', 2); //$request->program_id
             // })
             ->whereHas('teacherSubject', function ($q) use ($request) {
-                $q->where(['subject_id' => 25, 'field_id' => 8, 'program_id' => 2,]); //$request->subject_id      $request->field_id
+                $q->where(['subject_id' => 25, 'field_id' => 8, 'program_id' => 2,]); //25,8,2 $request->subject_id      $request->field_id
             })
             ->whereHas('teacher_specification', function ($q) use ($request, $start_date, $end_date) {
                 $q->where('availability_end_date', '>=',  $end_date);

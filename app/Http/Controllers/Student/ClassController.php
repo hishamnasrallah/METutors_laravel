@@ -1295,7 +1295,7 @@ class ClassController extends Controller
         $user_id = $token_user->id;
         $current_date = Carbon::today()->format('Y-m-d');
 
-        $course = Course::with('field','subject', 'language', 'program', 'teacher','teacher.teacher_qualification', 'classes')->find($course_id);
+        $course = Course::with('field','subject', 'language', 'program', 'teacher','teacher.user_qualification', 'classes')->find($course_id);
 
         // // //converting utc time to local
         // $ip = request()->getClientIp();
@@ -1367,7 +1367,7 @@ class ClassController extends Controller
         // ************************************************
 
         $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id",'class_type', 'duration', 'day', 'status', 'teacher_id')
-            ->with('course','course.field', 'teacher.teacher_qualification', 'course.subject.country', 'course.student', 'teacher')
+            ->with('course','course.field', 'teacher.user_qualification', 'course.subject.country', 'course.student', 'teacher')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])
@@ -1389,7 +1389,7 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->with('teacher','course.field','teacher.teacher_qualification')
+            ->with('teacher','course.field','teacher.user_qualification')
             ->where('start_date', '>', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
@@ -1402,7 +1402,7 @@ class ClassController extends Controller
             ->count();
 
         $past_classes = AcademicClass::select('id', 'class_id', 'teacher_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id",'class_type', 'duration', 'day', 'status')
-            ->with('course','course.field', 'teacher.teacher_qualification', 'course.subject.country', 'course.student')
+            ->with('course','course.field', 'teacher.user_qualification', 'course.subject.country', 'course.student')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
             }])

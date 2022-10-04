@@ -99,6 +99,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     //**************** Resources routes ****************
     Route::post('upload', 'Teacher\ResourcesController@uploadFiles');
+    Route::post('onboarding', 'Teacher\ResourcesController@onboarding');
     Route::delete('file/{id}', 'Teacher\ResourcesController@deleteFile');
     Route::get('teacher/resources/{course_id}', 'Teacher\ResourcesController@classResources');
     Route::post('teacher/resource/update/{resource_id}', 'Teacher\ResourcesController@updateResource');

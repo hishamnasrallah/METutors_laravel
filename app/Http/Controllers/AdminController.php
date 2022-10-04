@@ -1581,7 +1581,7 @@ class AdminController extends Controller
 
         if ($request->has('search')) {
 
-            $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('country','teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)
                 ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
@@ -1593,7 +1593,7 @@ class AdminController extends Controller
                 })->orderBy('id', 'desc')
                 ->get();
 
-            $rejected_teachers = User::with('teacher_interview_request')
+            $rejected_teachers = User::with('country','teacher_interview_request','teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')
                 ->where(function ($query) use ($request) {
@@ -1607,11 +1607,11 @@ class AdminController extends Controller
                 ->get();
         } else {
 
-            $pending_teachers = User::with('teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('country','teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)->orderBy('id', 'desc')
                 ->get();
 
-            $rejected_teachers = User::with('teacher_interview_request')
+            $rejected_teachers = User::with( 'country','teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')->orderBy('id', 'desc')
                 ->get();
@@ -3911,12 +3911,12 @@ class AdminController extends Controller
 
         if (isset($id)) {
 
-            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userResume','user.userSignature', 'user.userDegrees', 'user.userCertificates', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
+            $interviewRequests = TeacherInterviewRequest::with('user', 'user.country', 'user.userResume', 'user.userSignature', 'user.userDegrees', 'user.userCertificates', 'user.teacherSpecifications', 'user.teacherQualifications', 'user.spokenLanguages', 'user.spokenLanguages.language', 'user.teacher_subjects', 'user.teacher_subjects.program', 'user.teacher_subjects.field', 'user.teacher_subjects.subject.country')
                 ->where('id', $id)
                 ->first();
         }
 
-        $teacher_profile = User::with('teacherAvailability', 'country', 'userResume','userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
+        $teacher_profile = User::with('teacherAvailability', 'country', 'userResume', 'userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request')
             ->where('id', $id)
             ->first();
 
