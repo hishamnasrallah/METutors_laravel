@@ -27,6 +27,7 @@ use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\ClassTopic;
 use App\Models\Course;
+use App\Models\HighlightedTopic;
 use App\Models\RejectedCourse;
 use App\Models\Resource;
 use App\Models\Topic;
@@ -589,6 +590,7 @@ class TeacherController extends Controller
 
         $teacher = User::find($token_user->id);
         $course = Course::with('subject', 'language', 'program', 'student', 'student')->find($course_id);
+        $highlighted_topics = HighlightedTopic::where('course_id',$course_id)->get();
 
         $totalClases = AcademicClass::where('course_id', $course_id)->where($userrole, $token_user->id)->count();
         $completedClases = AcademicClass::where('course_id', $course_id)->where('status', 'completed')->where($userrole, $token_user->id)->count();
@@ -614,6 +616,7 @@ class TeacherController extends Controller
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
                 'course_progress' => $courseProgress,
+                'highlighted_topics'=>$highlighted_topics,
                 'topics' => $class_topics,
                 'unclassified_classes' => $remaining_classes,
             ]);
@@ -650,6 +653,7 @@ class TeacherController extends Controller
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
                 'course_progress' => $courseProgress,
+                'highlighted_topics'=>$highlighted_topics,
                 'topics' => $topics_array,
                 'unclassified_classes' => $remaining_classes,
             ]);

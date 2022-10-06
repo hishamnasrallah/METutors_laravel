@@ -19,7 +19,7 @@ use App\Models\RejectedCourse;
 use App\Models\Resource;
 use App\Models\Topic;
 use App\Models\Images;
-
+use App\Models\ResourceDocument;
 use App\Models\User;
 use App\Models\UserAssignment;
 use App\Models\UserFeedback;
@@ -251,11 +251,15 @@ class ResourcesController extends Controller
 
         $teacher = User::find($token_user->id);
 
+        $resource_teacher_documents  = ResourceDocument::with('user')->where('course_id',$course_id)->where('user_role','teacher')->get();
+        $resource_student_documents  = ResourceDocument::with('user')->where('course_id',$course_id)->where('user_role','student')->get();
         $course = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->where('teacher_id', $teacher->id)->where('id', $course_id)->first();
 
         return response()->json([
             'status' => true,
             'message' => 'Resources Dasboard!',
+            'teacher_other_documents' => $resource_teacher_documents,
+            'student_other_documents' => $resource_student_documents,
             'course' => $course,
         ]);
     }
