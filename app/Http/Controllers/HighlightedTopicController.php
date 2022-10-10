@@ -64,7 +64,7 @@ class HighlightedTopicController extends Controller
         return response()->json([
             'status' => true,
             'messaege' => 'Topic successfully added',
-            'highligted_topic' => $topic,
+            'highlighted_topic' => $topic,
         ]);
     }
 

@@ -105,7 +105,7 @@ class GeneralController extends Controller
     public function programs()
     {
 
-        $programs = Program::where('status', 1)->get();
+        $programs = Program::where('status', 1)->orderBy('order','ASC')->get();
 
         return response()->json([
 
