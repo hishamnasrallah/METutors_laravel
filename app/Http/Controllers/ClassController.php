@@ -1273,16 +1273,17 @@ class ClassController extends Controller
         //finding the course countries
         $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
         $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
+        $course_countries=$countries;
 
-        $Countries = Countries::all();
-        $course_countries = [];
-        foreach ($countries as $country) {
-            $Country = $Countries->where('name.common', $country->name)->first();
-            $course_country = new stdClass();
-            $course_country->name = $Country->name->common;
-            $course_country->flag =  $Country->flag['flag-icon'];
-            array_push($course_countries, $course_country);
-        }
+        // $Countries = Countries::all();
+        // $course_countries = [];
+        // foreach ($countries as $country) {
+        //     $Country = $Countries->where('name.common', $country->name)->first();
+        //     $course_country = new stdClass();
+        //     $course_country->name = $Country->name->common;
+        //     $course_country->flag =  $Country->flag['flag-icon'];
+        //     array_push($course_countries, $course_country);
+        // }
         // course countries ended
 
         if (count($request->all()) >= 1) {

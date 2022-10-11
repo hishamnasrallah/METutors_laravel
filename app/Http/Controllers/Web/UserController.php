@@ -1589,7 +1589,7 @@ class UserController extends Controller
         
         $document = new ResourceDocument();
         $document->title = $request->title;
-        $document->file = $request->document;
+        $document->file = json_encode($request->document);
         $document->course_id = $request->course_id;
         $document->user_id = $token_user->id;
         $document->user_role = $token_user->role_name;
