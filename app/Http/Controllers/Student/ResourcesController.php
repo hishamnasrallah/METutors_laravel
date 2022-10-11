@@ -12,6 +12,7 @@ use App\Models\ClassTopic;
 use App\Models\Course;
 use App\Models\RejectedCourse;
 use App\Models\Resource;
+use App\Models\ResourceDocument;
 use App\Models\Topic;
 
 use App\Models\User;
@@ -42,11 +43,15 @@ class ResourcesController extends Controller
 
         $teacher = User::find($token_user->id);
 
+            $resource_teacher_documents  = ResourceDocument::with('user')->where('course_id',$course_id)->where('user_role','teacher')->get();
+        $resource_student_documents  = ResourceDocument::with('user')->where('course_id',$course_id)->where('user_role','student')->get();
         $course = Course::with('subject', 'language', 'program', 'student', 'teacher', 'classes')->where($userrole, $token_user->id)->where('id', $course_id)->first();
 
         return response()->json([
             'status' => true,
             'message' => 'Resources Dasboard!',
+            'teacher_other_documents' => $resource_teacher_documents,
+            'student_other_documents' => $resource_student_documents,
             'course' => $course,
         ]);
     }

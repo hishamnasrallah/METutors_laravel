@@ -64,7 +64,7 @@ class HighlightedTopicController extends Controller
         return response()->json([
             'status' => true,
             'messaege' => 'Topic successfully added',
-            'highligted_topic' => $topic,
+            'highlighted_topic' => $topic,
         ]);
     }
 
@@ -80,12 +80,12 @@ class HighlightedTopicController extends Controller
         if(count( $topics) == 0){
             return response()->json([
                 'status' => true,
-                'messaege' => 'Topics not found for this course',
+                'message' => 'Topics not found for this course',
             ]);
         }
         return response()->json([
             'status' => true,
-            'messaege' => 'Highlighted topics of course',
+            'message' => 'Highlighted topics of course',
             'highlighted_topics' => $topics,
         ]);
     }
@@ -138,14 +138,14 @@ class HighlightedTopicController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'messaege' => 'No topic found',
+                'message' => 'No topic found',
             ]);
         }
 
 
         return response()->json([
             'status' => true,
-            'messaege' => 'Highlighted topic updated successfully',
+            'message' => 'Highlighted topic updated successfully',
             'highlighted_topic' => $topic,
         ]);
     }
@@ -171,7 +171,7 @@ class HighlightedTopicController extends Controller
 
         return response()->json([
             'status' => true,
-            'messaege' => 'Highlighted topic deleted successfully',
+            'message' => 'Highlighted topic deleted successfully',
             'highlighted_topic' => $topic,
         ]);
     }

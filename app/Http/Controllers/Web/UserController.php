@@ -26,6 +26,7 @@ use App\TeacherSubject;
 use App\Models\Role;
 use App\Models\Follow;
 use App\Models\Meeting;
+use App\Models\ResourceDocument;
 use App\Models\UserFeedback;
 use App\Models\UserPrefrence;
 use App\TeacherAvailability;
@@ -65,8 +66,8 @@ class UserController extends Controller
         // ]);
 
 
-        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio','country', 'status', 'created_at', 'updated_at')
-            ->with('teacher_qualification','country')
+        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'country', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification', 'country')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
             ->where('status', 'active')->where('id', '!=', 1212)
@@ -98,8 +99,8 @@ class UserController extends Controller
             $teacher->reviews_count = count($reviews);
         }
 
-        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio','country', 'status', 'created_at', 'updated_at')
-            ->with('teacher_qualification','country')
+        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'country', 'status', 'created_at', 'updated_at')
+            ->with('teacher_qualification', 'country')
             ->where('role_name', 'teacher')
             ->where('verified', 1)
             ->where('status', 'active')->where('id', 1212)
@@ -288,7 +289,7 @@ class UserController extends Controller
         }
 
 
-        $selectedTeachers = User::with('teacher_qualification','country')->whereIn('id', $final_teachers)->get();
+        $selectedTeachers = User::with('teacher_qualification', 'country')->whereIn('id', $final_teachers)->get();
         foreach ($selectedTeachers as $teacher) {
             $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
             $teacher->students_taught = count($students);
@@ -303,7 +304,7 @@ class UserController extends Controller
             $teacher->reviews_count = $total_reviews;
         }
 
-        $suggestedTeachers = User::with('teacher_qualification','country')->whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+        $suggestedTeachers = User::with('teacher_qualification', 'country')->whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
 
         foreach ($suggestedTeachers as $teacher) {
             $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
@@ -358,7 +359,7 @@ class UserController extends Controller
     public function teacher_profile(Request $request, $id)
     {
 
-        $user = \App\User::with('country', 'userResume','userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
+        $user = \App\User::with('country', 'userResume', 'userSignature', 'userDegrees', 'userCertificates', 'teacherSpecifications', 'teacherQualifications', 'teacherAvailability', 'spokenLanguages', 'spokenLanguages.language', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject.country', 'teacher_interview_request', 'teacher_feedbacks.feedback', 'teacher_feedbacks.sender', 'teacher_feedbacks.reciever')
             ->withCount('teacher_students')
             ->withCount('teacher_course')
             ->withCount('teacher_feedbacks')
@@ -1537,6 +1538,71 @@ class UserController extends Controller
             'success' => true,
             'message' => 'student profile',
             'profile' => $user,
+        ]);
+    }
+
+    public function upload_documents(Request $request)
+    {
+        $rules = [
+            'title' => 'required|string',
+            'document' => 'required',
+            'course_id' => 'required|integer',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+
+        // $files[] = $request->file('documents');
+        // if ($request->hasFile('documents')) {
+        //     foreach ($files as $file) {
+        //         // return $file;
+        //         $fileName = date('YmdHis') . random_int(0, 1000) . '_' . $file->getClientOriginalName();
+        //         $file->move(public_path('uploads/resources_documents'), $fileName);
+
+        //         $document = new ResourceDocument();
+        //         $document->title = $request->title;
+        //         $document->file = $fileName;
+        //         $document->course_id = $request->course_id;
+        //         $document->user_id = $token_user->id;
+        //         $document->user_role = $token_user->role_name;
+        //         $document->save();
+        //         // return $document;
+        //     }
+
+
+        // }
+        
+        $document = new ResourceDocument();
+        $document->title = $request->title;
+        $document->file = $request->document;
+        $document->course_id = $request->course_id;
+        $document->user_id = $token_user->id;
+        $document->user_role = $token_user->role_name;
+        $document->save();
+
+        $new_doc=ResourceDocument::with('user')->find($document->id);
+
+
+        return response()->json([
+            'status' => 'true',
+            'message' =>  'Documents uploaded successfully',
+            'document' =>  $new_doc,
+
         ]);
     }
 }
