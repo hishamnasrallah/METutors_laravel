@@ -1589,16 +1589,19 @@ class UserController extends Controller
         
         $document = new ResourceDocument();
         $document->title = $request->title;
-        $document->file = json_encode($request->document);
+        $document->file = $request->document;
         $document->course_id = $request->course_id;
         $document->user_id = $token_user->id;
         $document->user_role = $token_user->role_name;
         $document->save();
 
+        $new_doc=ResourceDocument::with('user')->find($document->id);
+
 
         return response()->json([
             'status' => 'true',
-            'message' =>  'Documents uploaded successfully!asd'
+            'message' =>  'Documents uploaded successfully',
+            'document' =>  $new_doc,
 
         ]);
     }

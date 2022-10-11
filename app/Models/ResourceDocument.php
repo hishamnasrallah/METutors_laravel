@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class ResourceDocument extends Model
 {
     use HasFactory;
+    protected $casts = [
+        'file' => 'array',
+    ];
+
 
     public function user(){
         return $this->belongsTo(User::class)->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
