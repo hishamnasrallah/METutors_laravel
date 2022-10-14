@@ -1393,8 +1393,7 @@ class ClassController extends Controller
             ->where('start_date', '>', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
-            ->where('course_id', $course->id)
-            ->paginate($request->per_page ?? 3);
+            ->where('course_id', $course->id);
 
         $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
             ->where($userrole, $user_id)
@@ -1415,8 +1414,7 @@ class ClassController extends Controller
             ->where('start_date', '<', $current_date)
             // ->with('course')
             ->where($userrole, $user_id)
-            ->where('course_id', $course->id)
-            ->paginate($request->per_page ?? 3);
+            ->where('course_id', $course->id);
 
         $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
             ->where($userrole, $user_id)

@@ -16,6 +16,9 @@ use JWTAuth;
 class Course extends Model
 {
     use HasFactory;
+     protected $casts = [
+        'files' => 'array',
+    ];
 
     public function classes()
     {

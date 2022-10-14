@@ -111,21 +111,11 @@ class ClassController extends Controller
         }
         if ($request->book_info == 2) {
             $request->validate([
-                'files' =>  'required',
+                'file' =>  'required',
             ]);
-            $course->book_info = $request->book_info;
-            if ($request->hasFile('files')) {
-                //************* book files **********\\
-                $images = array();
-                $files = $request->file('files');
-                foreach ($files as $file) {
-                    $imageName = date('YmdHis') . random_int(10, 100) . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('assets/images/class_files'), $imageName);
-                    $images[] = $imageName;
-                }
-                $course->files = implode("|", $images);
-                //************* book files ends **********\\
-            }
+            $course->files = $request->file; 
+            
+            
         }
         if ($request->book_info == 3) {
             $request->validate([
@@ -284,30 +274,31 @@ class ClassController extends Controller
         }
         $course->student_id = $token_user->id;
         $course->weekdays = $request->weekdays;
-        $course->start_date = $request->start_date;
+        $course->start_date = $request->start_date; 
         $course->end_date = $request->end_date;
         $course->start_time = $request->start_time;
         $course->end_time = $request->end_time;
-        $course->status = 'payment_pending';
-        $course->save();
+        $course->status = 'payment_pending';     
+        $course->save(); 
 
         //Adding Academic Classes data
         $classes = $request->classes;
-        $classes = json_decode($classes);
-        foreach ($classes as $session) {
+        // $classes = json_decode($classes); 
+        foreach ($classes as $session) {  
+              
             $class = new AcademicClass();
             $class->course_id = $course->id;
             if ($request->has('teacher_id')) {
-                $class->teacher_id = $request->teacher_id;
+                $class->teacher_id = $request->teacher_id; 
             }
             $class->student_id = $token_user->id;
-            $class->start_date = $session->date;
+            $class->start_date = $session['date'];
             $class->end_date = $request->end_date;
-            $class->start_time = $session->start_time;
-            $class->end_time = $session->end_time;
+            $class->start_time = $session['start_time'];
+            $class->end_time = $session['end_time'];
             $class->class_type = $request->class_type;
-            $class->duration = $session->duration;
-            $class->day = $session->day;
+            $class->duration = $session['duration'];
+            $class->day = $session['day'];
             $class->status = 'pending';
             $class->save();
         }
@@ -358,10 +349,11 @@ class ClassController extends Controller
 
         //Adding Highlighted topic data
         if ($request->has('highlighted_topics')) {
-            foreach (json_decode($request->highlighted_topics) as $topic) {
+            foreach ($request->highlighted_topics as $topic) { 
+              
                 $topicc = new HighlightedTopic();
-                $topicc->name = $topic->name;
-                $topicc->confidence_scale = $topic->knowledge_scale;
+                $topicc->name = $topic['name'];
+                $topicc->confidence_scale = $topic['knowledge_scale'];
                 $topicc->course_id = $course->id;
                 $topicc->save();
             }
@@ -1779,8 +1771,7 @@ class ClassController extends Controller
                 $q->where('role_name', 'teacher');
             }])
             ->where($userrole, $user_id)
-            ->where('course_id', $course->id)
-            ->paginate($request->per_page ?? 3);
+            ->where('course_id', $course->id);
 
         $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
             ->where($userrole, $user_id)
@@ -1801,8 +1792,7 @@ class ClassController extends Controller
             ->where('start_date', '<', $current_date)
             ->with('course')
             ->where($userrole, $user_id)
-            ->where('course_id', $course->id)
-            ->paginate($request->per_page ?? 3);
+            ->where('course_id', $course->id);
 
         $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
             ->where($userrole, $user_id)
