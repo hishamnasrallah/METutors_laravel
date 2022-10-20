@@ -101,6 +101,69 @@ class UserController extends Controller
     }
 
 
+    public function change_video(Request $request)
+    {
+        $rules = [
+
+            'video' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        if ($request->has('video')) {
+
+            $videoName = $request->video;
+            $teaching_quali = TeachingQualification::where('user_id', $token_user->id)->first();
+            $teaching_quali->video = $videoName;
+            $teaching_quali->update();
+
+
+            $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')
+                ->where('id', $token_user->id)
+                ->first();
+
+            $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+            //Email and notifiaction
+            // event(new UpdateAvatarEvent($user->id, $user, "Avatar updated successfully!"));
+            // dispatch(new UpdateAvatarJob($user->id, $user, "Avatar updated successfully!"));
+
+            return response()->json([
+                'status' => true,
+                'message' => 'avatar changes successfully',
+                'video' => $videoName,
+                'token' => $token
+
+
+            ]);
+
+
+            //************* Resource files ends **********\\
+        } else {
+
+            return response()->json([
+                'status' => true,
+                'message' => 'file not found',
+
+
+            ]);
+        }
+    }
+
+
     public function change_avatar(Request $request)
     {
         $rules = [

@@ -59,6 +59,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
 
 
+    Route::post('change-video', 'Panel\UserController@change_video');
     Route::post('change-avatar', 'Panel\UserController@change_avatar');
     Route::post('change-cover', 'Panel\UserController@change_cover');
 
