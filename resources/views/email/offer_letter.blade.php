@@ -20,6 +20,10 @@
                                     <p>Study Field: {{ $teacher_subject->field->name }}</p>
                                     <p>Subject: {{ $teacher_subject->subject->name }}</p>
                                     <p>Hourly Rate: {{ $teacher_subject->hourly_price }} USD</p>
+                                    @if($teacher_subject->program->id == 3)
+                                    <p>Country: {{ $teacher_subject->country->name }} USD</p>
+                                    <p>Grade: {{ $teacher_subject->grade }} </p>
+                                    @endif
                                     <hr>
                                 @endforeach
 

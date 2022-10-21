@@ -63,7 +63,7 @@ class HighlightedTopicController extends Controller
 
         return response()->json([
             'status' => true,
-            'messaege' => 'Topic successfully added',
+            'messaege' => 'Highlighted topic successfully added',
             'highlighted_topic' => $topic,
         ]);
     }
@@ -80,7 +80,7 @@ class HighlightedTopicController extends Controller
         if(count( $topics) == 0){
             return response()->json([
                 'status' => true,
-                'message' => 'Topics not found for this course',
+                'message' => 'Highlighted topics not found for this course',
             ]);
         }
         return response()->json([

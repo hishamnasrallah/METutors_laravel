@@ -80,14 +80,14 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'true',
-                'message' => 'document approved successfully',
+                'message' => 'Document approved successfully',
                 'document' => $user_meta,
             ]);
         } else {
             return response()->json([
 
                 'status' => false,
-                'message' => 'document not found',
+                'message' => 'Document not found',
 
             ]);
         }
@@ -139,13 +139,13 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'document rejected successfully',
+                'message' => 'Document rejected successfully',
                 'document' => $user_meta,
             ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => 'document not found',
+                'message' => 'Document not found',
             ]);
         }
     }

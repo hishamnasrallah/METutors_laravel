@@ -170,7 +170,7 @@ class ClassController extends Controller
         $course->update();
 
         return response()->json([
-            'message' => "Course data added Successfully!",
+            'message' => "Course data added successfully!",
             'success' => true,
             'course' => $course,
         ]);
@@ -235,7 +235,7 @@ class ClassController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Session Updated Succesfully!",
+            'message' => "Session updated succesfully!",
             'session' => $session,
         ]);
     }
@@ -406,7 +406,7 @@ class ClassController extends Controller
             $class->save();
             return response()->json([
                 'success' => true,
-                'message' => "Class Scheduled SuccessFully",
+                'message' => "Class scheduled successfully",
                 'class' => $class,
             ]);
         } else {
@@ -1016,7 +1016,7 @@ class ClassController extends Controller
                 if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
                     return response()->json([
                         'status' => false,
-                        'errors' => "Already have Scheduled Class at this time!",
+                        'errors' => "Already have scheduled class at this time! please check teacher availability first",
                     ], 400);
                 }
             }
@@ -1063,8 +1063,8 @@ class ClassController extends Controller
 
                 $student = User::findOrFail($token_user->id);
                 $teacher = User::findOrFail($academic_class->teacher_id);
-                $teacher_message = "Class Rescheduled Successfully!";
-                $student_message = "Teacher Rescheduled a class!";
+                $teacher_message = "Class rescheduled successfully!";
+                $student_message = "Teacher rescheduled a class!";
 
                 // event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
                 // event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
@@ -1074,7 +1074,7 @@ class ClassController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "Class Rescheduled Successfully!",
+                    'message' => "Class rescheduled successfully!",
                     'class' => $class,
                 ]);
             } else {
@@ -1086,7 +1086,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class Date has been Passed",
+                'errors' => "Class date has been passed",
             ], 400);
         }
     }
@@ -1119,7 +1119,7 @@ class ClassController extends Controller
         $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Kudos points',
+            'message' => 'Teacher kudos points',
             'kudos_points' => $teacher->kudos_points,
             'feedbacks' => $feedbacks,
         ]);

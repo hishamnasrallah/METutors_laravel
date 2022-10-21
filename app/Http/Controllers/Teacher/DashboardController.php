@@ -152,7 +152,7 @@ class DashboardController extends Controller
         //********* Sending Invoive Email ends **********//
         return response()->json([
             'status' => true,
-            'message' => "Invoice Email sent Successfully",
+            'message' => "Invoice email sent successfully",
         ]);
     }
 

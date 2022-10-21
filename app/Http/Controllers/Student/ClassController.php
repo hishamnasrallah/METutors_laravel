@@ -207,7 +207,7 @@ class ClassController extends Controller
         //********* Sending email ends **********//
 
         return response()->json([
-            'message' => "Course data added Successfully!",
+            'message' => "Course data added successfully!",
             'success' => true,
             'course' => $course,
         ]);
@@ -272,7 +272,7 @@ class ClassController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Session Updated Succesfully!",
+            'message' => "Session updated succesfully!",
             'session' => $session,
         ]);
     }
@@ -443,7 +443,7 @@ class ClassController extends Controller
             $class->save();
             return response()->json([
                 'success' => true,
-                'message' => "Class Scheduled SuccessFully",
+                'message' => "Class scheduled successfully",
                 'class' => $class,
             ]);
         } else {
@@ -465,7 +465,7 @@ class ClassController extends Controller
         if ($class->status == 'canceled') {
             return response()->json([
                 'status' => false,
-                'message' => 'Class has been Canceled!'
+                'message' => 'Class has been canceled!'
             ], 400);
         }
 
@@ -1661,7 +1661,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => "Class Rescheduled Successfully!",
+                        'message' => "Class rescheduled successfully!",
                         'class' => $class,
                     ]);
                 } else {
@@ -1731,7 +1731,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => "Class Rescheduled Successfully!",
+                        'message' => "Class rescheduled successfully!",
                         'class' => $class,
                     ]);
                 }
@@ -1744,7 +1744,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class Date has been Passed",
+                'errors' => "Class date has been passed",
             ], 400);
         }
     }
@@ -1777,7 +1777,7 @@ class ClassController extends Controller
         $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Kudos points',
+            'message' => 'Teacher kudos points',
             'kudos_points' => $teacher->kudos_points,
             'feedbacks' => $feedbacks,
         ]);
@@ -1927,7 +1927,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Class Added Successfully',
+            'message' => 'Class added successfully',
             'course' => $course,
         ]);
     }
@@ -1972,7 +1972,7 @@ class ClassController extends Controller
         if ($availabilities == []) {
             return response()->json([
                 'status' => false,
-                'errors' => 'Teacher Not Available',
+                'errors' => 'Teacher not available',
             ], 400);
         }
         $final_availabilities =  [];
@@ -1981,7 +1981,7 @@ class ClassController extends Controller
         if (count($classes) == 0) {
             return response()->json([
                 'status' => true,
-                'message' => "Makeup Class Scheduled",
+                'message' => "Makeup class scheduled",
                 'day' => $day,
                 // 'availabilities' => $availabilities,
                 'availabilities' => $availabilities,
@@ -2011,7 +2011,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Available Slots for Makeup Class",
+            'message' => "Available slots for makeup class",
             'day' => $day,
             // 'availabilities' => $availabilities,
             'availabilities' => $final_availabilities,
@@ -2167,7 +2167,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Makeup Class Scheduled",
+            'message' => "Makeup class scheduled",
             'academic_class' => $academic_class,
         ]);
     }
@@ -2250,7 +2250,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Your Request has been submitted! Wait for Teacher Approval!",
+            'message' => "Your request has been submitted! Wait for teacher approval!",
             'course' => $course,
         ]);
     }
@@ -2261,7 +2261,7 @@ class ClassController extends Controller
         $class = AcademicClass::findOrFail($class_id);
         return response()->json([
             'success' => true,
-            'message' => 'Class Detail!',
+            'message' => 'Class detail!',
             'class' => $class,
         ]);
     }

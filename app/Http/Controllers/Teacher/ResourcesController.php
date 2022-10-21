@@ -45,7 +45,7 @@ class ResourcesController extends Controller
         if ($image == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'file not found!',
+                'message' => 'File not found!',
 
             ], 400);
         }
@@ -239,7 +239,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Added Successfully!',
+            'message' => 'Resource added successfully!',
             'resource' => $resource1
         ]);
     }
@@ -257,7 +257,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resources Dasboard!',
+            'message' => 'Resources dashboard!',
             'teacher_other_documents' => $resource_teacher_documents,
             'student_other_documents' => $resource_student_documents,
             'course' => $course,
@@ -320,7 +320,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Deleted successfully!',
+            'message' => 'Resource deleted successfully!',
             'resource' => $resource,
         ]);
     }
@@ -341,7 +341,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Details!',
+            'message' => 'Resource details!',
             'resource' => $resource,
         ]);
     }

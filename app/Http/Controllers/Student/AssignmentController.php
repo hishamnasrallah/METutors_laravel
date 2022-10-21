@@ -110,7 +110,7 @@ class AssignmentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Course Assignment Dashboard!',
+                'message' => 'Course assignment dashboard!',
                 'course' => $course,
                 'total_assignments' => $total_assinments,
                 'active_assignments' => $active_assignments,
@@ -200,7 +200,7 @@ class AssignmentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Assignment ReSubmitted SuccessFully',
+                'message' => 'Assignment reSubmitted successFully',
                 'assignment' =>  $user_assignment,
             ]);
         } else {
@@ -231,7 +231,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Submitted SuccessFully',
+            'message' => 'Assignment submitted successfully',
             'assignment' =>  $userAssignment,
         ]);
     }
@@ -251,7 +251,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Student Assignment Detail!',
+            'message' => 'Student assignment detail!',
             'assignment' => $assignmnet,
         ]);
     }

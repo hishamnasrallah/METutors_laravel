@@ -18,7 +18,7 @@ class CourseParamController extends Controller
         $feedbacks = Feedback::all();
         return response()->json([
             'success' => true,
-            'message' => "All Course Feedback Params",
+            'message' => "All course feedback params",
             'feedbacks' => $feedbacks,
         ]);
     }
@@ -64,7 +64,7 @@ class CourseParamController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Course param inserted successfully!",
+            'message' => "Course param added successfully!",
             'feedback' => $feedback,
         ]);
     }

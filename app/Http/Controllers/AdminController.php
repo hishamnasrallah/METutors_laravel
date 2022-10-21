@@ -50,6 +50,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use Str;
 
 class AdminController extends Controller
 {
@@ -87,7 +88,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' =>  "Teacher Assigned to course Successfully",
+            'message' =>  "Teacher assigned to course successfully",
         ]);
     }
 
@@ -123,7 +124,7 @@ class AdminController extends Controller
             $teacher->status = "disabled";
             return response()->json([
                 'status' => false,
-                'message' => "Warning Limit Exceeded! Account has been banned",
+                'message' => "Warning limit exceeded! Account has been banned",
             ]);
         }
     }
@@ -145,7 +146,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Performance",
+            'message' => "Teacher performance",
             'average_rating' => $average_rating,
         ]);
     }
@@ -169,7 +170,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Blocked Successfully",
+            'message' => "User blocked successfully",
             'user' => $user,
         ]);
     }
@@ -193,7 +194,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User UnBlocked Successfully",
+            'message' => "User unblocked successfully",
             'user' => $user,
         ]);
     }
@@ -225,7 +226,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role added Successfully",
+            'message' => "Role added successfully",
             'role' => $role,
         ]);
     }
@@ -238,7 +239,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role Updated Successfully",
+            'message' => "Role updated successfully",
             'role' =>  $role,
         ]);
     }
@@ -250,7 +251,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role Deleted Successfully",
+            'message' => "Role deleted duccessfully",
             'role' =>  $role,
         ]);
     }
@@ -261,7 +262,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role Deleted Successfully",
+            'message' => "All roles",
             'roles' => $roles,
         ]);
     }
@@ -323,7 +324,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Course Detail!",
+            'message' => "Course detail!",
             // 'course_progress' => $progress,
             // 'teacher_rating' => $average_rating,
             'course' => $course,
@@ -378,7 +379,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Course Detail!",
+            'message' => "Course detail!",
             // 'course_progress' => $progress,
             // 'teacher_rating' => $average_rating,
             'course' => $course,
@@ -440,7 +441,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Courses Canceled by teacher!",
+            'message' => "Courses canceled by teacher!",
             'canceled_courses' => $courses,
         ]);
     }
@@ -474,7 +475,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Courses Canceled by student!",
+            'message' => "Courses canceled by student!",
             'canceled_courses' => $courses,
         ]);
     }
@@ -637,7 +638,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teachers Classes Schedule",
+            'message' => "Teachers classes schedule",
             'weekdays' => $weekDays,
             'teachers' => $this->paginate($tutors, $request->per_page ?? 10),
         ]);
@@ -666,7 +667,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Student's Classes Schedule",
+            'message' => "Student's classes schedule",
             'total_students' => count($students),
             'result' => $object,
         ]);
@@ -678,7 +679,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Newsletters",
+            'message' => "All newsletters",
             'newsletters' => $newsletters,
         ]);
     }
@@ -690,7 +691,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Newsletter Deleted Successfully!",
+            'message' => "Newsletter deleted successfully!",
             'newsletter' => $newsletter,
         ]);
     }
@@ -707,7 +708,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Students Feedbacks",
+            'message' => "Students feedbacks",
             'user_feedbacks' => $feedbacks,
         ]);
     }
@@ -902,7 +903,7 @@ class AdminController extends Controller
             // return $feedbacksArray;
             return response()->json([
                 'status' => true,
-                'message' => "Student Testimonials",
+                'message' => "Student testimonials",
                 'reviews_count' => count($user_feedbacks),
                 'overall_stars' => $overall_stars,
                 'overall_feedback' => $overall_feedback,
@@ -1052,7 +1053,7 @@ class AdminController extends Controller
             }
             return response()->json([
                 'status' => true,
-                'message' => "Teachers Testimonials!",
+                'message' => "Teachers testimonials!",
                 'reviews_count' => count($user_feedbacks),
                 'overall_stars' => $overall_stars,
                 'overall_feedback' => $overall_feedback,
@@ -1088,7 +1089,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Required Params for Platform Feedback!",
+            'message' => "Required params for platform feedback!",
             'review' => $testimonials[0]->review,
             'params' => $params,
         ]);
@@ -1142,7 +1143,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Your Feedback Updated Successfully!",
+            'message' => "Your feedback updated successfully!",
             'feedbacks' => $feedbacks,
         ]);
     }
@@ -1173,7 +1174,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Feedback deleted Successfully!",
+            'message' => "User feedback deleted successfully!",
         ]);
     }
 
@@ -1187,7 +1188,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Testimonial deleted Successfully!",
+            'message' => "User testimonial deleted successfully!",
         ]);
     }
 
@@ -1323,7 +1324,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Assigned Successfully!",
+            'message' => "Teacher assigned successfully!",
             'course' => $course,
         ]);
     }
@@ -1428,7 +1429,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Assigned Successfully!",
+            'message' => "Teacher assigned successfully!",
             'course' => $course,
         ]);
     }
@@ -1543,7 +1544,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Rejected Teachers!",
+            'message' => "Rejected teachers!",
             'teachers_count' => count($teachers),
             'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
@@ -1567,7 +1568,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Suspended Teachers!",
+            'message' => "Suspended teachers!",
             'teachers_count' => count($teachers),
             'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
@@ -1620,7 +1621,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Rejected Teachers!",
+            'message' => "Rejected teachers!",
             'pending_teachers_count' => count($pending_teachers),
             'pending_teachers' => $this->paginate($pending_teachers, $request->per_page ?? 10),
             'rejected_teachers_count' => count($rejected_teachers),
@@ -1784,7 +1785,7 @@ class AdminController extends Controller
         // return $available_teachers;
         return response()->json([
             'status' => true,
-            'message' => "Current Teachers",
+            'message' => "Current teachers",
             'total' => count($teachers),
             'available' => count($available_teachers),
             'engaged' => count($engaged_teachers),
@@ -1897,7 +1898,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Meeting Scheduled Successfully",
+                'message' => "Meeting scheduled successfully",
 
             ]);
         } else {
@@ -1925,7 +1926,7 @@ class AdminController extends Controller
         if ($int == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'meeting not found'
+                'message' => 'Meeting not found'
             ], 400);
         }
 
@@ -1976,7 +1977,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Active Teachers related to Subject!",
+            'message' => "Active teachers related to subject!",
             'teachers_count' => count($teachers),
             'teachers' => $teachers,
         ]);
@@ -1996,7 +1997,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Active Classes related to Subject!",
+            'message' => "Active classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2010,7 +2011,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Upcoming Classes related to Subject!",
+            'message' => "Upcoming classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2025,7 +2026,7 @@ class AdminController extends Controller
         $classes = CanceledCourse::whereIn('course_id', $subject_courses)->get();
         return response()->json([
             'status' => true,
-            'message' => "Canceled Classes related to Subject!",
+            'message' => "Canceled classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2039,7 +2040,7 @@ class AdminController extends Controller
         $classes = RescheduleClass::whereIn('course_id', $subject_courses)->get();
         return response()->json([
             'status' => true,
-            'message' => "Rescheduled Classes related to Subject!",
+            'message' => "Rescheduled classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2239,7 +2240,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Bookings of given Subject!",
+            'message' => "All bookings of given subject!",
             'subject' => $subject,
         ]);
     }
@@ -2440,7 +2441,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Student feedback on Course!",
+            'message' => "Student feedback on course!",
             'feedbacks_count' => $feedbacks_count,
             'feedback_rating' => $feedback_rating,
             'overall_feedback' => $overall_feedback,
@@ -2517,13 +2518,13 @@ class AdminController extends Controller
         if ($request->has('cancelled_by')) {
             return response()->json([
                 'status' => true,
-                'message' => "Cancelled Courses!",
+                'message' => "Cancelled courses!",
                 'cancelled_courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
         } else {
             return response()->json([
                 'status' => true,
-                'message' => "Cancelled Courses!",
+                'message' => "Cancelled courses!",
                 'total' => count($courses),
                 'by_teachers' => $by_teachers,
                 'by_students' => $by_students,
@@ -2561,7 +2562,7 @@ class AdminController extends Controller
         if (count($courses) > 0) {
             return response()->json([
                 'status' => false,
-                'message' => 'Access Denied! Please assign these courses to someone else.',
+                'message' => 'Access denied! Please assign these courses to someone else.',
                 'courses' => $courses,
             ], 400);
         } else {
@@ -2708,7 +2709,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Active Students ',
+                'message' => 'Active students ',
                 'Total' => count($active_students),
                 'enrolled' => count($enrolled_students),
                 'unenrolled' => count($active_students) - count($enrolled_students),
@@ -2763,7 +2764,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Inactive Students ',
+                'message' => 'Inactive students ',
                 'students' => $this->paginate($inactive_students, $request->per_page ?? 10),
 
             ]);
@@ -2815,7 +2816,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'suspended Students ',
+                'message' => 'Suspended students ',
                 'students' => $this->paginate($suspended_students, $request->per_page ?? 10),
 
             ]);
@@ -2823,7 +2824,7 @@ class AdminController extends Controller
         //Response
         return response()->json([
             'status' => true,
-            'message' => 'All Students ',
+            'message' => 'All students ',
             'Total' => count($registered_students),
             'enrolled' => count($enrolled_students),
             'active' => count($active_students),
@@ -2875,7 +2876,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'All Bookings!',
+            'message' => 'All bookings!',
             'student' => $student,
             'total_bookings' => count($bookings),
             'average_rating' => $average_rating,
@@ -3112,7 +3113,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Summary',
+            'message' => 'Assignment summary',
             'assignmnets_accuracy' => $assignmnets_accuracy,
             'assignment_completion_rate' => $assignment_completion_rate,
             'assignments_by_due_date' => $on_date,
@@ -3146,7 +3147,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Feedback to student!',
+            'message' => 'Teacher feedback to student!',
             'review' => $review,
             'teacher' => $teacher,
             'feedback' => $student_feedback,
@@ -3190,7 +3191,7 @@ class AdminController extends Controller
             // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
             return response()->json([
                 'status' => true,
-                'message' => 'Running Courses!',
+                'message' => 'Running courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3224,7 +3225,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Pending Courses!',
+                'message' => 'Pending courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3257,7 +3258,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Cancelled Courses!',
+                'message' => 'Cancelled courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3291,7 +3292,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Completed Courses!',
+                'message' => 'Completed courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3325,7 +3326,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Reassigned Courses!',
+                'message' => 'Reassigned courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3406,7 +3407,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'All Bookings!',
+            'message' => 'All bookings!',
             'teacher' => $teacher,
             'total_bookings' => count($courses),
             'rating_count' => count($points_array),
@@ -3491,7 +3492,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Rejected Courses!',
+                'message' => 'Rejected courses!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -3551,7 +3552,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Courses With no Teacher!',
+                'message' => 'Courses with no teacher!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -3600,7 +3601,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Cancelled Courses!',
+                'message' => 'Cancelled courses!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -3628,7 +3629,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Running Courses!',
+                'message' => 'Running courses!',
                 'courses_count' => count($courses),
                 'courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
@@ -3669,7 +3670,7 @@ class AdminController extends Controller
         //********* Sending Email ends **********//
         return response()->json([
             'status' => true,
-            'message' => "Email sent Successfully!",
+            'message' => "Email sent successfully!",
             'email' => $request->email,
             'message' => $request->message,
         ]);
@@ -3700,7 +3701,7 @@ class AdminController extends Controller
         $user_testimonials = UserTestimonial::where('sender_id', $user_id)->get();
         return response()->json([
             'status' => true,
-            'message' => "Status Updated Successfully",
+            'message' => "Status updated successfully",
             'user_testimonials' => $user_testimonials,
         ]);
     }
@@ -3713,7 +3714,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Requested Courses",
+            'message' => "All requested courses",
             'new_request_count' => count($requested_courses),
             'completed_count' => count($requested_courses),
             'requested_courses' => $this->paginate($requested_courses, $request->per_page ?? 10),
@@ -3740,7 +3741,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Orders",
+            'message' => "All orders",
             'orders' => $this->paginate($orders, $request->per_page ?? 10),
         ]);
     }
@@ -3772,7 +3773,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Orders to refund!",
+            'message' => "All orders to refund!",
             'orders' => $this->paginate($orders, $request->per_page ?? 10),
         ]);
     }
@@ -3820,7 +3821,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "status changed successfully",
+            'message' => "Status changed successfully",
         ]);
     }
 
@@ -3874,7 +3875,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Subject Orders",
+            'message' => "Subject orders",
             'orders' => $this->paginate($orders, $request->per_page),
         ]);
     }
@@ -3900,7 +3901,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Order Details!",
+            'message' => "Order details!",
             'order_detail' => $order,
         ]);
     }
@@ -3991,7 +3992,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Approval Requests!',
+            'message' => 'Approval requests!',
             'newly_courses_count' => count($new_courses),
             'completed_courses_count' => count($completed_courses),
             'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -4041,12 +4042,13 @@ class AdminController extends Controller
         $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(3);
         $teachers_list = [];
         foreach ($featured_teachers as $featured_teacher) {
+            $featured_teacher->teacher->last_name = Str::limit($featured_teacher->teacher->last_name,1,'').'.';
             array_push($teachers_list, $featured_teacher);
         }
 
         return response()->json([
             'status' => true,
-            'message' => 'Featured Teachers Related to Subject!',
+            'message' => 'Featured teachers related to subject!',
             'subject' => $subject,
             'featured_teachers' => $teachers_list,
         ]);
@@ -4105,12 +4107,13 @@ class AdminController extends Controller
                 ->unique();
 
             $featured_teacher->subjects = Subject::whereIn('id', $subjects)->get();
+            $featured_teacher->last_name = Str::limit($featured_teacher->last_name,1,'').'.';
             array_push($teachers_list, $featured_teacher);
         }
 
         return response()->json([
             'status' => true,
-            'message' => 'Featured Teachers!',
+            'message' => 'Featured teachers!',
             'featured_teachers' => $teachers_list,
         ]);
     }
@@ -4120,7 +4123,7 @@ class AdminController extends Controller
         $refunds = RefundCourse::with('order', 'course')->where('course_id', $course_id)->first();
         return response()->json([
             'status' => true,
-            'message' => 'Refund order Account Detail!',
+            'message' => 'Refund order account detail!',
             'refund' => $refunds,
         ]);
     }
@@ -4154,7 +4157,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Refunded Successfully!',
+            'message' => 'Refunded successfully!',
             'refund' => $refunds,
         ]);
     }
@@ -4192,7 +4195,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'All Courses!',
+            'message' => 'All courses!',
             'courses' =>  $courses,
             // 'courses' =>  $this->paginate($courses, $request->per_page ?? 10),
         ]);

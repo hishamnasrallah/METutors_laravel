@@ -122,7 +122,7 @@ class ProgramCountryController extends Controller
         }
         return response()->json([
             'success' => true,
-            'message' => "Program data  retrieved successfully",
+            'message' => "Program_country data  retrieved successfully",
             'program_country' => $program_country,
         ]);
     }
@@ -183,7 +183,7 @@ class ProgramCountryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Program data updated successfully",
+            'message' => "Program_country data updated successfully",
             'program_country' => $program_country,
         ]);
     }
@@ -253,7 +253,7 @@ class ProgramCountryController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Country with Flags",
+            'message' => "Countries with flags",
             'countries' => $Countries,
         ]);
     }

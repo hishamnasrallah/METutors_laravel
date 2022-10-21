@@ -62,7 +62,7 @@ class PaymentController extends Controller
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
+            'message' => "Checkout prepared successfully!",
             'script_url' => $script_url,
             'shopperResultUrl' => $shopperResultUrl,
         ]);
@@ -317,7 +317,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Refunded Successfully!",
+            'message' => "Refunded successfully!",
             'refund_details' => json_decode($responseData),
             // 'course' => $course,
         ]);
@@ -375,7 +375,7 @@ class PaymentController extends Controller
         // return $responseData;
         return response()->json([
             'status' => true,
-            'message' => "Refunded Successfully!",
+            'message' => "Refunded successfully!",
             'refund_details' => json_decode($responseData),
             // 'course' => $course,
         ]);

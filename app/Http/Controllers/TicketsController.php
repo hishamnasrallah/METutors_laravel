@@ -404,7 +404,7 @@ class TicketsController extends Controller
         if ($user->role_name != 'admin') {
             return response()->json([
                 'success' => false,
-                'message' => 'access denied',
+                'message' => 'Access denied',
             ], 401);
         }
 
@@ -412,7 +412,7 @@ class TicketsController extends Controller
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'status can only be changed to closed or inprogress',
+                'message' => 'Status can only be changed to closed or inprogress',
             ], 401);
         }
         $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();

@@ -344,7 +344,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "User Not found",
+                'message' => "User not found",
             ], 204);
         }
 
@@ -467,7 +467,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "User Not found",
+                'message' => "User not found",
             ], 204);
         }
 
@@ -490,7 +490,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "User Not found",
+                'message' => "User not found",
             ], 204);
         }
 
@@ -1027,13 +1027,13 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Security Settings updated",
+                'message' => "Security settings updated",
                 'user' => $user,
             ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Current Password did't matched!",
+                'message' => "Current password did't matched!",
             ]);
         }
     }
@@ -1091,7 +1091,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Prefrences Added Successfully",
+            'message' => "User prefrences added successfully",
             'prefrences' => $prefrences,
         ]);
     }
@@ -1107,7 +1107,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Prefrences",
+            'message' => "User prefrences",
             'preference' => $pref,
         ]);
     }
@@ -1153,7 +1153,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Progress of all courses of Student',
+            'message' => 'Progress of all courses of student',
             'courses_progress' => $lastarray
         ]);
     }
@@ -1190,7 +1190,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Progress',
+            'message' => 'Course progress',
             'course' => $course,
             'percentage' => $percentage
         ]);
@@ -1522,7 +1522,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Account setting updated Successfully!',
+            'message' => 'Account setting updated successfully!',
             'user' => $user,
         ]);
     }

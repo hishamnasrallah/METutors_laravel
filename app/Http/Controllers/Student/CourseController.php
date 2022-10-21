@@ -126,7 +126,7 @@ class CourseController extends Controller
         $teacher_attendence = Attendance::with('class')->where('user_id', $course->teacher_id)->where('course_id', $course_id)->get();
         return response()->json([
             'status' => true,
-            'message' => "Course Attendence!",
+            'message' => "Course attendence!",
             'completed_classes' => count($completed_classes),
             'remaining_classes' => count($remaining_classes),
             'my_attendence' => $my_attendence,
@@ -150,7 +150,7 @@ class CourseController extends Controller
         $students_attendance = Attendance::with('class', 'user')->whereIn('user_id', $students)->where('course_id', $course_id)->get();
         return response()->json([
             'status' => true,
-            'message' => "Course Attendence!",
+            'message' => "Course attendence!",
             'completed_classes' => count($completed_classes),
             'remaining_classes' => count($remaining_classes),
             'students_attendance' => $students_attendance,
@@ -254,7 +254,7 @@ class CourseController extends Controller
         if ($course->status == 'completed') {
             return response()->json([
                 'status' => true,
-                'message' => 'Access Denied! Course has been Completed!',
+                'message' => 'Access denied! Course has been completed!',
             ], 400);
         }
         $subject = Subject::find($course->subject_id);
@@ -267,7 +267,7 @@ class CourseController extends Controller
             if ($course->status == 'cancelled_by_teacher' || $course->status == 'cancelled_by_student' || $course->status == 'cancelled_by_admin') {
                 return response()->json([
                     'status' => true,
-                    'message' => 'Course Already cancelled!',
+                    'message' => 'Course already cancelled!',
                 ], 400);
             }
 
@@ -427,7 +427,7 @@ class CourseController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Course Cancelled Successfully!",
+            'message' => "Course cancelled successfully!",
             'reason' => $request->reason,
             'course' => $course,
             'canceledclasses' => $canceled_classes,
@@ -466,7 +466,7 @@ class CourseController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Request Successfully Sent to METUTORS!",
+            'message' => "Request successfully sent to MEtutors!",
             'course' => $course,
         ]);
     }

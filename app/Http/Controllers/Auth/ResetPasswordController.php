@@ -98,7 +98,7 @@ class ResetPasswordController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Password Updated Successfully'
+                'message' => 'Password updated successfully'
             ]);
         } else {
 
@@ -110,7 +110,7 @@ class ResetPasswordController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'something went wrong'
+            'message' => 'Something went wrong'
         ], 500);
     }
 
@@ -161,7 +161,7 @@ class ResetPasswordController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'something went wrong'
+            'message' => 'Something went wrong'
         ], 500);
     }
 
@@ -202,7 +202,7 @@ class ResetPasswordController extends Controller
                     $user->update();
                     return response()->json([
                         'success' => true,
-                        'message' => 'email Updated Successfully'
+                        'message' => 'Email updated successfully'
                     ]);
                 } else {
 
@@ -232,7 +232,7 @@ class ResetPasswordController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'something went wrong'
+            'message' => 'Something went wrong'
         ], 500);
     }
 

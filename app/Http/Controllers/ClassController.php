@@ -405,7 +405,7 @@ class ClassController extends Controller
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
+            'message' => "Checkout prepared successfully!",
             'script_url' => $script_url,
             'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
             'course' => $course
@@ -502,7 +502,7 @@ class ClassController extends Controller
             if (count($weekAvailabilities) == 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Teacher not available at this day!',
+                    'message' => 'Teacher not available at this day! please check teacher availability first',
                 ], 400);
             }
             $flag = 0;
@@ -519,7 +519,7 @@ class ClassController extends Controller
                     if ($flag == count($weekAvailabilities))
                         return response()->json([
                             'status' => false,
-                            'message' => 'Teacher not available at this time slot!',
+                            'message' => 'Teacher not available at this time slot!! please check teacher availability first',
                         ], 400);
                 }
             }
@@ -538,7 +538,7 @@ class ClassController extends Controller
                     if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
                         return response()->json([
                             'status' => false,
-                            'message' => 'Teacher is not available on this slot please check teacher availability first',
+                            'message' => 'Teacher is not available on this slot! please check teacher availability first',
                         ], 400);
                     }
                 }
@@ -642,7 +642,7 @@ class ClassController extends Controller
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
+            'message' => "Checkout prepared successfully!",
             'script_url' => $script_url,
             'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id . "&classes=" . json_encode($classes_array),
             'course' => $course,
@@ -695,7 +695,7 @@ class ClassController extends Controller
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
+            'message' => "Checkout prepared successfully!",
             'script_url' => $script_url,
             'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
             'course' => $course
@@ -863,7 +863,7 @@ class ClassController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Session Updated Succesfully!",
+            'message' => "Session updated succesfully!",
             'session' => $session,
         ]);
     }
@@ -1034,7 +1034,7 @@ class ClassController extends Controller
             $class->save();
             return response()->json([
                 'success' => true,
-                'message' => "Class Scheduled SuccessFully",
+                'message' => "Class scheduled successfully",
                 'class' => $class,
             ]);
         } else {
@@ -1053,7 +1053,7 @@ class ClassController extends Controller
         if ($class == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'class not found'
+                'message' => 'Class not found'
             ], 400);
         }
         if ($class->status == 'canceled') {
@@ -1974,7 +1974,7 @@ class ClassController extends Controller
                 if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
                     return response()->json([
                         'status' => false,
-                        'errors' => "Already have Scheduled Class at this time!",
+                        'errors' => "Already have scheduled class at this time! please check teacher availability first",
                     ], 400);
                 }
             }
@@ -2001,7 +2001,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => "Class Rescheduled Successfully!",
+                        'message' => "Class rescheduled successfully!",
                     ]);
                 } else {
                     // if class is not scheduled by braincert
@@ -2038,7 +2038,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'errors' => "Class Rescheduled Successfully!",
+                        'errors' => "Class rescheduled successfully!",
                     ]);
                 }
             } else {
@@ -2050,7 +2050,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class Date has been Passed",
+                'errors' => "Class date has been passed",
             ], 400);
         }
     }
@@ -2083,7 +2083,7 @@ class ClassController extends Controller
         $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Kudos points',
+            'message' => 'Teacher kudos points',
             'kudos_points' => $teacher->kudos_points,
             'feedbacks' => $feedbacks,
         ]);

@@ -120,7 +120,7 @@ class SyllabusController extends Controller
 
                     return response()->json([
                         'success' => true,
-                        'message' => 'Topic Added Successfully!',
+                        'message' => 'Topic added successfully!',
                         'unclassified_classes' => $academic_classes_count,
                         'topic_detail' => [
                             'total_classes' => $totalTopicClases,
@@ -164,7 +164,7 @@ class SyllabusController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Topic Added Successfully!',
+                'message' => 'Topic added successfully!',
 
                 'unclassified_classes' => $academic_classes_count,
                 'topic_detail' => [
@@ -352,7 +352,7 @@ class SyllabusController extends Controller
 
                             return response()->json([
                                 'success' => true,
-                                'message' => 'Topic Added Successfully!',
+                                'message' => 'Topic added successfully!',
 
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
@@ -418,7 +418,7 @@ class SyllabusController extends Controller
                             }
                             return response()->json([
                                 'success' => true,
-                                'message' => 'Topic Added Successfully!',
+                                'message' => 'Topic added successfully!',
 
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
@@ -578,7 +578,7 @@ class SyllabusController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "Class updated Successfully!",
+                    'message' => "Class updated successfully!",
                 ]);
             } else {
                 return response()->json([
@@ -593,7 +593,7 @@ class SyllabusController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Class updated Successfully!",
+                'message' => "Class updated successfully!",
             ]);
         }
     }
@@ -660,7 +660,7 @@ class SyllabusController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => 'Course assignment updated successfully!',
             'deleted_topic' => $topic,
             'unclassified_classes' => $unclassified_classes,
         ]);

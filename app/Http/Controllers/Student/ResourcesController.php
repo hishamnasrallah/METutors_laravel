@@ -49,7 +49,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resources Dasboard!',
+            'message' => 'Resources dasboard!',
             'teacher_other_documents' => $resource_teacher_documents,
             'student_other_documents' => $resource_student_documents,
             'course' => $course,
@@ -71,7 +71,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Details!',
+            'message' => 'Resource details!',
             'resource' => $resource,
         ]);
     }

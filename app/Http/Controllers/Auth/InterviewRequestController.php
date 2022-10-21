@@ -137,7 +137,7 @@ class InterviewRequestController extends Controller
 
         return response()->json([
           'status' => false,
-          'message' => 'Your have already submitted the interview request'
+          'message' => 'You have already submitted the interview request'
         ], 400);
       }
 
@@ -166,7 +166,7 @@ class InterviewRequestController extends Controller
 
       Mail::send('email.interview', $data, function ($message) use ($to_email) {
 
-        $message->to($to_email)->subject('MEtutors Interview request');
+        $message->to($to_email)->subject('MEtutors interview request');
         $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
       });
 
@@ -201,7 +201,7 @@ class InterviewRequestController extends Controller
 
       return response()->json([
         'status' => false,
-        'message' => 'Only Teachers can submit request to HR for interview'
+        'message' => 'Only teachers can submit request to HR for interview'
       ], 401);
     }
   }
@@ -272,7 +272,7 @@ class InterviewRequestController extends Controller
       // $class->save();
       return response()->json([
         'success' => true,
-        'message' => "Class Scheduled SuccessFully",
+        'message' => "Class scheduled successFully",
         'class' => $class,
       ]);
     } else {

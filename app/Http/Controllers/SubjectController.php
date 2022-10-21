@@ -121,7 +121,7 @@ class SubjectController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "subject stored successfully",
+            'message' => "Subject stored successfully",
             'subject' => $subject,
         ]);
     }
@@ -141,7 +141,7 @@ class SubjectController extends Controller
         }
         return response()->json([
             'success' => true,
-            'message' => "subject data  retrieved successfully",
+            'message' => "Subject data retrieved successfully",
             'subject' => $subject,
         ]);
     }
@@ -196,7 +196,7 @@ class SubjectController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "subject data updated successfully",
+            'message' => "Subject data updated successfully",
             'subject' => $subject,
         ]);
     }
@@ -217,7 +217,7 @@ class SubjectController extends Controller
         $subject->delete();
         return response()->json([
             'success' => true,
-            'message' => "subject deleted successfully",
+            'message' => "Subject deleted successfully",
         ]);
     }
 

@@ -158,7 +158,7 @@ class FaqController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Newsletter Submitted Successfully",
+            'message' => "Newsletter submitted successfully",
         ]);
     }
 }
