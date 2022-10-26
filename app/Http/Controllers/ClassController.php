@@ -1692,22 +1692,15 @@ class ClassController extends Controller
             $userrole = 'student_id';
         }
 
-         $ip = request()->getClientIp();
-           // $ip = '39.46.57.189';
-           $user = \Location::get($ip);
-           // return $user->timezone;
-           // $current_date = Carbon::parse($value)->format('Y-m-d g:i a');
+        
 
 
-        $current_date = Carbon::today()->setTimezone($user->timezone)->format('Y-m-d');
-         // $current_date->setTimezone($user->timezone);
-         // return $current_date;
-        $new_today_date = $current_date."T00:00:00.000Z";
+        $current_date = Carbon::today()->format('Y-m-d');
 
-        $todays_date = Carbon::now()->setTimezone($user->timezone)->format('d-M-Y [l]');
+        $todays_date = Carbon::now()->format('d-M-Y [l]');
 
         $user_id = $token_user->id;
-        $current_date = Carbon::today()->setTimezone($user->timezone)->format('Y-m-d');
+        $current_date = Carbon::today()->format('Y-m-d');
 
         $course = Course::with('subject.country', 'language', 'program', 'participants.user')->find($course_id);
         $corse = Course::with('subject.country', 'language', 'program', 'classes')->find($course_id);
@@ -1760,7 +1753,21 @@ class ClassController extends Controller
 
         $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
             ->with('course', 'course.subject.country', 'course.student', 'attendence', 'attendees.user')
-            ->where('start_date', $new_today_date)
+            ->whereDate('start_date', $current_date)
+            ->with('course')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
+            // ->where($userrole, $user_id)
+            ->where('course_id', $course->id)
+            ->get();
+
+        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
+            ->with('course', 'course.subject.country', 'course.student', 'attendence', 'attendees.user')
+            ->whereDate('start_date', '>', $current_date)
             ->with('course')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
@@ -1772,20 +1779,7 @@ class ClassController extends Controller
             ->where('course_id', $course->id)
             ->get();
 
-        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject.country', 'course.student', 'attendence', 'attendees.user')
-            ->where('start_date', '>', $new_today_date)
-            ->with('course')
-            ->with(['student_attendence' => function ($q) {
-                $q->where('role_name', 'student');
-            }])
-            ->with(['teacher_attendence' => function ($q) {
-                $q->where('role_name', 'teacher');
-            }])
-            ->where($userrole, $user_id)
-            ->where('course_id', $course->id);
-
-        $total_upcomingClasses = AcademicClass::where('start_date', '>', $new_today_date)
+        $total_upcomingClasses = AcademicClass::whereDate('start_date', '>', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
@@ -1801,17 +1795,18 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->where('start_date', '<', $new_today_date)
+            ->whereDate('start_date', '<', $current_date)
             ->with('course')
             ->where($userrole, $user_id)
-            ->where('course_id', $course->id);
+            ->where('course_id', $course->id)
+            ->get();
 
-        $total_pastClasses = AcademicClass::where('start_date', '<', $new_today_date)
+        $total_pastClasses = AcademicClass::whereDate('start_date', '<', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
 
-        $remaining_classes = AcademicClass::where('course_id', $course_id)->where('start_date', '>', $new_today_date)->where('status', '!=', 'completed')->count();
+        $remaining_classes = AcademicClass::where('course_id', $course_id)->whereDate('start_date', '>', $current_date)->where('status', '!=', 'completed')->count();
         $completed_classes = AcademicClass::where('course_id', $course_id)->where('status', 'completed')->count();
 
         $totalClases = AcademicClass::where('course_id', $course_id)->where($userrole, $user_id)->count();

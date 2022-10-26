@@ -83,5 +83,6 @@ class Kernel extends HttpKernel
         'isTeacher' => \App\Http\Middleware\isTeacher::class,
         'isStudent' => \App\Http\Middleware\isStudent::class,
         'verifyEmail' => \App\Http\Middleware\EmailVerification::class,
+        'LangMiddleware' => \App\Http\Middleware\LangMiddleware::class,
     ];
 }

@@ -59,7 +59,10 @@ class DashboardController extends Controller
             }
 
 
-
+            $endDate = Carbon::parse($endDate)->format('Y-m-d');
+            $compareDate = Carbon::parse($compareDate)->format('Y-m-d');
+            $startDate = Carbon::parse($startDate)->format('Y-m-d');
+            $current_date = Carbon::now()->format('Y-m-d');
 
             // $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();
 
@@ -67,13 +70,17 @@ class DashboardController extends Controller
             $course_details = [];
             $completed_courses = Course::with('subject.country', 'student', 'program', 'classes', 'feedbacks')
                 ->where('status', 'completed')
-                ->whereBetween('created_at', [$endDate, $current_date])
+                // ->whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
                 ->where($userrole, $user_id)
                 ->get();
             // return count($completed_courses);
             $last_completed_courses = Course::with('subject.country', 'student', 'program', 'classes', 'feedbacks')
                 ->where('status', 'completed')
-                ->whereBetween('created_at', [$compareDate, $endDate])
+                // ->whereBetween('created_at', [$compareDate, $endDate])
+                ->whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
                 ->where($userrole, $user_id)
                 ->get();
             // return count($last_completed_courses);
@@ -113,14 +120,33 @@ class DashboardController extends Controller
             }
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status', 'teacher_id')
                 ->with('teacher', 'course', 'course.subject.country', 'course.student', 'course.teacher', 'course.program')
-                ->where('start_date', $current_date)->where($userrole, $user_id)
+                ->whereDate('start_date', $current_date)
+                ->where($userrole, $user_id)
                 ->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'desc')
                 ->get();
-            $total_classes = AcademicClass::where($userrole, $user_id)->whereBetween('created_at', [$endDate, $current_date])->count();
-            $attended_classes = Attendance::where('user_id', $user_id)->whereBetween('created_at', [$endDate, $current_date])->where('status', 'present')->count();
+
+            $total_classes = AcademicClass::where($userrole, $user_id)
+                // ->whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                ->count();
+
+            $attended_classes = Attendance::where('user_id', $user_id)
+            // ->whereBetween('created_at', [$endDate, $current_date])
+            ->whereDate('created_at', '>=', $endDate)
+            ->whereDate('created_at', '<=', $current_date)
+            ->where('status', 'present')
+            ->count();
+
             //Attendence Growth
-            $last_attended_classes = Attendance::where('user_id', $user_id)->whereBetween('created_at', [$compareDate, $endDate])->where('status', 'present')->count();
+            $last_attended_classes = Attendance::where('user_id', $user_id)
+            // ->whereBetween('created_at', [$compareDate, $endDate])
+            ->whereDate('created_at', '>=', $compareDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->where('status', 'present')
+            ->count();
+
             $attendence_growth = 0;
             $greater = 0;
             $greater = $attended_classes > $last_attended_classes ? $attended_classes : $last_attended_classes;
@@ -129,11 +155,20 @@ class DashboardController extends Controller
             }
             // return $current_date;
             // return $endDate.$Carbion(z);
-            $total_payment = Course::whereBetween('created_at', [$endDate, $current_date])
-                ->where($userrole, $user_id)->where('course_code', '!=', null)->sum('total_price');
+            $total_payment = Course::whereDate('created_at', '>=', $endDate)
+            ->whereDate('created_at', '<=', $current_date)
+            // whereBetween('created_at', [$endDate, $current_date])
+                ->where($userrole, $user_id)
+                ->where('course_code', '!=', null)
+                ->sum('total_price');
+
             // return $total_payment = Course::whereBetween('created_at', [$endDate, $current_date])->where($userrole, $user_id)->sum('total_price');
             //Payment Growth
-            $total_last_payment = Course::whereBetween('created_at', [$compareDate, $endDate])->where($userrole, $user_id)->sum('total_price');
+            $total_last_payment = Course::whereDate('created_at', '>=', $compareDate)
+            ->whereDate('created_at', '<=', $endDate)
+            // whereBetween('created_at', [$compareDate, $endDate])
+            ->where($userrole, $user_id)
+            ->sum('total_price');
             $payment_growth = 0;
             $greater = 0;
             $greater = $total_payment > $total_last_payment ? $total_payment : $total_last_payment;
@@ -230,10 +265,12 @@ class DashboardController extends Controller
                 ]);
             }
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')->with('course', 'teacher', 'course.subject.country', 'course.student', 'course.teacher', 'course.program')
-                ->where('start_date', $current_date)->where($userrole, $user_id)
+                ->whereDate('start_date', $current_date)
+                ->where($userrole, $user_id)
                 ->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'asc')
                 ->get();
+                
             $total_classes = AcademicClass::where($userrole, $user_id)->count();
             $attended_classes = Attendance::where('user_id', $user_id)->count();
             $total_payment = Course::where($userrole, $user_id)->sum('total_price');
@@ -295,7 +332,7 @@ class DashboardController extends Controller
 
         Mail::send('email.invoice_mail', $data, function ($message) use ($to_email) {
             $message->to($to_email)->subject('Invoice Email');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
 
         //********* Sending Invoive Email ends **********//

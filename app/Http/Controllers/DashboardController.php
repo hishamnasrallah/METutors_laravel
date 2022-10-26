@@ -53,13 +53,37 @@ class DashboardController extends Controller
                 $compareDate = Carbon::today()->subYear(2);
             }
 
+            $endDate = Carbon::parse($endDate)->format('Y-m-d');
+            $compareDate = Carbon::parse($compareDate)->format('Y-m-d');
+            $startDate = Carbon::parse($startDate)->format('Y-m-d');
+            $current_date = Carbon::now()->format('Y-m-d');
 
 
-            $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();
+            $endDate = Carbon::parse($endDate)->format('Y-m-d');
+            $compareDate = Carbon::parse($compareDate)->format('Y-m-d');
+            $startDate = Carbon::parse($startDate)->format('Y-m-d');
+
+            // $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();
+            $classes = AcademicClass::whereDate('start_date', '>=', $endDate)
+                ->whereDate('start_date', '<=', $startDate)
+                ->get();
+
             $current_date = Carbon::now();
+            $current_date = Carbon::parse($current_date)->format('Y-m-d');
 
-            $total_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('course_code', '!=', null)->count();
-            $total_last_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->count();
+            $total_courses = Course::whereDate('created_at', '>=', $endDate)
+            // whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '<=', $current_date)
+                ->where('teacher_id', $user_id)
+                ->where('course_code', '!=', null)
+                ->count();
+
+            $total_last_courses = Course::whereDate('created_at', '>=', $compareDate)
+            ->whereDate('created_at', '<=', $endDate)
+            // whereBetween('created_at', [$compareDate, $endDate])
+                ->where('teacher_id', $user_id)
+                ->count();
+
             //Total courses Growth
             $courses_growth = 0;
             $courses_last_count = 0;
@@ -70,8 +94,20 @@ class DashboardController extends Controller
                 $courses_last_count = $total_last_courses;
             }
 
-            $total_completed_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'completed')->count();
-            $total_last_completed_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->where('status', 'completed')->count();
+            $total_completed_courses = Course::whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                // whereBetween('created_at', [$endDate, $current_date])
+                ->where('teacher_id', $user_id)
+                ->where('status', 'completed')
+                ->count();
+
+            $total_last_completed_courses = Course::whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
+                // whereBetween('created_at', [$compareDate, $endDate])
+                ->where('teacher_id', $user_id)
+                ->where('status', 'completed')
+                ->count();
+
             //Total completed courses Growth
             $completed_courses_growth = 0;
             $completed_courses_last_count = 0;
@@ -84,9 +120,9 @@ class DashboardController extends Controller
             // return $endDate . ' - ' . $current_date;
 
             $newly_assigned_courses = Course::with('subject.country', 'student', 'program', 'classes')
-                ->whereBetween('created_at', [$endDate, $current_date])
-                // ->where('created_at', '>=', $endDate)
-                // ->where('created_at', '<=', $current_date)
+                // ->whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
                 ->where('teacher_id', $user_id)
                 ->where('status', 'pending')
                 ->orderBy('created_at', 'desc')
@@ -94,8 +130,11 @@ class DashboardController extends Controller
 
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", "status", "duration")
                 ->with('course', 'course.subject.country', 'course.student', 'course.program', 'attendence')
-                ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
-                ->orderBy('start_time', 'asc')->get();
+                ->whereDate('start_date', $current_date)
+                ->where('teacher_id', $user_id)
+                ->where('status', '!=', 'pending')
+                ->orderBy('start_time', 'asc')
+                ->get();
 
             //checking if class has completed
             $currentTime = Carbon::now()->format('H:i:s');
@@ -109,12 +148,17 @@ class DashboardController extends Controller
                 }
             }
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
-                ->whereBetween('created_at', [$endDate, $current_date])
+                // ->whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '>=', $current_date)
+                ->whereDate('created_at', '<=', $endDate)
                 ->where('receiver_id', $user_id)
-                ->orderBy('id','desc')
+                ->orderBy('id', 'desc')
                 ->get();
+
             $last_feedbacks = UserFeedback::with('course', 'sender', 'feedback')
-                ->whereBetween('created_at', [$compareDate, $endDate])
+                // ->whereBetween('created_at', [$compareDate, $endDate])
+                ->whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
                 ->where('receiver_id', $user_id)
                 // ->groupBy('')
                 ->get();
@@ -130,19 +174,36 @@ class DashboardController extends Controller
             }
 
 
-            $total_newly_courses = Course::whereBetween('created_at', [$endDate, $current_date])->where('teacher_id', $user_id)->where('status', 'pending')->count();
-            $total_last_newly_courses = Course::whereBetween('created_at', [$compareDate, $endDate])->where('teacher_id', $user_id)->where('status', 'pending')->count();
+            $total_newly_courses = Course::whereDate('created_at', '>=', $endDate)
+            ->whereDate('created_at', '<=', $current_date)
+            // whereBetween('created_at', [$endDate, $current_date])
+            ->where('teacher_id', $user_id)
+            ->where('status', 'pending')
+            ->count();
+
+            $total_last_newly_courses = Course::whereDate('created_at', '>=', $compareDate)
+            ->whereDate('created_at', '<=', $endDate)
+            // whereBetween('created_at', [$compareDate, $endDate])
+            ->where('teacher_id', $user_id)
+            ->where('status', 'pending')
+            ->count();
+
             //Newly assigned courses Growth
             $newly_courses_growth = 0;
             $greater = 0;
             $greater = $total_newly_courses > $total_last_newly_courses ? $total_newly_courses : $total_last_newly_courses;
-            if ($greater > 0 && $token_user->created_at <= $compareDate) {
-                $newly_courses_growth = ($total_last_newly_courses / $total_newly_courses) * 100;
+            if ($greater > 0 && $token_user->created_at <= $compareDate ) {
+                $newly_courses_growth = ($total_last_newly_courses / $greater) * 100;
                 $newly_courses_last_count = $total_last_newly_courses;
             }
 
 
-            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->whereBetween('created_at', [$endDate, $current_date])->where('status', '!=', 'completed')->count();
+            $missed_classes = AcademicClass::where('teacher_id', $user_id)
+                ->where('start_date', '<', $endDate)
+                // ->whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                ->where('status', '!=', 'completed')->count();
 
             $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
             //converted to all feedbacks per course 
@@ -191,24 +252,38 @@ class DashboardController extends Controller
             $current_date = Carbon::now()->format('Y-m-d');
 
             $total_courses = Course::where('teacher_id', $user_id)->count();
-            $total_completed_courses = Course::where('status', 'completed')->where('teacher_id', $user_id)->count();
+            $total_completed_courses = Course::where('status', 'completed')
+                ->where('teacher_id', $user_id)
+                ->count();
+
             $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'status')
                 ->with('course', 'course.subject.country', 'course.student', 'course.program')
-                ->where('start_date', $current_date)->where('teacher_id', $user_id)->where('status', '!=', 'pending')
-                ->orderBy('start_time', 'asc')->get();
+                ->whereDate('start_date', $current_date)
+                ->where('teacher_id', $user_id)
+                ->where('status', '!=', 'pending')
+                ->orderBy('start_time', 'asc')
+                ->get();
+
             $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
                 ->where('receiver_id', $user_id)
-                ->orderBy('id','desc')
+                ->orderBy('id', 'desc')
                 // ->where('course_id', '183')
                 ->get();
 
 
 
             $newly_assigned_courses = Course::with('subject.country', 'student', 'program', 'classes')
-                ->where('teacher_id', $user_id)->where('status', 'pending')->get();
+                ->where('teacher_id', $user_id)
+                ->where('status', 'pending')->get();
 
-            $total_newly_courses = Course::where('teacher_id', $user_id)->where('status', 'pending')->count();
-            $missed_classes = AcademicClass::where('teacher_id', $user_id)->where('start_date', '<', $current_date)->where('status', '!=', 'completed')->count();
+            $total_newly_courses = Course::where('teacher_id', $user_id)
+                ->where('status', 'pending')
+                ->count();
+
+            $missed_classes = AcademicClass::where('teacher_id', $user_id)
+            ->whereDate('start_date', '<', $current_date)
+            ->where('status', '!=', 'completed')
+            ->count();
 
             $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);
             //converted to all feedbacks per course 
@@ -404,7 +479,7 @@ class DashboardController extends Controller
 
         $feedbacks = UserFeedback::with('course', 'sender', 'feedback')
             ->where('receiver_id', $user_id)
-            ->orderBy('id','desc')
+            ->orderBy('id', 'desc')
             ->get();
 
         $feedbacks = $feedbacks->groupBy(['course_id', 'sender_id']);

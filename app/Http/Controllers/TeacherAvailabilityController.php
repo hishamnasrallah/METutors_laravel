@@ -23,7 +23,8 @@ class TeacherAvailabilityController extends Controller
         $endDate = Carbon::now()->addDays(30)->format('Y-m-d');
         $end_date = Carbon::now()->addDays(30)->format('d/m/Y');
 
-        $academicClasses = AcademicClass::whereBetween('start_date', [$startDate, $endDate])
+        $academicClasses = AcademicClass::whereDate('start_date', '>=', $startDate)
+            ->whereDate('start_date', '<=', $endDate)
             ->where('teacher_id', $teacher_id)
             ->where('status', '!=', 'completed')
             ->get();
@@ -68,6 +69,8 @@ class TeacherAvailabilityController extends Controller
             }
         }
 
+        // return $weekdays_days;
+
         $begin = new DateTime($startDate);
         $end   = new DateTime($endDate);
 
@@ -103,13 +106,14 @@ class TeacherAvailabilityController extends Controller
                     $weekAvailabilites = $availabilites->where('day', $day);
                     //if weekday classees are greater than 0
                     foreach ($weekAvailabilites as $weekAvailability) {
+
                         $time_from = Carbon::parse($weekAvailability->time_from)->format('G:i');
                         $time_to = Carbon::parse($weekAvailability->time_to)->format('G:i');
                         $counter = 0;
                         //No Classses on weekday
                         if (count($weekdayClasses) == 0) {
                             array_push($totalAvailabilities, [
-                                'availabilty_date' => $date->format('Y-m-d'),
+                                'availabilty_date' => $date->format('Y-m-d').'T11:00:00.000Z',
                                 // 'time_from' => Carbon::parse($weekAvailability->time_from)->format('h:i a'),
                                 'time_from' => $weekAvailability->time_from,
                                 // 'time_to' =>  Carbon::parse($weekAvailability->time_to)->format('h:i a'),
@@ -118,26 +122,32 @@ class TeacherAvailabilityController extends Controller
                                 'day' => $weekAvailability->day,
                             ]);
                         } else {
+                            
                             //If Classes Are Scheduled on Weeekdays
                             // foreach ($weekdayClasses as $weekdayClass) {
 
-                            // $start_time = Carbon::parse($weekdayClass->start_time);
-                            // $end_time = Carbon::parse($weekdayClass->end_time);
+                            $start_time = Carbon::parse($weekAvailability->time_from)->format('G:i');
+                            $end_time = Carbon::parse($weekAvailability->time_to)->format('G:i');
 
                             // return $time_to;
-                            $check_classes = AcademicClass::whereBetween('start_date', [$startDate, $endDate])
+                            $check_classes = AcademicClass::whereDate('start_date', $date->format('Y-m-d'))
                                 ->where('teacher_id', $teacher_id)
                                 ->where('status', '!=', 'completed')
                                 ->where('day', $weekAvailability->day)
                                 // ->where(function ($q) use ($time_from, $time_to) {
-                                ->whereBetween('start_time', [$weekAvailability->time_from, $weekAvailability->time_to])
-                                ->whereBetween('end_time', [$weekAvailability->time_from, $weekAvailability->time_to])
+                                ->whereTime('start_time', '>=', $start_time)
+                                ->whereTime('start_time', '<=', $end_time)
+                                ->whereTime('end_time', '>=', $start_time)
+                                ->whereTime('end_time', '<=', $end_time)
+
+                                // ->whereBetween('start_time', [$weekAvailability->time_from, $weekAvailability->time_to])
+                                // ->whereBetween('end_time', [$weekAvailability->time_from, $weekAvailability->time_to])
                                 // })
                                 ->get();
 
                             if (count($check_classes) == 0) {
                                 array_push($totalAvailabilities, [
-                                    'availabilty_date' => $date->format('Y-m-d'),
+                                    'availabilty_date' => $date->format('Y-m-d').'T11:00:00.000Z',
                                     // 'time_from' => Carbon::parse($weekAvailability->time_from)->format('h:i a'),
                                     'time_from' => $weekAvailability->time_from,
                                     // 'time_to' =>  Carbon::parse($weekAvailability->time_to)->format('h:i a'),

@@ -96,6 +96,7 @@ class PaymentController extends Controller
         $paymentDetails = json_decode(json_encode($payment_details));
 
         $course = Course::findOrFail($request->course_id);
+        $classroom = ClassRoom::where('course_id',$request->course_id)->first();
         $admin_message = "Course paymente completed!";
         $student = User::findOrFail($course->student_id);
         $teacher = User::findOrFail($course->teacher_id);
@@ -104,7 +105,9 @@ class PaymentController extends Controller
         //If we got success Response From HyperPay
         if ($paymentDetails->original->transaction_status == 'success') {
             $course->status = "pending";
+            $classroom->status = "pending";
             $course->update();
+            $classroom->update();   
 
             $order = new Order();
             $order->user_id = $course->student_id;

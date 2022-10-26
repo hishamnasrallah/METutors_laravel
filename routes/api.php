@@ -32,7 +32,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
 
     //**************** Student routes starts****************
 
-    Route::get('student/dashboard', 'Student\DashboardController@dashboard'); 
+    Route::get('student/dashboard', 'Student\DashboardController@dashboard');
     Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
 
     Route::get('student/classroom', 'Student\ClassController@courses');
@@ -560,10 +560,34 @@ Route::get('student/class/{academic_class_id}/recording', 'Student\ClassControll
 Route::post('student/course/{course_id}/select-teacher', 'Student\ClassController@teacher_replacement');
 Route::post('student/course/{course_id}/request-admin', 'Student\CourseController@request_admin');
 
-//Student Reschedule
+// Student Reschedule
 Route::get('available-slots', 'TeacherAvailabilityController@available_slots');
 Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
 Route::get('student/class/{class_id}', 'Student\ClassController@classDetail');
+
+// Student Certificates
+Route::get('student/certificates', 'CertificateController@certificates');
+Route::get('student/certificates/{certificate_id}', 'CertificateController@certificate_detail');
+
+
+
+Route::post('user/language', 'Web\UserController@change_language');
+
+//***************** lang middleware to set locale ************************
+Route::group(['middleware' => ['LangMiddleware']], function () {
+
+    // Degree levels and fields
+    Route::get('degree-levels', 'DegreeController@degree_levels')->middleware('LangMiddleware');
+    Route::get('degree-fields/{level_id}', 'DegreeController@degree_fields')->middleware('LangMiddleware');
+
+    // Coupons
+    Route::get('coupons', 'CouponController@coupons');
+    Route::post('admin/coupon', 'CouponController@create_coupon');
+});
+
+
+
+Route::get('test', 'DegreeController@test');
 
 Route::group(['middleware' => ['cors']], function () {
     Route::get('get-country', 'TestController@get_country');
@@ -580,7 +604,7 @@ Route::get('payment/{payment_id}/status', 'PaymentController@statusPayment');
 Route::get('payment/details', 'PaymentController@payment_details');
 Route::Post('payment/{payment_id}/refund', 'PaymentController@refund');
 Route::Post('payment/refund2', 'PaymentController@refund2');
-Route::get('test', 'TestController@test');
+// Route::get('test', 'TestController@test');
 
 //**************** classes routes ****************
 Route::resource('highlighted-topic', 'HighlightedTopicController');
