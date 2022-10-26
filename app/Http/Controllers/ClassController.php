@@ -28,7 +28,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use JWTAuth;
 use Stevebauman\Location\Facades\Location;
 use Devinweb\LaravelHyperpay\Events\SuccessTransaction;
@@ -54,6 +53,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use PragmaRX\Countries\Package\Countries;
 use stdClass;
+use Illuminate\Support\Str;
 
 class ClassController extends Controller
 {

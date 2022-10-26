@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use Illuminate\Support\Str;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -221,13 +222,31 @@ class UserController extends Controller
 
         foreach ($filtered_teacher as $teacher) {
             $classCounter = 0;
-           
+
             foreach ($requestedClasses as $requestedClass) {
-                
+
                 $request_from =  Carbon::parse($requestedClass->start)->format('G:i');
                 $request_to =  Carbon::parse($requestedClass->end)->format('G:i');
+                $day = $requestedClass->day;
 
-                $availabilities = TeacherAvailability::whereIn('day', $uniqueWeekdays)
+                 //converting days to integers
+                 if ($day == 'Sunday') {
+                    $day =  1;
+                } elseif ($day == 'Monday') {
+                    $day =  2;
+                } elseif ($day == 'Tuesday') {
+                    $day = 3;
+                } elseif ($day == 'Wednesday') {
+                    $day = 4;
+                } elseif ($day == 'Thursday') {
+                    $day = 5;
+                } elseif ($day == 'Friday') {
+                    $day = 6;
+                } else {
+                    $day = 7;
+                }
+
+                $availabilities = TeacherAvailability::where('day', $day)
                     ->where('user_id', $teacher->id)
                     ->whereTime('time_from', '>=', $request_from)
                     ->whereTime('time_from', '<=', $request_to)
@@ -235,14 +254,14 @@ class UserController extends Controller
                     ->whereTime('time_to', '<=', $request_to)
                     ->get();
 
-                    if (count($availabilities) > 0) {
-                        $classCounter++;
-                        if ($classCounter == count($requestedClasses)) {
-                            array_push($available_teachers, $teacher->id);
-                        }
+                if (count($availabilities) > 0) {
+                    $classCounter++;
+                    if ($classCounter == count($requestedClasses)) {
+                        array_push($available_teachers, $teacher->id);
                     }
+                }
 
-                
+
 
                 // $counter = 0;
                 // if (count($availabilities) > 0) {
@@ -272,13 +291,14 @@ class UserController extends Controller
         //************ Checking If Teacher is ALREADY Booked ***********
         $final_teachers = [];
         $sugested_teachers = [];
-        
+
         foreach ($available_teachers as $available_teacher) {
             $flag = 0;
             $nullCounter = 0;
+            $classCounter = 0;
 
             foreach ($requestedClasses as $requestedClass) {
-
+                $classCounter++;
                 $start_time = Carbon::parse($requestedClass->start)->format('G:i');
                 $end_time = Carbon::parse($requestedClass->end)->format('G:i');
 
@@ -319,10 +339,14 @@ class UserController extends Controller
                     $nullCounter++;
                     if ($nullCounter == count($requestedClasses)) {
                         array_push($final_teachers, $available_teacher);
-                    } else {
-                        array_push($sugested_teachers, $available_teacher);
                     }
                 }
+
+
+                if ($nullCounter != count($requestedClasses) && $classCounter == count($requestedClasses)) {
+                    array_push($sugested_teachers, $available_teacher);
+                }
+
 
 
                 //************ If teacher has no Classes In classes Table ***********
@@ -373,7 +397,7 @@ class UserController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $teacher->average_rating = $average_rating;
+                $teacher->average_rating = Str::limit($average_rating, 3, '');
                 $teacher->reviews_count = $total_reviews;
             }
         }
@@ -394,7 +418,7 @@ class UserController extends Controller
             if ($total_reviews > 0) {
                 $average_rating = $rating_sum / $total_reviews;
             }
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
             $teacher->reviews_count = $total_reviews;
         }
 
@@ -452,7 +476,7 @@ class UserController extends Controller
             $average_rating = $rating_sum / $total_reviews;
         }
 
-        $user->average_rating = $average_rating;
+        $user->average_rating = Str::limit($average_rating, 3, '');
 
         // students rating
         foreach ($user['teacher_feedbacks'] as $feedback) {
@@ -463,7 +487,7 @@ class UserController extends Controller
             if ($total_reviews > 0) {
                 $student_rating = $rating_sum / $total_reviews;
             }
-            $feedback->average_rating = $student_rating;
+            $feedback->average_rating = Str::limit($student_rating, 3, '');
         }
 
 

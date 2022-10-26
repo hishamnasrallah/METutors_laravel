@@ -9,6 +9,7 @@ use App\Models\UserFeedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use Illuminate\Support\Str;
 
 class CertificateController extends Controller
 {
@@ -68,7 +69,7 @@ class CertificateController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
 
-            $certificate->teacher_rating = $average_rating;
+            $certificate->teacher_rating = Str::limit($average_rating,3,'');
 
             unset($certificate['course']);
         }

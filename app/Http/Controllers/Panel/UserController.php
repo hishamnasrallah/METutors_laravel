@@ -78,7 +78,7 @@ class UserController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $signature=UserSignature::where('user_id',$token_user->id)->where('document',$request->document)->get();
+        $signature = UserSignature::where('user_id',$token_user->id)->where('document',$request->document)->get();
         if(count($signature) == 0){
             $sig=new UserSignature();
             $sig->document=$request->document;

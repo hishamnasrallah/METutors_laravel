@@ -50,7 +50,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
-use Str;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -147,7 +147,7 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "Teacher performance",
-            'average_rating' => $average_rating,
+            'average_rating' => Str::limit($average_rating,3,''),
         ]);
     }
 
@@ -320,7 +320,7 @@ class AdminController extends Controller
 
         $reassigned_classes = AcademicClass::where(['course_id' => $course->id, 'status' => 'reassigned'])->get();
         $course->course_progress = $progress;
-        $course['teacher']->teacher_rating = $average_rating;
+        $course['teacher']->teacher_rating = Str::limit($average_rating,3,'');
 
         return response()->json([
             'status' => true,
@@ -375,7 +375,7 @@ class AdminController extends Controller
         }
 
         $course->course_progress = $progress;
-        $course['teacher']->teacher_rating = $average_rating;
+        $course['teacher']->teacher_rating = Str::limit($average_rating,3,'');
 
         return response()->json([
             'status' => true,
@@ -872,7 +872,7 @@ class AdminController extends Controller
                         ]);
                     }
                     // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                    $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
                         "testimonial_id" => $feedback->testimonial->id,
@@ -1042,7 +1042,7 @@ class AdminController extends Controller
                         ]);
                     }
                     // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                    $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
                         "title" => $feedback->testimonial->name,
@@ -1131,7 +1131,7 @@ class AdminController extends Controller
                 $feedbacks['sender'] = $feedback->sender;
             }
             // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-            $feedbacks['average_rating'] = $average_rating; //feedback average rating
+            $feedbacks['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
 
             $feedbacks['feedbacks'][] = array(
                 "title" => $feedback->testimonial->name,
@@ -1205,7 +1205,7 @@ class AdminController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
 
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating,3,'');
         }
 
         return response()->json([
@@ -2371,7 +2371,7 @@ class AdminController extends Controller
                     ]);
                 }
                 // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+                $feedbacks[$flag]['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
 
                 $feedbacks[$flag]['feedbacks'][] = array(
 
@@ -2633,7 +2633,7 @@ class AdminController extends Controller
             if ($total_reviews > 0) {
                 $average_rating = $rating_sum / $total_reviews;
             }
-            $student->average_rating =  $average_rating;
+            $student->average_rating =  Str::limit($average_rating,3,'');
             //finding student courses
             $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
             if (count($student_courses) == 0) {
@@ -2690,7 +2690,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  $average_rating;
+                $student->average_rating =  Str::limit($average_rating,3,'');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2745,7 +2745,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  $average_rating;
+                $student->average_rating =  Str::limit($average_rating,3,'');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2797,7 +2797,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  $average_rating;
+                $student->average_rating =  Str::limit($average_rating,3,'');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2879,7 +2879,7 @@ class AdminController extends Controller
             'message' => 'All bookings!',
             'student' => $student,
             'total_bookings' => count($bookings),
-            'average_rating' => $average_rating,
+            'average_rating' => Str::limit($average_rating,3,''),
             // 'attendence_count' => $attendence_count,
             // 'completed_clasess' => $completed_clasess,
             'attendence_rate' => $attendence_rate,
@@ -2937,7 +2937,7 @@ class AdminController extends Controller
             'message' => 'Student profile!',
             'total_courses' => count($bookings),
             'completed_courses' => count($completed_courses),
-            'average_rating' => number_format($average_rating, 2),
+            'average_rating' => Str::limit($average_rating,3,''),
             'total_spendings' => $total_spendings,
             'attendence_rate' => $attendence_rate,
             'student' => $student_details,
@@ -2993,7 +2993,7 @@ class AdminController extends Controller
         if ($total_reviews > 0) {
             $average_rating = $rating_sum / $total_reviews;
         }
-        $student->average_rating = $average_rating;
+        $student->average_rating = Str::limit($average_rating,3,'');
 
         //Calculating Assignment completion rate
         $assignment_completion_rate = 100;
@@ -3037,7 +3037,7 @@ class AdminController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
             $teacher = $class['teacher'];
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating,3,'');
 
             //Checking class Attendence
             $attendence = Attendance::where('academic_class_id', $class->id)->first();
@@ -3411,7 +3411,7 @@ class AdminController extends Controller
             'teacher' => $teacher,
             'total_bookings' => count($courses),
             'rating_count' => count($points_array),
-            'average_rating' => $average_rating,
+            'average_rating' => Str::limit($average_rating,3,''),
             'attendence_rate' => round($attendence_rate),
             'bookings' => $courses,
         ]);
@@ -4032,7 +4032,7 @@ class AdminController extends Controller
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating,3,'');
             $teacher->reviews_count  = $reviews_count;
             array_push($featured_teachers, $teacher);
             $teacher->programs = $programs;
@@ -4090,7 +4090,7 @@ class AdminController extends Controller
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating,3,'');
             $teacher->reviews_count  = $reviews_count;
             $teacher->teacher_students_count  = $students_count;
             array_push($featured_teachers, $teacher);
