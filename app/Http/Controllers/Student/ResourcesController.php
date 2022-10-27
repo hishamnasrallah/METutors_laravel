@@ -129,7 +129,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource updated successfully!',
+            'message' => trans('api_messages.RESOURCE_UPDATED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }

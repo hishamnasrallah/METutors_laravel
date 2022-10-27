@@ -1129,13 +1129,13 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Security settings updated",
+                'message' => trans('api_messages.SECURITY_SETTINGS_UPDATED'),
                 'user' => $user,
             ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Current password did't matched!",
+                'message' => trans('api_messages.CURRENT_PASSWORD_NOT_MATCH'),
             ]);
         }
     }
@@ -1193,7 +1193,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User prefrences added successfully",
+            'message' => trans('api_messages.USER_PREFRENCES_ADDED_SUCCESSFULLY'),
             'prefrences' => $prefrences,
         ]);
     }
@@ -1624,7 +1624,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Account setting updated successfully!',
+            'message' => trans('api_messages.ACCOUNT_SETTING_UPDATED_SUCCESSFULLY'),
             'user' => $user,
         ]);
     }
@@ -1702,7 +1702,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => 'true',
-            'message' =>  'Documents uploaded successfully',
+            'message' =>  trans('api_messages.DOCUMENTS_UPLOADED_SUCCESSFULLY'),
             'document' =>  $new_doc,
 
         ]);
@@ -1740,13 +1740,13 @@ class UserController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'message' =>  'User not found',
+                'message' =>  trans('api_messages.USER_NOT_FOUND'),
             ], 400);
         }
 
         return response()->json([
             'status' => true,
-            'message' =>  'Language set successfully',
+            'message' =>  trans('api_messages.Language set successfully'),
             'user' =>  $user,
         ]);
     }

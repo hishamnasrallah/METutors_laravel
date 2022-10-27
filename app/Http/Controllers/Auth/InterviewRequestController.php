@@ -127,7 +127,7 @@ class InterviewRequestController extends Controller
       if ($user->profile_completed_step != 5) {
         return response()->json([
           'status' => false,
-          'message' => 'Please complete your account details first'
+          'message' => trans('api_messages.COMPLETE_ACCOUNT_DETAILS_FIRST')
         ], 400);
       }
 
@@ -137,7 +137,7 @@ class InterviewRequestController extends Controller
 
         return response()->json([
           'status' => false,
-          'message' => 'You have already submitted the interview request'
+          'message' => trans('api_messages.SUBMITTED_INTERVIEW_REQUEST')
         ], 400);
       }
 
@@ -194,7 +194,7 @@ class InterviewRequestController extends Controller
 
       return response()->json([
         'status' => true,
-        'message' => 'Your interview request has submitted successfully',
+        'message' => trans('api_messages.INTERVIEW_REQUEST_SUBMITTED_SUCCESSFULLY'),
         'interview_request' => $interviewRequest
       ]);
     } else {

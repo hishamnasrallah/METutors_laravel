@@ -1898,7 +1898,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Meeting scheduled successfully",
+                'message' => trans('api_messages.MEETING_SCHEDULED_SUCCESSFULLY'),
 
             ]);
         } else {

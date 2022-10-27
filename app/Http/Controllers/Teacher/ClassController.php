@@ -603,7 +603,7 @@ class ClassController extends Controller
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
                 $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')
-                ->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                    ->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
@@ -1003,23 +1003,37 @@ class ClassController extends Controller
             $EndTime = substr($request->end_time, 0, 5);
             $StartTime = substr($request->start_time, 0, 5);
 
-            $start_date = Carbon::parse($class->start_date);
+            $start_date = Carbon::parse($class->start_date)->format('Y-m-d');
 
-            $start_time = date("G:i", strtotime($request->start_time));
-            $end_time = date("G:i", strtotime($request->end_time));
+            $start_time = Carbon::parse($request->start_time)->format('H:i:s');
+            $end_time = Carbon::parse($request->end_time)->format('H:i:s');
 
-            $classes = AcademicClass::where('id', '!=', $academic_id)->where('start_date', $request->start_date)->where('teacher_id', $token_user->id)->get();
+            $classes = AcademicClass::where('id', '!=', $academic_id)
+                ->whereDate('start_date', $start_date)
+                ->where('teacher_id', $token_user->id)
+                ->whereTime('start_time', '>=', $start_time)
+                ->whereTime('start_time', '<=', $end_time)
+                ->whereTime('end_time', '>=', $start_time)
+                ->whereTime('end_time', '<=', $end_time)
+                ->get();
 
-            foreach ($classes as $class) {
-                $db_startTime = date("G:i", strtotime($class->start_time));
-                $db_endTime = date("G:i", strtotime($class->end_time));
-                if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
-                    return response()->json([
-                        'status' => false,
-                        'errors' => "Already have scheduled class at this time! please check teacher availability first",
-                    ], 400);
-                }
+            if (count($classes) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => trans('api_messages.SCHEDULED_CLASS_TIME_CHECK_AVAILABILITY'),
+                ], 400);
             }
+
+            // foreach ($classes as $class) {
+            //     $db_startTime = date("G:i", strtotime($class->start_time));
+            //     $db_endTime = date("G:i", strtotime($class->end_time));
+            //     if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
+            //         return response()->json([
+            //             'status' => false,
+            //             'errors' => "Already have scheduled class at this time! please check teacher availability first",
+            //         ], 400);
+            //     }
+            // }
             // return $totalDuration;
             if ($totalDuration > 48) {
                 $class->start_time = $request->start_time;
@@ -1074,19 +1088,19 @@ class ClassController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "Class rescheduled successfully!",
+                    'message' => trans('api_messages.CLASS_RESCHEDULED_SUCCESSFULLY'),
                     'class' => $class,
                 ]);
             } else {
                 return response()->json([
                     'status' => false,
-                    'errors' => "You dont have time to reschdule the class",
+                    'errors' => trans('api_messages.DONT_HAVE_TIME_RESCHEDULE_CLASS'),
                 ], 400);
             }
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class date has been passed",
+                'errors' => trans('api_messages.CLASS_DATE_PASSED'),
             ], 400);
         }
     }

@@ -412,7 +412,7 @@ class TicketsController extends Controller
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Status can only be changed to closed or inprogress',
+                'message' => trans('api_messages.STATUS_CHANGED_CLOSED_INPROGRESS'),
             ], 401);
         }
         $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();
@@ -431,7 +431,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'message' => 'success',
-            'status' => 'Status changed successfully',
+            'status' => trans('api_messages.STATUS_CHANGED_SUCCESSFULLY'),
         ]);
         return redirect()->back()->with("status", "The ticket has been closed.");
     }

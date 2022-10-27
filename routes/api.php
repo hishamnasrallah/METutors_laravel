@@ -20,7 +20,7 @@ Route::group(['middleware' => ['cors', 'share', 'jwt.verify']], function () {
     Route::get('testing_verify', 'GeneralController@testing_verify');
 });
 
-Route::group(['middleware' => ['cors', 'share']], function () {
+Route::group(['middleware' => ['cors', 'share', 'LangMiddleware']], function () {
 
 
 
@@ -146,7 +146,7 @@ Route::group(['middleware' => ['cors', 'share']], function () {
     Route::get('courses/course-detail/{id}', 'ClassController@course_detail');
 });
 
-Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], function () {
+Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share', 'LangMiddleware']], function () {
 
     Route::post('/login', 'LoginController@login');
     Route::get('/login', 'LoginController@showLoginForm');
@@ -239,19 +239,20 @@ Route::get('languages', 'GeneralController@languages');
 Route::get('ticket-categories', 'TicketsController@ticket_categories');
 Route::get('ticket-priorities', 'TicketsController@ticket_priorities');
 
+Route::group(['middleware' => ['LangMiddleware']], function () {
+    Route::post('create-ticket', 'TicketsController@store_new');
+    Route::get('create-ticket', 'TicketsController@store_new');
+    Route::get('new-ticket', 'TicketsController@create');
+    Route::get('my-tickets', 'TicketsController@userTickets');
+    Route::get('tickets/{ticket_id}', 'TicketsController@show');
+    Route::post('comment', 'CommentsController@postComment');
 
-Route::post('create-ticket', 'TicketsController@store_new');
-Route::get('create-ticket', 'TicketsController@store_new');
-Route::get('new-ticket', 'TicketsController@create');
-Route::get('my-tickets', 'TicketsController@userTickets');
-Route::get('tickets/{ticket_id}', 'TicketsController@show');
-Route::post('comment', 'CommentsController@postComment');
-
-Route::group(['prefix' => 'admin'], function () {
-
-    Route::get('tickets', 'TicketsController@index');
-    Route::post('ticket/change-status', 'TicketsController@change_status');
+    Route::group(['prefix' => 'admin'], function () {
+        Route::get('tickets', 'TicketsController@index');
+        Route::post('ticket/change-status', 'TicketsController@change_status');
+    });
 });
+
 
 Route::get('/roles', 'Admin\RoleController@roles');
 Route::post('admin/approve-document/{id}', 'Admin\UserController@approve_document');
@@ -302,14 +303,18 @@ Route::post('teacher/approve/{id}', 'Panel\UserController@teacher_approve');
 
 Route::post('teacher/reject/{id}', 'Panel\UserController@teacher_reject');
 
-Route::post('teacher/upload-documents', 'Panel\UserController@upload_documents');
+Route::group(['middleware' => ['LangMiddleware']], function () {
+    Route::post('upload-documents', 'Web\UserController@upload_documents');
+    Route::post('teacher/upload-documents', 'Panel\UserController@upload_documents');
+    Route::post('teacher/signature', 'Panel\UserController@teacher_signature');
+    Route::post('teacher/complete-account', 'Panel\UserController@teacher_complete_account');
+});
 
 Route::post('teacher/upload-documents2', 'Panel\UserController@upload_documents2');
 
-Route::post('upload-documents', 'Web\UserController@upload_documents');
 
-Route::post('teacher/signature', 'Panel\UserController@teacher_signature');
-Route::post('teacher/complete-account', 'Panel\UserController@teacher_complete_account');
+
+
 Route::post('teacher/update-rates', 'Panel\UserController@update_rates');
 
 Route::post('add-language', 'Panel\UserController@add_language');
@@ -332,11 +337,15 @@ Route::group(['namespace' => 'Panel', 'prefix' => 'teacher', 'middleware' => ['i
 });
 
 //**************** Syllabus routes ****************
+Route::group(['middleware' => ['LangMiddleware']], function () {
+    Route::post('invoice-mail', 'DashboardController@invoice_mail');
+});
 
 Route::get('teacher-dashboard', 'DashboardController@teacher_dashboard');
 Route::get('teacher/kudos-points', 'DashboardController@kudos_detail');
-Route::post('invoice-mail', 'DashboardController@invoice_mail');
+
 Route::get('classes-dashboard', 'DashboardController@classes_dashboard');
+
 
 Route::get('students/profile', 'ClassController@student_profile');
 Route::Post('teacher/update-profile', 'DashboardController@update_teacherProfile');
@@ -369,12 +378,13 @@ Route::get('search/{searchQuery}', 'TeacherController@overallSearch');
 
 
 //**************** Account setting routes ****************
-Route::get('student/profile', 'Web\UserController@student_get_profile');
-Route::patch('student/account/setting', 'Web\UserController@account_setting');
-Route::post('student/security/setting', 'Web\UserController@security_setting');
-Route::post('student/preference', 'Web\UserController@user_preference');
-Route::get('student/preference', 'Web\UserController@get_user_preference');
-
+Route::group(['middleware' => ['LangMiddleware']], function () {
+    Route::get('student/profile', 'Web\UserController@student_get_profile');
+    Route::patch('student/account/setting', 'Web\UserController@account_setting');
+    Route::post('student/security/setting', 'Web\UserController@security_setting');
+    Route::post('student/preference', 'Web\UserController@user_preference');
+    Route::get('student/preference', 'Web\UserController@get_user_preference');
+});
 //**************** Feedback routes ****************
 
 Route::post('teacher-performance', 'AdminController@teacher_performance');
@@ -387,47 +397,65 @@ Route::get('teacher-profile', 'Web\UserController@teacher_public_profile');
 //**************** classes routes ****************
 Route::get('class-attendees/{class_id}', 'TeacherController@classAttendees');
 Route::get('todays-classes', 'TeacherController@todaysClasses');
-Route::post('teacher/class/reschedule', 'Teacher\ClassController@reschedule_class');
-Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
+
+Route::group(['middleware' => ['LangMiddleware']], function () {
+    Route::post('teacher/class/reschedule', 'Teacher\ClassController@reschedule_class');
+    Route::post('student/class/reschedule', 'Student\ClassController@reschedule_class');
+    Route::post('student/course/{course_id}/class', 'Student\ClassController@addClass');
+    Route::post('course/{id}/cancel', 'TeacherController@cancelCourse');
+    Route::post('teacher/preferences', 'TeacherController@prefrences');
+    Route::get('teacher/preferences', 'TeacherController@teacher_prefrences');
+    Route::post('course/accept/{id}', 'TeacherController@acceptCourse');
+    Route::post('course/reject/{id}', 'TeacherController@rejectCourse');
+    Route::get('reschedule-course/{id}', 'TeacherController@rescheduleCourse');
+    Route::post('teacher/course/{id}/cancel', 'TeacherController@cancelCourse');
+
+    //**************** Resources routes ****************
+    Route::get('course/{course_id}/resources', 'TeacherController@classResources');
+    Route::post('resource/{resource_id}/update', 'TeacherController@updateResource');
+    Route::get('resource/{resource_id}', 'TeacherController@editResource');
+    Route::delete('resource/{resource_id}', 'TeacherController@delResource');
+    Route::post('class/{class_id}/resource', 'TeacherController@addResource');
+
+    //**************** Assignment routes ****************
+    Route::get('assignment/{id}', 'TeacherController@assignmentDetail');
+    Route::post('assignment/{id}/update', 'TeacherController@updateAssignment');
+    Route::delete('assignment/{id}', 'TeacherController@deleteAssignment');
+    Route::post('course/assignment/add', 'TeacherController@addAssignment');
+    Route::get('course/{id}/assignment', 'TeacherController@assignmentDashboard');
+
+    //**************** Syllabus routes ****************
+    Route::get('course/{course_id}/syllabus', 'TeacherController@syllabusDashboard');
+    Route::post('course/add-topic', 'TeacherController@addTopic');
+    Route::get('course/edit-topic/{topic_id}', 'TeacherController@editTopic');
+    Route::post('topic/update', 'TeacherController@updateTopic');
+    Route::patch('class/edit/{acadamic_class_id}', 'TeacherController@editTopicClass');
+    Route::delete('topic/{id}', 'TeacherController@deleteTopic');
+
+    Route::post('teacher/feedback/classroom', 'FeedbackController@classroom_feedback');
+    Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
+    Route::post('student/feedback', 'FeedbackController@feedback');
+});
+
 Route::post('teacher/class/view', 'Teacher\ClassController@view_class_recording');
 Route::post('student/class/view', 'Student\ClassController@view_class_recording');
-Route::post('student/course/{course_id}/class', 'Student\ClassController@addClass');
+
 
 
 //**************** Courses routes ****************
-Route::post('course/{id}/cancel', 'TeacherController@cancelCourse');
-Route::post('teacher/course/{id}/cancel', 'TeacherController@cancelCourse');
-Route::post('teacher/preferences', 'TeacherController@prefrences');
-Route::get('teacher/preferences', 'TeacherController@teacher_prefrences');
+
+
 Route::get('courses/progress', 'TeacherController@coursesProgress');
 Route::get('course/{id}/progress', 'TeacherController@courseProgress');
-Route::post('course/accept/{id}', 'TeacherController@acceptCourse');
-Route::post('course/reject/{id}', 'TeacherController@rejectCourse');
-Route::get('reschedule-course/{id}', 'TeacherController@rescheduleCourse');
+
 Route::get('course/{id}/reviews', 'TeacherController@courseReviews');
 Route::get('newly-asssigned-courses', 'TeacherController@newlyCourses');
 
-//**************** Resources routes ****************
-Route::get('course/{course_id}/resources', 'TeacherController@classResources');
-Route::post('resource/{resource_id}/update', 'TeacherController@updateResource');
-Route::get('resource/{resource_id}', 'TeacherController@editResource');
-Route::delete('resource/{resource_id}', 'TeacherController@delResource');
-Route::post('class/{class_id}/resource', 'TeacherController@addResource');
 
-//**************** Assignment routes ****************
-Route::get('assignment/{id}', 'TeacherController@assignmentDetail');
-Route::post('assignment/{id}/update', 'TeacherController@updateAssignment');
-Route::delete('assignment/{id}', 'TeacherController@deleteAssignment');
-Route::post('course/assignment/add', 'TeacherController@addAssignment');
-Route::get('course/{id}/assignment', 'TeacherController@assignmentDashboard');
 
-//**************** Syllabus routes ****************
-Route::get('course/{course_id}/syllabus', 'TeacherController@syllabusDashboard');
-Route::post('course/add-topic', 'TeacherController@addTopic');
-Route::get('course/edit-topic/{topic_id}', 'TeacherController@editTopic');
-Route::post('topic/update', 'TeacherController@updateTopic');
-Route::patch('class/edit/{acadamic_class_id}', 'TeacherController@editTopicClass');
-Route::delete('topic/{id}', 'TeacherController@deleteTopic');
+
+
+
 
 //**************** Roles management routes ****************
 Route::post('roles/add', 'AdminController@add_role');
@@ -442,8 +470,6 @@ Route::post('teachers/filter', 'Web\UserController@filterTeacher');
 
 Route::get('teacher/{teacher_id}/availability', 'TeacherAvailabilityController@getAvailability'); //get teacher availability
 Route::get('admin/teacher-availability/{teacher_id}/', 'TeacherAvailabilityController@getAvailability'); //Admin get teacher availability
-
-
 
 
 // Route::group(['middleware' => ['auth.jwt', 'isAdmin']], function () {
@@ -533,7 +559,7 @@ Route::get('teacher/feedback/params', 'FeedbackController@feedback_params');
 Route::post('teacher/feedback/platform', 'FeedbackController@userPlatform');
 Route::get('teacher/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
 Route::get('teacher/feedback/classroom/params', 'FeedbackController@classroom_params');
-Route::post('teacher/feedback/classroom', 'FeedbackController@classroom_feedback');
+
 
 
 Route::get('teacher/course/{course_id}/attendance', 'Student\CourseController@teacherAttendence');
@@ -546,9 +572,8 @@ Route::post('student/course/{course_id}/cancel', 'Student\CourseController@cance
 
 Route::get('student/course/{course_id}/attendance', 'Student\CourseController@getCourseAttendence');
 // Feedback Routes
-Route::post('student/feedback', 'FeedbackController@feedback');
+
 Route::get('student/feedback/params', 'FeedbackController@feedback_params');
-Route::post('student/feedback/platform', 'FeedbackController@userPlatform');
 Route::get('student/feedback/platform/params', 'FeedbackController@PlatformFeedbackParams');
 
 Route::get('student/teachers/available', 'Web\UserController@availableTeachers');
@@ -571,11 +596,12 @@ Route::get('student/certificates/{certificate_id}', 'CertificateController@certi
 
 
 
-Route::post('user/language', 'Web\UserController@change_language');
+
 
 //***************** lang middleware to set locale ************************
 Route::group(['middleware' => ['LangMiddleware']], function () {
 
+    Route::post('user/language', 'Web\UserController@change_language');
     // Degree levels and fields
     Route::get('degree-levels', 'DegreeController@degree_levels')->middleware('LangMiddleware');
     Route::get('degree-fields/{level_id}', 'DegreeController@degree_fields')->middleware('LangMiddleware');

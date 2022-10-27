@@ -200,7 +200,7 @@ class AssignmentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Assignment reSubmitted successFully',
+                'message' => trans('api_messages.ASSIGNMENT_RESUBMITTED_SUCCESSFULLY'),
                 'assignment' =>  $user_assignment,
             ]);
         } else {

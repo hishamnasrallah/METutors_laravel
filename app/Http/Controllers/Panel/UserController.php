@@ -95,7 +95,7 @@ class UserController extends Controller
 
          return response()->json([
                 'status' => 'true',
-                'message' => "Signature Submitted Successfully",
+                'message' => trans('api_messages.SIGNATURE_SUBMITTED_SUCCESSFULLY'),
             ]);
 
     }
@@ -143,7 +143,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Avatar changed successfully',
+                'message' => trans('api.messages.AVATAR_CHANGED_SUCCESSFULLY'),
                 'video' => $videoName,
                 'token' => $token
 
@@ -206,7 +206,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Avatar changed successfully',
+                'message' => trans('api_messages.AVATAR_CHANGED_SUCCESSFULLY'),
                 'avatar' => $imageName,
                 'token' => $token
 
@@ -219,7 +219,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'File not found',
+                'message' => trans('api_messages.FILE_NOT_FOUND'),
 
 
             ]);
@@ -264,7 +264,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Cover image changed successfully',
+                'message' => trans('api_messages.COVER_CHANGED_SUCCESSFULLY'),
                 'cover_img' => $imageName,
 
 
@@ -276,7 +276,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'File not found',
+                'message' => trans('api_messages.FILE_NOT_FOUND'),
 
 
             ]);
@@ -1093,7 +1093,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Data updated succesfully',
+                'message' => trans('api_messages.DATA_UPDATED_SUCCESSFULLY'),
                 'token' => $token,
                 'user' => $user,
             ]);
@@ -1873,7 +1873,7 @@ class UserController extends Controller
 
                 return response()->json([
                     'status' => 'true',
-                    'message' =>  'Documents uploaded successfully! Please login to continue'
+                    'message' =>  trans('api_messages.DOCUMENTS_UPLOADED_LOGIN_CONTINUE')
 
                 ]);
             }
@@ -1882,7 +1882,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' =>  'user does not exist'
+                'message' =>  trans('api_messages.USER_NOT_EXIST')
             ], 404);
         }
     }
@@ -2722,7 +2722,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully',
+                'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY'),
                 'user' => $user,
             ]);
         }
@@ -2782,7 +2782,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully'
+                'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY')
 
             ]);
         }
@@ -2872,7 +2872,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'Profile details updated successfully',
+                    'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY'),
                     'user' => $user,
                 ]);
             }
@@ -2984,7 +2984,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'Profile details updated successfully',
+                    'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY'),
                     'user' => $user,
                 ]);
             }
@@ -3098,7 +3098,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully'
+                'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY')
 
             ]);
         }

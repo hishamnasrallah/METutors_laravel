@@ -37,7 +37,7 @@ class CommentsController extends Controller
         if ($tick->status == "Closed") {
             return response()->json([
                 'status' => 'false',
-                'message' => "Ticket is closed you can not add comment on it",
+                'message' => trans('api_messages.TICKET_CLOSED_U_NOT_ADD_COMMENT'),
             ], 400);
         }
 

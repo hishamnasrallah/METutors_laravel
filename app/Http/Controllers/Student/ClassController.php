@@ -649,7 +649,7 @@ class ClassController extends Controller
 
 
 
-         $classroom = ClassRoom::where($userrole, $token_user->id)->where('status', '!=', 'payment_pending')->pluck('course_id');
+        $classroom = ClassRoom::where($userrole, $token_user->id)->where('status', '!=', 'payment_pending')->pluck('course_id');
 
         //finding the course countries
         $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
@@ -1420,14 +1420,14 @@ class ClassController extends Controller
             ->count();
 
         $totalClases = AcademicClass::where('course_id', $course_id)
-        ->where($userrole, $user_id)
-        ->count();
+            ->where($userrole, $user_id)
+            ->count();
 
         $completedClases = AcademicClass::where('course_id', $course_id)
-        ->where('status', 'completed')
-        ->where($userrole, $user_id)
-        ->count();
-        
+            ->where('status', 'completed')
+            ->where($userrole, $user_id)
+            ->count();
+
         $inProgress = 0;
         if ($totalClases > 0) {
             $inProgress = ($completedClases / $totalClases) * 100;
@@ -1536,7 +1536,7 @@ class ClassController extends Controller
         //checking date
         $currentdate = Carbon::now()->format('Y-m-d');
         $currentdate = Carbon::parse($currentdate);
-        
+
         $db_date = Carbon::parse($class->start_date);
         if ($db_date >= $currentdate) {
             $dayOrNight = substr($class->start_time, 6, 9);
@@ -1562,58 +1562,76 @@ class ClassController extends Controller
             $EndTime = substr($request->end_time, 0, 5);
             $StartTime = substr($request->start_time, 0, 5);
 
-            $start_date = Carbon::parse($class->start_date);
+            $start_date = Carbon::parse($class->start_date)->format('Y-m-d');
 
-            $start_time = date("G:i", strtotime($request->start_time));
-            $end_time = date("G:i", strtotime($request->end_time));
+            $start_time = Carbon::parse($request->start_time)->format('H:i:s');
+            $end_time = Carbon::parse($request->end_time)->format('H:i:s');
 
             $classes = AcademicClass::where('id', '!=', $academic_id)
-                ->where('start_date', $request->start_date)
+                ->whereDate('start_date', $start_date)
                 ->where('teacher_id', $class->teacher_id)
+                ->whereTime('start_time', '>=', $start_time)
+                ->whereTime('start_time', '<=', $end_time)
+                ->whereTime('end_time', '>=', $start_time)
+                ->whereTime('end_time', '<=', $end_time)
                 ->where('status', '!=', 'completed')
                 ->get();
 
-            if ($classes->isNotEmpty()) {
-                foreach ($classes as $class) {
-                    $db_startTime = date("G:i", strtotime($class->start_time));
-                    $db_endTime = date("G:i", strtotime($class->end_time));
-                    if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
-                        return response()->json([
-                            'status' => false,
-                            'errors' => "Already have Scheduled Class at this time! please check teacher availability first",
-                        ], 400);
-                    }
-                }
-            }
-
-
-
-            $availabilites = TeacherAvailability::where('user_id', $class->teacher_id)->where('day', $request->day)->get();
-            if ($availabilites->isEmpty()) {
+            if (count($classes) > 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => "Teacher is not Available at this day! please check teacher availability first",
+                    'errors' => trans('api_messages.SCHEDULED_CLASS_TIME_CHECK_AVAILABILITY'),
+                ], 400);
+            }
+
+            // if ($classes->isNotEmpty()) {
+            //     foreach ($classes as $class) {
+            //         $db_startTime = date("G:i", strtotime($class->start_time));
+            //         $db_endTime = date("G:i", strtotime($class->end_time));
+            //         if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
+            //             return response()->json([
+            //                 'status' => false,
+            //                 'errors' => trans('api_messages.SCHEDULED_CLASS_TIME_CHECK_AVAILABILITY'),
+            //             ], 400);
+            //         }
+            //     }
+            // }
+
+
+
+            $availabilites = TeacherAvailability::where('user_id', $class->teacher_id)
+                ->where('day', $request->day)
+                ->whereTime('time_from', '>=', $start_time)
+                ->whereTime('time_from', '<=', $end_time)
+                ->whereTime('time_to', '>=', $start_time)
+                ->whereTime('time_to', '<=', $end_time)
+                ->get();
+
+            if (count($availabilites) == 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => "Teacher not Available! please check teacher availability first",
                 ], 400);
             }
 
 
-            $counter = 0;
-            foreach ($availabilites as $availability) {
-                $time_from = Carbon::parse($availability->time_from)->format('G:i');
-                $time_to = Carbon::parse($availability->time_to)->format('G:i');
+            // $counter = 0;
+            // foreach ($availabilites as $availability) {
+            //     $time_from = Carbon::parse($availability->time_from)->format('G:i');
+            //     $time_to = Carbon::parse($availability->time_to)->format('G:i');
 
-                if (($start_time >= $time_from) && ($end_time >= $time_from) && ($start_time <=  $time_to) && ($end_time <=  $time_to)) {
-                    break;
-                } else {
-                    $counter++;
-                    if (count($availabilites) == $counter) {
-                        return response()->json([
-                            'status' => false,
-                            'message' => "Teacher is not Available at this time! please check teacher availability first",
-                        ], 400);
-                    }
-                }
-            }
+            //     if (($start_time >= $time_from) && ($end_time >= $time_from) && ($start_time <=  $time_to) && ($end_time <=  $time_to)) {
+            //         break;
+            //     } else {
+            //         $counter++;
+            //         if (count($availabilites) == $counter) {
+            //             return response()->json([
+            //                 'status' => false,
+            //                 'message' => "Teacher is not Available at this time! please check teacher availability first",
+            //             ], 400);
+            //         }
+            //     }
+            // }
 
 
 
@@ -1664,7 +1682,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => "Class rescheduled successfully!",
+                        'message' => trans('api_messages.CLASS_RESCHEDULED_SUCCESSFULLY'),
                         'class' => $class,
                     ]);
                 } else {
@@ -1734,20 +1752,20 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => "Class rescheduled successfully!",
+                        'message' => trans('api_messages.CLASS_RESCHEDULED_SUCCESSFULLY'),
                         'class' => $class,
                     ]);
                 }
             } else {
                 return response()->json([
                     'status' => false,
-                    'message' => "You dont have time to reschdule the class",
+                    'message' => trans('api_messages.DONT_HAVE_TIME_RESCHEDULE_CLASS'),
                 ], 400);
             }
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class date has been passed",
+                'errors' => trans('api_messages.CLASS_DATE_PASSED'),
             ], 400);
         }
     }
@@ -1789,6 +1807,7 @@ class ClassController extends Controller
     //************* Student: Add class  *************
     public function addClass($course_id, Request $request)
     {
+
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
@@ -1796,59 +1815,91 @@ class ClassController extends Controller
         if ($course->status == 'completed') {
             return response()->json([
                 'status' => false,
-                'message' => 'Course has been completed!',
+                'message' => trans('api_messages.COURSE_COMPLETED'),
             ], 400);
         }
 
         //Teacher Day Availability and requested classes Availability
         $availability = TeacherAvailability::where('user_id', $course->teacher_id)->get();
         $requestedClasses = json_decode(json_encode($request->classes));
+
         foreach ($requestedClasses as $class) {
-            $weekAvailabilities = $availability->where('day', $class->day);
+
+            $start_time = Carbon::parse($class->start_time)->format('H:i:s');
+            $end_time = Carbon::parse($class->end_time)->format('H:i:s');
+
+            $weekAvailabilities = TeacherAvailability::where('user_id', $course->teacher_id)
+                ->where('day', $class->day)
+                ->whereTime('time_from', '>=', $start_time)
+                ->whereTime('time_from', '<=', $end_time)
+                ->whereTime('time_to', '>=', $start_time)
+                ->whereTime('time_to', '<=', $end_time)
+                ->get();
+
+
             if (count($weekAvailabilities) == 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Teacher not available at this day! please check teacher availability first',
+                    'message' => trans('Teacher not available please check teacher availability first'),
                 ], 400);
             }
-            $flag = 0;
-            foreach ($weekAvailabilities as $weekAvailability) {
-                $start_time = Carbon::parse($weekAvailability->time_from)->format('G:i');
-                $end_time = Carbon::parse($weekAvailability->time_to)->format('G:i');
-                $request_startTime = Carbon::parse($class->start_time)->format('G:i');
-                $request_endTime = Carbon::parse($class->end_time)->format('G:i');
 
-                if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) && ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
-                    break;
-                } else {
-                    $flag++;
-                    if ($flag == count($weekAvailabilities))
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'Teacher not available at this time slot! please check teacher availability first',
-                        ], 400);
-                }
-            }
+
+            //$flag = 0;
+            // foreach ($weekAvailabilities as $weekAvailability) {
+            //     $start_time = Carbon::parse($weekAvailability->time_from)->format('G:i');
+            //     $end_time = Carbon::parse($weekAvailability->time_to)->format('G:i');
+            //     $request_startTime = Carbon::parse($class->start_time)->format('G:i');
+            //     $request_endTime = Carbon::parse($class->end_time)->format('G:i');
+
+            //     if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) && ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
+            //         break;
+            //     } else {
+            //         $flag++;
+            //         if ($flag == count($weekAvailabilities))
+            //             return response()->json([
+            //                 'status' => false,
+            //                 'message' => 'Teacher not available at this time slot! please check teacher availability first',
+            //             ], 400);
+            //     }
+            // }
+
+            $classDate = Carbon::parse($class->date)->format('Y-m-d');
             // Checking if teacher is booked
-            $classes = AcademicClass::where('day', $class->day)->where('teacher_id', $course->teacher_id)
-                ->where('start_date', $class->date)
+            $classes = AcademicClass::where('day', $class->day)
+                ->where('teacher_id', $course->teacher_id)
+                ->where('student_id', $token_user->id)
+                ->whereDate('start_date', $classDate)
+                ->whereTime('start_time', '>=', $start_time)
+                ->whereTime('start_time', '<=', $end_time)
+                ->whereTime('end_time', '>=', $start_time)
+                ->whereTime('end_time', '<=', $end_time)
+                ->where('status', '!=', 'completed')
                 ->get();
-            if (count($classes) > 0) {
-                $flag = 0;
-                foreach ($classes as $academicClass) {
-                    $start_time = Carbon::parse($academicClass->start_time)->format('G:i');
-                    $end_time = Carbon::parse($academicClass->end_time)->format('G:i');
-                    $request_startTime = Carbon::parse($class->start_time)->format('G:i');
-                    $request_endTime = Carbon::parse($class->end_time)->format('G:i');
 
-                    if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'Teacher is not available on this slot please check teacher availability first',
-                        ], 400);
-                    }
-                }
+            if (count($classes) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Teacher already booked please check teacher availability first',
+                ], 400);
             }
+
+            // if (count($classes) > 0) {
+            //     $flag = 0;
+            //     foreach ($classes as $academicClass) {
+            //         $start_time = Carbon::parse($academicClass->start_time)->format('G:i');
+            //         $end_time = Carbon::parse($academicClass->end_time)->format('G:i');
+            //         $request_startTime = Carbon::parse($class->start_time)->format('G:i');
+            //         $request_endTime = Carbon::parse($class->end_time)->format('G:i');
+
+            //         if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
+            //             return response()->json([
+            //                 'status' => false,
+            //                 'message' => 'Teacher is not available on this slot please check teacher availability first',
+            //             ], 400);
+            //         }
+            //     }
+            // }
         }
 
         $course->total_classes = $course->total_classes + $request->total_classes;
@@ -1879,15 +1930,15 @@ class ClassController extends Controller
                 'apikey' =>  "xKUyaLJHtbvBUtl3otJc",
                 'title' =>  'class' . $counter,
                 'timezone' => 90,
-                'start_time' => $academicClass->start_time,
-                'end_time' => $academicClass->end_time,
-                'date' => $academicClass->start_date,
+                'start_time' => Carbon::parse($reqClass->start_time)->format('g:i a'),
+                'end_time' => Carbon::parse($reqClass->end_time)->format('g:i a'),
+                'date' => Carbon::parse($reqClass->date)->format('Y-m-d'),
                 'currency' => "USD",
                 'ispaid' => null,
                 'is_recurring' => 0,
                 'repeat' => 1,
                 'weekdays' => $reqClass->day,
-                'end_date' => $academicClass->end_date,
+                'end_date' => Carbon::parse($reqClass->date)->format('Y-m-d'),
                 'seat_attendees' => null,
                 'record' => 0,
                 'isRecordingLayout ' => 1,
@@ -1930,7 +1981,7 @@ class ClassController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Class added successfully',
+            'message' => trans('api_messages.CLASS_ADDED_SUCCESSFULLY'),
             'course' => $course,
         ]);
     }

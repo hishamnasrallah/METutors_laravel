@@ -71,14 +71,14 @@ class LoginController extends Controller
             JWTAuth::invalidate(JWTAuth::getToken());
             return response()->json([
                 'status' => 'success',
-                'msg' => 'You have successfully logged out.'
+                'msg' => trans('api_messages.SUCCESSFULLY_LOGOUT')
             ]);
         } catch (JWTException $e) {
             JWTAuth::unsetToken();
             // something went wrong tries to validate a invalid token
             return response()->json([
                 'status' => 'error',
-                'msg' => 'Failed to logout, please try again.'
+                'msg' => trans('api_messages.FAILED_LOGOUT_TRY_AGAIN')
             ], 400);
         }
     }
@@ -144,12 +144,12 @@ class LoginController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "OTP Verified",
+                    'message' => trans('api_messages.OTP_VERIFIED'),
                 ]);
             } else {
                 return response()->json([
                     'status' => 'false',
-                    'message' => "OTP Expired",
+                    'message' => trans('api_messages.OTP_EXPIRED'),
                 ], 400);
             }
         } else {
@@ -177,7 +177,7 @@ class LoginController extends Controller
 
                     return response()->json([
                         'status' => false,
-                        'message' => "OTP Expired",
+                        'message' => trans('api_messages.OTP_EXPIRED'),
                     ], 400);
                 } else {
                     $find->otp_attempts = $find->otp_attempts + 1;
@@ -188,7 +188,7 @@ class LoginController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "Invalid OTP",
+                'message' => trans('api_messages.INVALID_OTP'),
             ], 400);
         }
 
@@ -313,7 +313,7 @@ class LoginController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User Logged in Successfully!!',
+                'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                 'user' => $user,
                 'token' => $token,
                 'return_url' => $redirect_url ?? false,

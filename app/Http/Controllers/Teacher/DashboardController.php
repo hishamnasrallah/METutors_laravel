@@ -245,7 +245,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Profile Updated Successfully!'
+            'message' => trans('api_messages.PROFILE_UPDATED_SUCCESSFULLY')
         ]);
     }
 

@@ -190,7 +190,7 @@ class FeedbackController extends Controller
             $feedbacks = UserTestimonial::where('sender_id', $token_user->id)->get();
             return response()->json([
                 'status' => true,
-                'message' => "You feedback submitted successfully!",
+                'message' => trans('api_messages.FEEDBACK_SUBMITTED_SUCCESSFULLY'),
                 'feedbacks' => $feedbacks,
             ]);
         } else {
@@ -202,7 +202,7 @@ class FeedbackController extends Controller
             }
             return response()->json([
                 'status' => true,
-                'message' => "Your feedback updated successfully!",
+                'message' => trans('api_messages.FEEDBACK_UPDATED_SUCCESSFULLY'),
                 'feedbacks' => $testimonials,
             ]);
         }
@@ -282,13 +282,13 @@ class FeedbackController extends Controller
             $feedbacks = ClassroomFeedback::where('course_id', $request->course_id)->where('user_id', $token_user->id)->get();
             return response()->json([
                 'status' => true,
-                'message' => "Your feedback has successfully submitted",
+                'message' => trans('api_messages.FEEDBACK_SUBMITTED_SUCCESSFULLY'),
                 'feedback' => $feedbacks,
             ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "You have already submitted feedback on this classroom!",
+                'message' => trans('api_messages.SUBMITTED_FEEDBACK_CLASSROOM'),
             ], 400);
         }
     }

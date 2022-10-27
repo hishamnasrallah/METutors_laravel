@@ -137,7 +137,7 @@ class ForgotPasswordController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'Password recovery link sent to your email address. Please check your email',
+            'message' => trans('api_messages.PASSWORD_RECOVERY_LINK_SENT_EMAIL'),
 
         ]);
         return back()->with(['toast' => $toastData]);

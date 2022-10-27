@@ -246,7 +246,7 @@ class RegisterController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User registered successfully and verification code has been sent !!',
+                'message' => trans('api_messages.USER_REGISTERED_VERIFICATION_SENT'),
                 'return_url' => $request->return_url ?? false,
             ]);
 

@@ -120,7 +120,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User Logged in Successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
@@ -131,7 +131,7 @@ class SocialiteController extends Controller
                     if($user->role_id != $request->role){
                         return response()->json([
                             'status' => false,
-                            'message' => 'This email is already registered with us for another role',
+                            'message' => trans('api_messages.EMAIL_ALREADY_REGISTERED_ROLE'),
                         ],400);
                     }
 
@@ -145,7 +145,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User Logged in Successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
@@ -268,7 +268,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User logged in successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
@@ -280,7 +280,7 @@ class SocialiteController extends Controller
 
                         return response()->json([
                             'status' => false,
-                            'message' => 'This email is already registered with us for another role.',
+                            'message' => trans('api_messages.EMAIL_ALREADY_REGISTERED_ROLE'),
                         ], 400);
                     }
 
@@ -298,7 +298,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User logged in successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);

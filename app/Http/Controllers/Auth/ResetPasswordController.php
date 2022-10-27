@@ -98,19 +98,19 @@ class ResetPasswordController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Password updated successfully'
+                'message' => trans('api_messages.PASSWORD_UPDATED_SUCCESSFULLY')
             ]);
         } else {
 
             return response()->json([
                 'success' => false,
-                'message' => 'Current password is not correct'
+                'message' => trans('api_messages.CURRENT_PASSWORD_NOT_CORRECT')
             ], 400);
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Something went wrong'
+            'message' => trans('api_messages.SOMETHING_WENT_WRONG')
         ], 500);
     }
 
@@ -155,13 +155,13 @@ class ResetPasswordController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Current password is not correct'
+                'message' => trans('api_messages.CURRENT_PASSWORD_NOT_CORRECT')
             ], 400);
         }
 
         return response()->json([
             'success' => false,
-            'message' => 'Something went wrong'
+            'message' => trans('api_messages.SOMETHING_WENT_WRONG')
         ], 500);
     }
 
@@ -275,13 +275,13 @@ class ResetPasswordController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Password Validated'
+                'message' => trans('api_messages.PASSWORD_VALIDATED')
             ]);
         } else {
 
             return response()->json([
                 'success' => false,
-                'message' => 'Current password is not correct'
+                'message' => trans('api_messages.CURRENT_PASSWORD_NOT_CORRECT')
             ], 401);
         }
     }
@@ -348,7 +348,7 @@ class ResetPasswordController extends Controller
             return response()->json([
 
                 'status' => 'true',
-                'message' => 'Your password successfully changed!',
+                'message' => trans('api_messages.PASSWORD_CHANGED_SUCCESSFULLY'),
                 // 'toast' => $toastData
 
             ]);

@@ -45,7 +45,7 @@ class ResourcesController extends Controller
         if ($image == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'File not found!',
+                'message' => trans('api_messages.FILE_NOT_FOUND'),
 
             ], 400);
         }
@@ -60,7 +60,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'file deleted successfully!',
+            'message' => trans('api_messages.FILE_DELETED_SUCCESSFULLY'),
 
         ]);
     }
@@ -118,7 +118,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'files uploaded!',
+            'message' => trans('api_messages.FILES_UPLOADED'),
             'file' => [$array],
 
         ]);
@@ -178,7 +178,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'files uploaded!',
+            'message' => trans('api_messages.FILES_UPLOADED'),
             'file' => [$array],
 
         ]);
@@ -239,7 +239,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource added successfully!',
+            'message' => trans('api_messages.RESOURCE_ADDED_SUCCESSFULLY'),
             'resource' => $resource1
         ]);
     }
@@ -299,7 +299,7 @@ class ResourcesController extends Controller
         dispatch(new UpdateResourceJob($student->id, $student_message, $resource, $student));
         return response()->json([
             'status' => true,
-            'message' => 'Resource updated successfully!',
+            'message' => trans('api_messages.RESOURCE_UPDATED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }
@@ -320,7 +320,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource deleted successfully!',
+            'message' => trans('api_messages.RESOURCE_DELETED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }
