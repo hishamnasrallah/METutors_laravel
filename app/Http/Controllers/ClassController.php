@@ -113,9 +113,7 @@ class ClassController extends Controller
             $request->validate([
                 'file' =>  'required',
             ]);
-            $course->files = $request->file; 
-            
-            
+            $course->files = $request->file;
         }
         if ($request->book_info == 3) {
             $request->validate([
@@ -160,7 +158,12 @@ class ClassController extends Controller
         //     }
         // }
 
-        $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+        if ($request->has('teacher_id')) {
+            $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+            $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+            $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+        }
+
 
         // if ($end_date > $teacher_specification->availability_end_date) {
         //     return response()->json([
@@ -170,8 +173,7 @@ class ClassController extends Controller
         // }
 
 
-        $availability_start = Carbon::parse($teacher_specification->availability_start_date);
-        $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+
 
 
         //If Request has teacher id
@@ -274,22 +276,22 @@ class ClassController extends Controller
         }
         $course->student_id = $token_user->id;
         $course->weekdays = $request->weekdays;
-        $course->start_date = $request->start_date; 
+        $course->start_date = $request->start_date;
         $course->end_date = $request->end_date;
         $course->start_time = $request->start_time;
         $course->end_time = $request->end_time;
-        $course->status = 'payment_pending';     
-        $course->save(); 
+        $course->status = 'payment_pending';
+        $course->save();
 
         //Adding Academic Classes data
         $classes = $request->classes;
         // $classes = json_decode($classes); 
-        foreach ($classes as $session) {  
-              
+        foreach ($classes as $session) {
+
             $class = new AcademicClass();
             $class->course_id = $course->id;
             if ($request->has('teacher_id')) {
-                $class->teacher_id = $request->teacher_id; 
+                $class->teacher_id = $request->teacher_id;
             }
             $class->student_id = $token_user->id;
             $class->start_date = $session['date'];
@@ -349,8 +351,8 @@ class ClassController extends Controller
 
         //Adding Highlighted topic data
         if ($request->has('highlighted_topics')) {
-            foreach ($request->highlighted_topics as $topic) { 
-              
+            foreach ($request->highlighted_topics as $topic) {
+
                 $topicc = new HighlightedTopic();
                 $topicc->name = $topic['name'];
                 $topicc->confidence_scale = $topic['knowledge_scale'];
@@ -487,7 +489,7 @@ class ClassController extends Controller
         ];
 
         $course = Course::with('classes')->find($request->course_id);
-        
+
         if ($course->status == 'completed') {
             return response()->json([
                 'status' => false,
@@ -503,7 +505,7 @@ class ClassController extends Controller
             $start_time = Carbon::parse($class->start_time)->format('H:i:s');
             $end_time = Carbon::parse($class->end_time)->format('H:i:s');
 
-           $weekAvailabilities = TeacherAvailability::where('user_id', $course->teacher_id)
+            $weekAvailabilities = TeacherAvailability::where('user_id', $course->teacher_id)
                 ->where('day', $class->day)
                 ->whereTime('time_from', '>=', $start_time)
                 ->whereTime('time_from', '<=', $end_time)
@@ -511,7 +513,7 @@ class ClassController extends Controller
                 ->whereTime('time_to', '<=', $end_time)
                 ->get();
 
-                
+
 
             if (count($weekAvailabilities) == 0) {
                 return response()->json([
@@ -541,15 +543,15 @@ class ClassController extends Controller
             $classDate = Carbon::parse($class->date)->format('Y-m-d');
             // Checking if teacher is booked
             $classes = AcademicClass::where('day', $class->day)
-            ->where('teacher_id', $course->teacher_id)
-            ->where('student_id', $token_user->id)
-            ->whereDate('start_date', $classDate)
-            ->whereTime('start_time', '>=', $start_time)
-            ->whereTime('start_time', '<=', $end_time)
-            ->whereTime('end_time', '>=', $start_time)
-            ->whereTime('end_time', '<=', $end_time)
-            ->where('status', '!=', 'completed')
-            ->get();
+                ->where('teacher_id', $course->teacher_id)
+                ->where('student_id', $token_user->id)
+                ->whereDate('start_date', $classDate)
+                ->whereTime('start_time', '>=', $start_time)
+                ->whereTime('start_time', '<=', $end_time)
+                ->whereTime('end_time', '>=', $start_time)
+                ->whereTime('end_time', '<=', $end_time)
+                ->where('status', '!=', 'completed')
+                ->get();
 
             if (count($classes) > 0) {
                 return response()->json([
@@ -1102,7 +1104,7 @@ class ClassController extends Controller
             ], 400);
         }
         // return Carbon::parse($class->start_date);
-        
+
         $today = Carbon::now()->toISOString();
         $today = Date($today);
         $today_time = Carbon::now()->toISOString();
@@ -1110,7 +1112,7 @@ class ClassController extends Controller
         $classDate = Date($class->start_date);
         $classTime = Date($class->start_time);
 
-        if ($today < $classDate ) {
+        if ($today < $classDate) {
             return response()->json([
                 'status' => false,
                 'message' => trans('api_messages.CLASS_NOT_SCHEDULED_TODAY')
@@ -1305,7 +1307,7 @@ class ClassController extends Controller
         //finding the course countries
         $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
         $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
-        $course_countries=$countries;
+        $course_countries = $countries;
 
         // $Countries = Countries::all();
         // $course_countries = [];
@@ -1732,7 +1734,7 @@ class ClassController extends Controller
             $userrole = 'student_id';
         }
 
-        
+
 
 
         $current_date = Carbon::today()->format('Y-m-d');

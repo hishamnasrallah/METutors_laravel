@@ -146,17 +146,11 @@ Route::group(['middleware' => ['cors', 'share', 'LangMiddleware']], function () 
     Route::get('courses/course-detail/{id}', 'ClassController@course_detail');
 });
 
-Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share', 'LangMiddleware']], function () {
+Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], function () {
 
     Route::post('/login', 'LoginController@login');
     Route::get('/login', 'LoginController@showLoginForm');
-
     Route::post('/register', 'RegisterController@register');
-    Route::get('/verification', 'VerificationController@index');
-    Route::post('/verification', 'VerificationController@confirmCode');
-
-    Route::post('/verification/resend', 'VerificationController@resendCode');
-
     Route::post('/send-email', 'ForgotPasswordController@forgot');
 
     Route::get('reset-password/{token}', 'ResetPasswordController@getPassword');
@@ -178,25 +172,30 @@ Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share', 'LangMidd
     Route::post('/verifyOtp', 'LoginController@verifyOtp');
     Route::get('/resendOtp', 'LoginController@resendOtp');
 
-    Route::post('/interview-request', 'InterviewRequestController@interview_request');
+    Route::group(['middleware' => ['LangMiddleware']], function () {
+        
+        Route::get('/verification', 'VerificationController@index');
+        Route::post('/verification', 'VerificationController@confirmCode');
 
-    Route::get('admin/interview-request', 'InterviewRequestController@interview_requests');
-
-    Route::get('admin/interview-request/{id}', 'InterviewRequestController@interview_requests_details');
-
-    Route::post('/logout', 'LoginController@logout');
-
+        Route::post('/verification/resend', 'VerificationController@resendCode');
 
 
-    Route::get('/testing', 'LoginController@testing');
+        Route::post('/interview-request', 'InterviewRequestController@interview_request');
 
+        Route::get('admin/interview-request', 'InterviewRequestController@interview_requests');
 
+        Route::get('admin/interview-request/{id}', 'InterviewRequestController@interview_requests_details');
 
-    Route::post('validate-password', 'ResetPasswordController@validate_password');
+        Route::post('/logout', 'LoginController@logout');
 
-    Route::post('change-password', 'ResetPasswordController@change_password');
-    Route::post('change-email', 'ResetPasswordController@change_email');
-    Route::post('submit-email-withotp', 'ResetPasswordController@submit_email_withOtp');
+        Route::get('/testing', 'LoginController@testing');
+
+        Route::post('validate-password', 'ResetPasswordController@validate_password');
+
+        Route::post('change-password', 'ResetPasswordController@change_password');
+        Route::post('change-email', 'ResetPasswordController@change_email');
+        Route::post('submit-email-withotp', 'ResetPasswordController@submit_email_withOtp');
+    });
 });
 
 Route::get('estimated-price', 'PricingController@estimated_price');
