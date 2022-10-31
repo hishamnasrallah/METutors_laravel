@@ -524,10 +524,10 @@ class UserController extends Controller
         }
 
         $user->feedback_rating = [
-            'Expert in the subject' => $feedback_id_1,
-            'Present Complex Topics clearly and easily' => $feedback_id_2,
-            'Skillfull in engaging students' => $feedback_id_3,
-            'Always on time' => $feedback_id_4,
+            'EXPERT_IN_SUBJECT' => $feedback_id_1,
+            'PRESENT_COMPLEX_TOPICS_CLEARLY' => $feedback_id_2,
+            'SKILLFULL_ENGAGING_STUDENTS' => $feedback_id_3,
+            'ALWAYS_ON_TIME' => $feedback_id_4,
         ];
 
 

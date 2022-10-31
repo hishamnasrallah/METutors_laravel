@@ -414,6 +414,207 @@ class ClassController extends Controller
         ]);
     }
 
+    //********* Create Course *********
+    public function demo_course(Request $request)
+    {
+        $rules = [
+            'field_of_study' =>  'required',
+
+            'language_id' =>  'required',
+            // 'book_type' =>  'required',
+            'book_info' =>  'required',
+            'total_classes' =>  'required',
+            'total_hours' =>  'required',
+            'total_price' =>  'required',
+            'subject_id' =>  'required',
+            'weekdays' =>  'required',
+
+            // 'teacher_id' =>  'required',
+            'start_date' =>  'required',
+            'end_date' =>  'required',
+            'start_time' =>  'required',
+            'end_time' =>  'required',
+            'class_type' =>  'required',
+            'classes' =>  'required',
+            // 'highlighted_topics' =>  'required',
+
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        if ($request->program_id == 3) {
+            $request->validate([
+                'country_id' =>  'required',
+            ]);
+        }
+
+        // Adding Course Data
+        $course = new Course();
+        if ($request->program_id == 3) {
+            $course->program_id = $request->program_id;
+            $course->country_id = $request->country_id;
+        } else {
+            $course->program_id = $request->program_id;
+        }
+        if ($request->book_info == 2) {
+            $request->validate([
+                'file' =>  'required',
+            ]);
+            $course->files = $request->file;
+        }
+        if ($request->book_info == 3) {
+            $request->validate([
+                'book_name' =>  'required',
+                'book_edition' =>  'required',
+                'book_author' =>  'required',
+            ]);
+            $course->book_info = $request->book_info;
+            $course->book_name = $request->book_name;
+            $course->book_edition = $request->book_edition;
+            $course->book_author = $request->book_author;
+        } else {
+            $course->book_info = $request->book_info;
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        if ($request->total_hours < 0.5) {
+            return response()->json([
+                'status' => false,
+                'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
+            ], 400);
+        }
+
+        //**************** Availabilities and checkues for course booking ****************
+        $start_date = Carbon::parse($request->start_date);
+        $end_date = Carbon::parse($request->end_date);
+
+        if ($request->has('teacher_id')) {
+            $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+            $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+            $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+        }
+
+
+        $course->field_of_study = $request->field_of_study;
+
+        $course->language_id = $request->language_id;
+        // $course->book_type = $request->book_type;
+        $course->total_price = $request->total_price;
+        $course->total_hours = $request->total_hours;
+        $course->total_classes = $request->total_classes;
+        $course->subject_id = $request->subject_id;
+        //if request has teacher id
+        if ($request->has('teacher_id')) {
+            $course->teacher_id = $request->teacher_id;
+        }
+        $course->student_id = $token_user->id;
+        $course->weekdays = $request->weekdays;
+        $course->start_date = $request->start_date;
+        $course->end_date = $request->end_date;
+        $course->start_time = $request->start_time;
+        $course->end_time = $request->end_time;
+        $course->status = 'pending';
+        // $course->save();
+
+        //Adding Academic Classes data
+        $classes = $request->classes;
+        //  $classes = json_decode($classes); 
+        foreach ($classes as $session) {
+            // return $session->date;
+            $class = new AcademicClass();
+            $class->course_id = $course->id;
+            if ($request->has('teacher_id')) {
+                $class->teacher_id = $request->teacher_id;
+            }
+            $class->student_id = $token_user->id;
+            $class->start_date = $session['date'];
+            $class->end_date = $request->end_date;
+            $class->start_time = $session['start_time'];
+            $class->end_time = $session['end_time'];
+            $class->class_type = $request->class_type;
+            $class->duration = $session['duration'];
+            $class->day = $session['day'];
+            $class->status = 'pending';
+            $class->save();
+        }
+
+        $program = Program::find($request->program_id);
+        $subject = Subject::find($request->subject_id);
+        $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->count();
+        if ($course_count != null) {
+            $course_count =  $course_count + 1;
+        } else {
+            $course_count = 1;
+        }
+
+
+        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
+
+        // Adding Course Code
+        $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
+
+        // Adding Course name
+        if ($course_count == 0) {
+            $course->course_name = $subject->name . "0001";
+        } else {
+            //Course name conditions
+            $number = strlen($course_count);
+            if ($number == 1) {
+                $course->course_name = $subject->name . "-" . "000" . $course_count;
+            } elseif ($number == 2) {
+                $course->course_name = $subject->name . "-" . "00" . $course_count;
+            } elseif ($number == 3) {
+                $course->course_name = $subject->name . "-" . "0" . $course_count;
+            } else {
+                $course->course_name = $subject->name . "-" . $course_count;
+            }
+        }
+        $course->update();
+
+        //Adding Classroom Data
+        $classRoom = new ClassRoom();
+        $classRoom->course_id = $course->id;
+        if ($request->has('teacher_id')) {
+            $classRoom->teacher_id = $request->teacher_id;
+        }
+
+        $classRoom->student_id = $token_user->id;
+        $classRoom->status = 'pending';
+        $classRoom->save();
+
+        //Adding Highlighted topic data
+        if ($request->has('highlighted_topics')) {
+            foreach ($request->highlighted_topics as $topic) {
+
+                $topicc = new HighlightedTopic();
+                $topicc->name = $topic['name'];
+                $topicc->confidence_scale = $topic['knowledge_scale'];
+                $topicc->course_id = $course->id;
+                $topicc->save();
+            }
+        }
+
+        
+        return response()->json([
+            'status' => true,
+            'message' => 'Demo course created successfully',
+            'course'=> $course
+        ]);
+    }
+
+
 
     public function add_classes(Request $request)
     {

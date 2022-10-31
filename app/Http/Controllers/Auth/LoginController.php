@@ -323,7 +323,7 @@ class LoginController extends Controller
 
 
 
-        return response()->json(['status' => false, 'message' => 'Invalid credentials'], 401);
+        return response()->json(['status' => false, 'message' => trans('api_messages.INVALID_CREDENTIALS')], 401);
 
         // return $this->sendFailedLoginResponse($request);
     }

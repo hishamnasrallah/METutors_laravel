@@ -123,6 +123,7 @@ Route::group(['middleware' => ['cors', 'share', 'LangMiddleware']], function () 
     Route::get('view-class/{id}', 'ClassController@view_class');
     Route::Post('create-course', 'ClassController@create_course');
     Route::Post('create-class', 'ClassController@create_course');
+    Route::Post('demo-class', 'ClassController@demo_course');
     Route::Post('add-classes', 'ClassController@add_classes');
 
     Route::Post('course/payment-retry', 'ClassController@course_payment_retry');
@@ -172,13 +173,14 @@ Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], functio
     Route::post('/verifyOtp', 'LoginController@verifyOtp');
     Route::get('/resendOtp', 'LoginController@resendOtp');
 
+    Route::get('/verification', 'VerificationController@index');
+    Route::post('/verification', 'VerificationController@confirmCode');
+    Route::post('/verification/resend', 'VerificationController@resendCode');
+
+
     Route::group(['middleware' => ['LangMiddleware']], function () {
+
         
-        Route::get('/verification', 'VerificationController@index');
-        Route::post('/verification', 'VerificationController@confirmCode');
-
-        Route::post('/verification/resend', 'VerificationController@resendCode');
-
 
         Route::post('/interview-request', 'InterviewRequestController@interview_request');
 
@@ -364,6 +366,7 @@ Route::get('programs/{id}/subjects', 'ClassController@program_subjects');
 
 
 Route::get('courses/{id}', 'AdminController@program_subjects');
+Route::get('all-courses', 'AdminController@all_subjects');
 
 Route::get('search/{searchQuery}', 'TeacherController@overallSearch');
 
@@ -542,6 +545,7 @@ Route::post('admin/course/{course_id}/teacher-status', 'AdminController@teacherS
 Route::get('admin/approval-request', 'AdminController@approval_request');
 Route::get('admin/subject/{subject_id}/featured-teacher', 'AdminController@featured_teacher');
 Route::get('admin/featured-teachers', 'AdminController@featured_teachers_list');
+Route::get('teachers/program/{program_id}', 'GeneralController@teachers');
 Route::get('admin/course/{course_id}/refund/account-detail', 'AdminController@refund_account_detail');
 Route::post('admin/course/{course_id}/refund', 'AdminController@process_refund');
 
@@ -602,11 +606,13 @@ Route::group(['middleware' => ['LangMiddleware']], function () {
 
     Route::post('user/language', 'Web\UserController@change_language');
     // Degree levels and fields
-    Route::get('degree-levels', 'DegreeController@degree_levels')->middleware('LangMiddleware');
-    Route::get('degree-fields/{level_id}', 'DegreeController@degree_fields')->middleware('LangMiddleware');
+    Route::get('degree-levels', 'DegreeController@degree_levels');
+    Route::get('degree-fields/{level_id}', 'DegreeController@degree_fields');
 
     // Coupons
-    Route::get('coupons', 'CouponController@coupons');
+    Route::get('admin/coupons', 'CouponController@coupons');
+    Route::post('admin/coupon/{coupon_id}', 'CouponController@edit_coupon');
+    Route::delete('admin/coupon/{coupon_id}', 'CouponController@del_coupon');
     Route::post('admin/coupon', 'CouponController@create_coupon');
 });
 

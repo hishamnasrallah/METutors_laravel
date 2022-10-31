@@ -99,7 +99,10 @@ class PaymentController extends Controller
         $classroom = ClassRoom::where('course_id',$request->course_id)->first();
         $admin_message = "Course paymente completed!";
         $student = User::findOrFail($course->student_id);
-        $teacher = User::findOrFail($course->teacher_id);
+        if($course->teacher_id != null){
+            $teacher = User::findOrFail($course->teacher_id);
+        }
+        
         $admin = User::where('role_name', 'admin')->first();
 
         //If we got success Response From HyperPay
@@ -119,10 +122,14 @@ class PaymentController extends Controller
 
             event(new CompletePaymentEvent($admin->id, $admin, $admin_message, $course));
             event(new CompletePaymentEvent($student->id, $student, $admin_message, $course));
-            event(new CompletePaymentEvent($teacher->id, $teacher, $admin_message, $course));
+            if($course->teacher_id != null){
+                event(new CompletePaymentEvent($teacher->id, $teacher, $admin_message, $course));
+                dispatch(new CompletePaymentJob($teacher->id, $teacher, $admin_message, $course));
+            }
+           
             dispatch(new CompletePaymentJob($admin->id, $admin, $admin_message, $course));
             dispatch(new CompletePaymentJob($student->id, $student, $admin_message, $course));
-            dispatch(new CompletePaymentJob($teacher->id, $teacher, $admin_message, $course));
+            
 
             return response()->json([
                 'status' => true,

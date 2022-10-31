@@ -2083,6 +2083,17 @@ class AdminController extends Controller
         ]);
     }
 
+    public function all_subjects(){
+        $subjects = Subject::with('program', 'country', 'field')->get();
+        $field_of_studies = FieldOfStudy::with('program', 'country')->get();
+
+        return response()->json([
+            'status' => true,
+            'subjects' => $subjects,
+            'field_of_studies' => $field_of_studies,
+        ]);
+    }
+
     public function workforce_capacity(Request $request)
     {
         $subjects_array = [];
@@ -2385,22 +2396,22 @@ class AdminController extends Controller
         $overall_feedback = array(
 
             array(
-                "title" => 'Expert in the subject',
+                "title" => 'EXPERT_IN_SUBJECT',
                 "value" => $feedback_id_1,
             ),
 
             array(
-                "title" => 'Present Complex Topics clearly and easily',
+                "title" => 'PRESENT_COMPLEX_TOPICS_CLEARLY',
                 "value" => $feedback_id_2,
             ),
 
             array(
-                "title" => 'Skillfull in engaging students',
+                "title" => 'SKILLFULL_ENGAGING_STUDENTS',
                 "value" => $feedback_id_3,
             ),
 
             array(
-                "title" => 'Always on time',
+                "title" => 'ALWAYS_ON_TIME',
                 "value" => $feedback_id_4,
             ),
 
