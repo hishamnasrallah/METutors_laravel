@@ -30,6 +30,8 @@ use Illuminate\Support\Facades\Storage;
 use Validator;
 use DateTime;
 use \App\Mail\SendMailInvite;
+use App\Models\Coupon;
+use Carbon\Carbon;
 
 class PricingController extends Controller
 {
@@ -85,17 +87,68 @@ class PricingController extends Controller
 
 
         // print_r($total_h);die;
-
         $subject = Subject::find($request->subject_id);
+        $total_amount = $total_hours * $subject->price_per_hour;
 
         return response()->json([
-
             'status' => true,
             'no_of_classes' => $classes,
             'price_per_hour' => $subject->price_per_hour,
             'total_hours' => $total_hours,
-            'total_amount' => $total_hours * $subject->price_per_hour,
+            'total_amount' => $total_amount,
+        ]);
+    }
 
+    public function discounted_final_invoice(Request $request)
+    {
+        $rules = [
+            'promo_code' => 'required',
+            'subject_id' => 'required',
+            'classes' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+        
+        $total_hours = 0;
+        $classes = 0;
+
+        foreach (json_decode(json_encode($request->classes)) as $class) {
+            $classes++;
+            $total_hours = $total_hours + $class->duration;
+        }
+
+        $subject = Subject::find($request->subject_id);
+        $total_amount = $total_hours * $subject->price_per_hour;
+
+        $today_date = Carbon::now()->toISOString();
+        $coupon = Coupon::where('coupon_id', $request->promo_code)->first();
+        if ($today_date > $coupon->expiry_date) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon expired',
+            ], 400);
+        }
+        $discounted_price = $total_amount - ($total_amount * ($coupon->discount / 100));
+
+
+        return response()->json([
+            'status' => true,
+            'no_of_classes' => $classes,
+            'price_per_hour' => $subject->price_per_hour,
+            'total_hours' => $total_hours,
+            'total_amount' => $total_amount,
+            'discount_percentage' => $coupon->discount,
+            'discounted_amount' => $discounted_price,
         ]);
     }
 }

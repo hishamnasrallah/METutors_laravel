@@ -203,6 +203,7 @@ Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], functio
 Route::get('estimated-price', 'PricingController@estimated_price');
 
 Route::post('final-invoice', 'PricingController@final_invoice');
+Route::post('apply-coupon', 'PricingController@discounted_final_invoice');
 
 Route::post('contact-us', 'FaqController@contact_us');
 Route::post('add-faq', 'FaqController@add_faq');
