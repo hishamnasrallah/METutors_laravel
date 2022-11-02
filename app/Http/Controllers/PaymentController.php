@@ -112,10 +112,22 @@ class PaymentController extends Controller
             $course->update();
             $classroom->update();   
 
+            $user = User::findOrFail($course->student_id);
+
+            //billing details
             $order = new Order();
             $order->user_id = $course->student_id;
             $order->course_id = $course->id;
             $order->transaction_id = $paymentDetails->original->id;
+            // $order->email = $user->email;
+            // $order->billing_country = 'Jordan'; //$user->country
+            // $order->billing_city = 'Shmeisani';
+            // $order->billing_state = 'Amman';
+            // $order->billing_street = 'Yousef Ben Tashfeen';
+            // $order->postal_code = '1504'; //$user->postal_code
+            // $order->customer_name = $user->first_name;
+            // $order->customer_surname = $user->last_name;
+
             // $order->transaction_id = $paymentDetails->original->transaction_id;
             $order->payment_status = 'success';
             $order->save();

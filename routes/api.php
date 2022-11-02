@@ -641,4 +641,8 @@ Route::Post('payment/refund2', 'PaymentController@refund2');
 Route::resource('highlighted-topic', 'HighlightedTopicController');
 Route::post('highlighted-topic/{course_id}', 'HighlightedTopicController@update');
 
-//**************** classes routes ****************
+//**************** Paypal routes ****************
+
+Route::post('paypal-charge', 'PayPalPaymentController@charge');
+Route::get('paypal-success', 'PayPalPaymentController@success');
+Route::get('paypal-error', 'PayPalPaymentController@error');

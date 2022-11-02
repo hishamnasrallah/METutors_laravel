@@ -976,34 +976,38 @@ class ClassController extends Controller
         $academic_id = $request->academic_class_id;
         $class = AcademicClass::where('id', $academic_id)->first();
         //checking date
-        $currentdate = Carbon::now()->format('Y-m-d');
-        $currentdate = Carbon::parse($currentdate);
-        $db_date = Carbon::parse($class->start_date);
-        if ($db_date >= $currentdate) {
-            $dayOrNight = substr($class->start_time, 6, 9);
-            $trimed_time = Str::limit($class->start_time, 5, '');
-            $final_time = $trimed_time;
-            // converting pm to 24 hour format
-            if ($dayOrNight == "PM") {
+        $currentISO = Carbon::now()->toISOString();
+        $currentdate = Carbon::parse($currentISO)->format('Y-m-d');
+        $db_date = Carbon::parse($class->start_date)->format('Y-m-d');
 
-                $time = $trimed_time;
-                $time2 = "12:00:00";
-                $secs = strtotime($time2) - strtotime("00:00:00");
-                $final_time = date("H:i", strtotime($time) + $secs);
-            }
-            // converting pm to 24 hour format ends
+        if ($db_date >= $currentdate) {
+            // $dayOrNight = substr($class->start_time, 6, 9);
+            // $trimed_time = Str::limit($class->start_time, 5, '');
+            // $final_time = $trimed_time;
+            // // converting pm to 24 hour format
+            // if ($dayOrNight == "PM") {
+
+            //     $time = $trimed_time;
+            //     $time2 = "12:00:00";
+            //     $secs = strtotime($time2) - strtotime("00:00:00");
+            //     $final_time = date("H:i", strtotime($time) + $secs);
+            // }
+            // // converting pm to 24 hour format ends
 
             // calculating difference
-            $crrentTime = Carbon::now()->format('Y-m-d H:i');
-            $startTime = Carbon::parse($crrentTime);
-            $endTime = Carbon::parse($class->start_date . ' ' . $final_time);
-            $totalDuration = $endTime->diffInHours($crrentTime);
+            // $crrentTime = Carbon::now()->format('Y-m-d H:i');
+            // $startTime = Carbon::parse($crrentTime);
+            // $endTime = Carbon::parse($class->start_date . ' ' . $final_time);
+            // $totalDuration = $endTime->diffInHours($crrentTime);
+            $startTime = Carbon::parse($currentISO);
+            $endTime = Carbon::parse($class->start_date);
+            $totalDuration = $endTime->diffInHours($startTime);
             // calculating difference ends
 
-            $EndTime = substr($request->end_time, 0, 5);
-            $StartTime = substr($request->start_time, 0, 5);
+            // $EndTime = substr($request->end_time, 0, 5);
+            // $StartTime = substr($request->start_time, 0, 5);
 
-            $start_date = Carbon::parse($class->start_date)->format('Y-m-d');
+            $start_date = Carbon::parse($request->start_date)->format('Y-m-d');
 
             $start_time = Carbon::parse($request->start_time)->format('H:i:s');
             $end_time = Carbon::parse($request->end_time)->format('H:i:s');

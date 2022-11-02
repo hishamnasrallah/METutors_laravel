@@ -11,7 +11,7 @@ class RequestedCourse extends Model
 
        public function program()
     {
-        return $this->belongsTo('App\Program', 'program_id', 'id')->select('id', 'name', 'code');
+        return $this->belongsTo('App\Program', 'program_id', 'id')->select('id', 'name','name_ar', 'code');
     }
       public function country()
     {

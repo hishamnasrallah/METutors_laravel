@@ -36,6 +36,7 @@
                     <th scope="col">Teacher</th>
                     <th scope="col">Student</th>
                     <th scope="col">Action</th>
+                    <th scope="col">Paypal</th>
                 </tr>
             </thead>
             <tbody>
@@ -51,7 +52,13 @@
                                 data-attr={{ $course->id }}>Accept</button>
                             <button {{-- href="{{ route('accept_course', $course->teacher_id) }}" --}} class="btn btn-danger btn-sm">Reject</button>
                         </td>
-
+                        <td>
+                            <form action='api/paypal-charge' method="post">
+                                @csrf
+                                <input type="hidden" name="amount" id="" value="20">
+                                <button class="btn btn-success" type="submit">Pay with PayPal ($20)</button>
+                            </form>
+                        </td>
                     </tr>
                 @endforeach
 

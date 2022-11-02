@@ -40,3 +40,7 @@ Route::get('courses', [TestController::class, 'courses'])->name('courses');
 Route::get('course/accept/{id}', [TestController::class, 'acceptCourse'])->name('accept_course');
 Route::get('notifications', [TestController::class, 'notifications'])->name('notifications');
 Route::get('notifications/{id}/read', [TestController::class, 'mark_as_read'])->name('mark_as_read');
+
+Route::post('paypal-charge', 'PayPalPaymentController@charge');
+Route::get('paypal-success', 'PayPalPaymentController@success');
+Route::get('paypal-error', 'PayPalPaymentController@error');

@@ -78,7 +78,7 @@ class CouponController extends Controller
 
         if ($request->has('search')) {
             $coupons = Coupon::where('name', 'LIKE', "%$request->search%")
-                ->where('description', 'LIKE', "%$request->search%")
+                ->orWhere('description', 'LIKE', "%$request->search%")
                 ->orWhereDate('expiry_date', $request->search)
                 ->orWhere('coupon_id', $request->search)
                 ->paginate($request->per_page ?? 10);
