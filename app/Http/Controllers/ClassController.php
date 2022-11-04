@@ -40,6 +40,7 @@ use App\Jobs\ClassStartedJob;
 use App\Jobs\CourseBookingJob;
 use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
+use App\Models\BillingDetail;
 use App\Models\HighlightedTopic;
 use App\Models\LastActivity;
 use App\Models\RejectedCourse;
@@ -138,6 +139,9 @@ class ClassController extends Controller
                 'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
             ], 400);
         }
+
+
+
 
         //**************** Availabilities and checkues for course booking ****************
         $start_date = Carbon::parse($request->start_date);
@@ -391,7 +395,27 @@ class ClassController extends Controller
             'course_id' => $course->id,
             'course_code' => $course->course_code
         ];
-        $user = User::findOrFail($token_user->id);
+
+        // Adding Billing details
+        if ($request->has('billing_info') && $request->billing_info != '') {
+            $billing_info = json_decode($request->billing_info);
+            //Add or update billing details
+            $billing_detail = BillingDetail::updateOrCreate([
+                'user_id'   => $token_user->id,
+            ], [
+                'user_id' => $token_user->id,
+                'country' => $billing_info->country,
+                'state' => $billing_info->state,
+                'city' => $billing_info->city,
+                'street' => $billing_info->street,
+                'postcode' => $billing_info->postcode,
+            ]);
+        }
+
+        $user = User::with('billing_info')
+            ->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')
+            ->findOrFail($token_user->id);
+
         $amount = $request->total_price;
         $brand = 'VISA'; // MASTER OR MADA
 
@@ -606,11 +630,14 @@ class ClassController extends Controller
             }
         }
 
-        
+        $user = User::find($token_user->id);
+        $user->is_demo = '1';
+        $user->update();
+
         return response()->json([
             'status' => true,
             'message' => 'Demo course created successfully',
-            'course'=> $course
+            'course' => $course
         ]);
     }
 

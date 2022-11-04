@@ -651,7 +651,6 @@ class ClassController extends Controller
 
         $classroom = ClassRoom::where($userrole, $token_user->id)
             ->where('status', '!=', 'payment_pending')
-            // ->where('teacher_id', '!=', null)
             ->pluck('course_id');
 
         //finding the course countries
@@ -748,17 +747,19 @@ class ClassController extends Controller
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
 
-                    $rating_sum = 0;
-                    $average_rating = 0;
-                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                    if ($rating_sum > 0) {
-                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                        $average_rating = $rating_sum / $total_reviews;
-                    }
+                    if ($course->teacher_id != null) {
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
 
-                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                    unset($course['teacher']['teacher_qualification']);
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
+                    }
                 }
 
                 $progress = 0;
@@ -767,17 +768,19 @@ class ClassController extends Controller
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
 
-                    $rating_sum = 0;
-                    $average_rating = 0;
-                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                    if ($rating_sum > 0) {
-                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                        $average_rating = $rating_sum / $total_reviews;
-                    }
+                    if ($course->teacher_id != null) {
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
 
-                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                    unset($course['teacher']['teacher_qualification']);
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
+                    }
                 }
 
                 $progress = 0;
@@ -786,17 +789,19 @@ class ClassController extends Controller
                     $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                     $lastActivity_course->course->progress = round($progress);
 
-                    $rating_sum = 0;
-                    $average_rating = 0;
-                    $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
-                    if ($rating_sum > 0) {
-                        $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
-                        $average_rating = $rating_sum / $total_reviews;
-                    }
+                    if ($lastActivity_course->teacher_id != null) {
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
 
-                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
-                    unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                    }
                 }
 
 
@@ -855,17 +860,19 @@ class ClassController extends Controller
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
 
-                        $rating_sum = 0;
-                        $average_rating = 0;
-                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                        if ($rating_sum > 0) {
-                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                            $average_rating = $rating_sum / $total_reviews;
-                        }
+                        if ($course->teacher_id != null) {
+                            $rating_sum = 0;
+                            $average_rating = 0;
+                            $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                            if ($rating_sum > 0) {
+                                $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                                $average_rating = $rating_sum / $total_reviews;
+                            }
 
-                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                        unset($course['teacher']['teacher_qualification']);
+                            $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                            $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                            unset($course['teacher']['teacher_qualification']);
+                        }
                     }
 
                     $progress = 0;
@@ -874,17 +881,19 @@ class ClassController extends Controller
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
 
-                        $rating_sum = 0;
-                        $average_rating = 0;
-                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                        if ($rating_sum > 0) {
-                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                            $average_rating = $rating_sum / $total_reviews;
-                        }
+                        if ($course->teacher_id != null) {
+                            $rating_sum = 0;
+                            $average_rating = 0;
+                            $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                            if ($rating_sum > 0) {
+                                $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                                $average_rating = $rating_sum / $total_reviews;
+                            }
 
-                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                        unset($course['teacher']['teacher_qualification']);
+                            $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                            $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                            unset($course['teacher']['teacher_qualification']);
+                        }
                     }
 
                     $progress = 0;
@@ -893,17 +902,19 @@ class ClassController extends Controller
                         $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                         $lastActivity_course->course->progress = round($progress);
 
-                        $rating_sum = 0;
-                        $average_rating = 0;
-                        $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
-                        if ($rating_sum > 0) {
-                            $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
-                            $average_rating = $rating_sum / $total_reviews;
+                        if ($lastActivity_course->teacher_id != null) {
+                            $rating_sum = 0;
+                            $average_rating = 0;
+                            $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                            if ($rating_sum > 0) {
+                                $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                                $average_rating = $rating_sum / $total_reviews;
+                            }
+                            // $lastActivity_course->course->teacher;
+                            $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                            $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                            unset($lastActivity_course->course['teacher']['teacher_qualification']);
                         }
-                        // $lastActivity_course->course->teacher;
-                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                        $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
-                        unset($lastActivity_course->course['teacher']['teacher_qualification']);
                     }
 
                     return response()->json([
@@ -973,17 +984,19 @@ class ClassController extends Controller
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
 
-                        $rating_sum = 0;
-                        $average_rating = 0;
-                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                        if ($rating_sum > 0) {
-                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                            $average_rating = $rating_sum / $total_reviews;
-                        }
+                        if ($course->teacher_id != null) {
+                            $rating_sum = 0;
+                            $average_rating = 0;
+                            $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                            if ($rating_sum > 0) {
+                                $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                                $average_rating = $rating_sum / $total_reviews;
+                            }
 
-                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                        unset($course['teacher']['teacher_qualification']);
+                            $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                            $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                            unset($course['teacher']['teacher_qualification']);
+                        }
                     }
 
                     $progress = 0;
@@ -992,17 +1005,19 @@ class ClassController extends Controller
                         $progress = ($completed_classes / $course->total_classes) * 100;
                         $course->progress = round($progress);
 
-                        $rating_sum = 0;
-                        $average_rating = 0;
-                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                        if ($rating_sum > 0) {
-                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                            $average_rating = $rating_sum / $total_reviews;
-                        }
+                        if ($course->teacher_id != null) {
+                            $rating_sum = 0;
+                            $average_rating = 0;
+                            $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                            if ($rating_sum > 0) {
+                                $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                                $average_rating = $rating_sum / $total_reviews;
+                            }
 
-                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                        unset($course['teacher']['teacher_qualification']);
+                            $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                            $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                            unset($course['teacher']['teacher_qualification']);
+                        }
                     }
 
                     $progress = 0;
@@ -1011,17 +1026,19 @@ class ClassController extends Controller
                         $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                         $lastActivity_course->course->progress = round($progress);
 
-                        $rating_sum = 0;
-                        $average_rating = 0;
-                        $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
-                        if ($rating_sum > 0) {
-                            $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
-                            $average_rating = $rating_sum / $total_reviews;
-                        }
+                        if ($lastActivity_course->teacher_id != null) {
+                            $rating_sum = 0;
+                            $average_rating = 0;
+                            $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                            if ($rating_sum > 0) {
+                                $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                                $average_rating = $rating_sum / $total_reviews;
+                            }
 
-                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                        $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
-                        unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                            $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                            $lastActivity_course->course['teacher']->tag_line =  $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                            unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                        }
                     }
 
                     return response()->json([
@@ -1095,17 +1112,19 @@ class ClassController extends Controller
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
 
-                    $rating_sum = 0;
-                    $average_rating = 0;
-                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                    if ($rating_sum > 0) {
-                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                        $average_rating = $rating_sum / $total_reviews;
-                    }
+                    if ($course->teacher_id != null) {
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
 
-                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                    unset($course['teacher']['teacher_qualification']);
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
+                    }
                 }
 
                 $progress = 0;
@@ -1114,17 +1133,19 @@ class ClassController extends Controller
                     $progress = ($completed_classes / $course->total_classes) * 100;
                     $course->progress = round($progress);
 
-                    $rating_sum = 0;
-                    $average_rating = 0;
-                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                    if ($rating_sum > 0) {
-                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                        $average_rating = $rating_sum / $total_reviews;
-                    }
+                    if ($course->teacher_id != null) {
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
 
-                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                    unset($course['teacher']['teacher_qualification']);
+                        $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($course['teacher']['teacher_qualification']);
+                    }
                 }
 
                 $progress = 0;
@@ -1133,17 +1154,19 @@ class ClassController extends Controller
                     $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                     $lastActivity_course->course->progress = round($progress);
 
-                    $rating_sum = 0;
-                    $average_rating = 0;
-                    $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
-                    if ($rating_sum > 0) {
-                        $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
-                        $average_rating = $rating_sum / $total_reviews;
-                    }
+                    if ($lastActivity_course->teacher_id != null) {
+                        $rating_sum = 0;
+                        $average_rating = 0;
+                        $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                        if ($rating_sum > 0) {
+                            $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                            $average_rating = $rating_sum / $total_reviews;
+                        }
 
-                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
-                    unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                        $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                        $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                        unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                    }
                 }
 
 
@@ -1202,17 +1225,19 @@ class ClassController extends Controller
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
 
-                $rating_sum = 0;
-                $average_rating = 0;
-                $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                if ($rating_sum > 0) {
-                    $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                    $average_rating = $rating_sum / $total_reviews;
-                }
+                if ($course->teacher_id != null) {
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
 
-                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                unset($course['teacher']['teacher_qualification']);
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
+                }
             }
 
             $progress = 0;
@@ -1221,17 +1246,19 @@ class ClassController extends Controller
                 $progress = ($completed_classes / $course->total_classes) * 100;
                 $course->progress = round($progress);
 
-                $rating_sum = 0;
-                $average_rating = 0;
-                $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
-                if ($rating_sum > 0) {
-                    $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
-                    $average_rating = $rating_sum / $total_reviews;
-                }
+                if ($course->teacher_id != null) {
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
 
-                $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
-                unset($course['teacher']['teacher_qualification']);
+                    $course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $course['teacher']->tag_line =  $course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($course['teacher']['teacher_qualification']);
+                }
             }
 
             $progress = 0;
@@ -1240,17 +1267,19 @@ class ClassController extends Controller
                 $progress = ($completed_classes / $lastActivity_course->course->total_classes) * 100;
                 $lastActivity_course->course->progress = round($progress);
 
-                $rating_sum = 0;
-                $average_rating = 0;
-                $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
-                if ($rating_sum > 0) {
-                    $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
-                    $average_rating = $rating_sum / $total_reviews;
-                }
+                if ($lastActivity_course->teacher_id != null) {
+                    $rating_sum = 0;
+                    $average_rating = 0;
+                    $rating_sum = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->sum('rating');
+                    if ($rating_sum > 0) {
+                        $total_reviews = UserFeedback::where('receiver_id', $lastActivity_course->course->teacher_id)->count();
+                        $average_rating = $rating_sum / $total_reviews;
+                    }
 
-                $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
-                $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
-                unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                    $lastActivity_course->course['teacher']->average_rating = Str::limit($average_rating, 3, '');
+                    $lastActivity_course->course['teacher']->tag_line = $lastActivity_course->course['teacher']['teacher_qualification'][0]->degree_field;
+                    unset($lastActivity_course->course['teacher']['teacher_qualification']);
+                }
             }
 
 

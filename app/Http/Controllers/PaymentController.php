@@ -96,13 +96,13 @@ class PaymentController extends Controller
         $paymentDetails = json_decode(json_encode($payment_details));
 
         $course = Course::findOrFail($request->course_id);
-        $classroom = ClassRoom::where('course_id',$request->course_id)->first();
+        $classroom = ClassRoom::where('course_id', $request->course_id)->first();
         $admin_message = "Course paymente completed!";
         $student = User::findOrFail($course->student_id);
-        if($course->teacher_id != null){
+        if ($course->teacher_id != null) {
             $teacher = User::findOrFail($course->teacher_id);
         }
-        
+
         $admin = User::where('role_name', 'admin')->first();
 
         //If we got success Response From HyperPay
@@ -110,23 +110,22 @@ class PaymentController extends Controller
             $course->status = "pending";
             $classroom->status = "pending";
             $course->update();
-            $classroom->update();   
+            $classroom->update();
 
-            $user = User::findOrFail($course->student_id);
+            $user = User::with('billing_info')->findOrFail($course->student_id);
+            $biiling_info = $user['billing_info'];
 
-            //billing details
             $order = new Order();
             $order->user_id = $course->student_id;
             $order->course_id = $course->id;
             $order->transaction_id = $paymentDetails->original->id;
-            // $order->email = $user->email;
-            // $order->billing_country = 'Jordan'; //$user->country
-            // $order->billing_city = 'Shmeisani';
-            // $order->billing_state = 'Amman';
-            // $order->billing_street = 'Yousef Ben Tashfeen';
-            // $order->postal_code = '1504'; //$user->postal_code
-            // $order->customer_name = $user->first_name;
-            // $order->customer_surname = $user->last_name;
+            
+            //billing details
+            $order->billing_country = $biiling_info->country;
+            $order->billing_city =  $biiling_info->city;
+            $order->billing_state =  $biiling_info->state;
+            $order->billing_street =  $biiling_info->street;
+            $order->postcode =  $biiling_info->postcode;
 
             // $order->transaction_id = $paymentDetails->original->transaction_id;
             $order->payment_status = 'success';
@@ -134,14 +133,14 @@ class PaymentController extends Controller
 
             event(new CompletePaymentEvent($admin->id, $admin, $admin_message, $course));
             event(new CompletePaymentEvent($student->id, $student, $admin_message, $course));
-            if($course->teacher_id != null){
+            if ($course->teacher_id != null) {
                 event(new CompletePaymentEvent($teacher->id, $teacher, $admin_message, $course));
                 dispatch(new CompletePaymentJob($teacher->id, $teacher, $admin_message, $course));
             }
-           
+
             dispatch(new CompletePaymentJob($admin->id, $admin, $admin_message, $course));
             dispatch(new CompletePaymentJob($student->id, $student, $admin_message, $course));
-            
+
 
             return response()->json([
                 'status' => true,

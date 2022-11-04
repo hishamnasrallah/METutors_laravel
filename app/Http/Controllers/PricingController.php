@@ -32,6 +32,7 @@ use DateTime;
 use \App\Mail\SendMailInvite;
 use App\Models\Coupon;
 use Carbon\Carbon;
+use JWTAuth;
 
 class PricingController extends Controller
 {
@@ -90,12 +91,23 @@ class PricingController extends Controller
         $subject = Subject::find($request->subject_id);
         $total_amount = $total_hours * $subject->price_per_hour;
 
+        if(JWTAuth::getToken()){
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+              $user = User::with('billing_info')
+            ->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')
+            ->findOrFail($token_user->id);
+        }else{
+            $user=null;
+        }
+
         return response()->json([
             'status' => true,
             'no_of_classes' => $classes,
             'price_per_hour' => $subject->price_per_hour,
             'total_hours' => $total_hours,
             'total_amount' => $total_amount,
+            'user' => $user,
         ]);
     }
 

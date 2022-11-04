@@ -49,6 +49,7 @@ class PayPalPaymentController extends Controller
                     'message' => "Redirect URL",
                     // 'redirect_url' => $data['contextualLogin']['experienceMetaData']['merchantData']->paymentToken,
                     'response' => $response->redirect(),
+                    // 'response' => $response['paypal_link'],
                 ]);
             } else {
                 // not successful

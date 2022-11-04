@@ -226,7 +226,7 @@ class LoginController extends Controller
 
         if ($this->attemptLogin($request)) {
 
-            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar', 'redirect_url')->where('email', $request->username)->first();
+            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar','is_demo', 'redirect_url')->where('email', $request->username)->first();
 
             $credentials = array();
             $credentials['email'] = $request->username;

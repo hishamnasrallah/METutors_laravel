@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddBillingDetailsToOrdersTable extends Migration
+class AddBillingInfoToOrdersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -14,14 +14,11 @@ class AddBillingDetailsToOrdersTable extends Migration
     public function up()
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('email')->after('transaction_id')->nullable();
-            $table->string('billing_country')->after('email')->nullable();
+            $table->string('billing_country')->after('transaction_id')->nullable();
             $table->string('billing_state')->after('billing_country')->nullable();
             $table->string('billing_city')->after('billing_state')->nullable();
             $table->string('billing_street')->after('billing_city')->nullable();
-            $table->string('postal_code')->after('billing_street')->nullable();
-            $table->string('customer_name')->after('postal_code')->nullable();
-            $table->string('customer_surname')->after('customer_name')->nullable();
+            $table->string('postcode')->after('billing_street')->nullable();
         });
     }
 

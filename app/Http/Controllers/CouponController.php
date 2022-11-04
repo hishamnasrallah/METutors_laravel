@@ -16,7 +16,6 @@ class CouponController extends Controller
     public function create_coupon(Request $request)
     {
 
-
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
@@ -44,18 +43,8 @@ class CouponController extends Controller
 
         $coupon = new Coupon();
         $coupon->user_id = $token_user->id;
-        $coupon_count = mb_strlen($coupons);
-
         // Making coupon id
-        if ($coupon_count == 1) {
-            $coupon_id = 'COP000' . $coupons;
-        } elseif ($coupon_count == 2) {
-            $coupon_id = 'COP00' . $coupons;
-        } elseif ($coupon_count == 3) {
-            $coupon_id = 'COP0' . $coupons;
-        } else {
-            $coupon_id = 'COP' . $coupons;
-        }
+        $coupon_id = 'COP' . random_int(1000,9999);
 
         $coupon->coupon_id = $coupon_id;
         $coupon->name = $request->name;
@@ -81,6 +70,7 @@ class CouponController extends Controller
                 ->orWhere('description', 'LIKE', "%$request->search%")
                 ->orWhereDate('expiry_date', $request->search)
                 ->orWhere('coupon_id', $request->search)
+                ->orWhere('discount', $request->search)
                 ->paginate($request->per_page ?? 10);
         }
 
