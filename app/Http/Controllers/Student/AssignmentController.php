@@ -37,9 +37,9 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $corse = Course::find($course_id);
+        // $corse = Course::find($course_id);
 
-        $course = Course::with('participants', 'participants.user',  'assignments')
+        $course = Course::with('participants', 'participants.user','assignments')
             ->with(['assignments.assignees.user' => function ($q) {
                 $q->latest();
             }])

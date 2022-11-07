@@ -109,7 +109,7 @@ class GeneralController extends Controller
     public function programs()
     {
 
-        $programs = Program::where('status', 1)->orderBy('order','ASC')->get();
+        $programs = Program::where('status', 1)->orderBy('order', 'ASC')->get();
 
         return response()->json([
 
@@ -159,7 +159,7 @@ class GeneralController extends Controller
     public function subjects()
     {
 
-        $subjects = Subject::with('field','country')->get();
+        $subjects = Subject::with('field', 'country')->get();
 
         return response()->json([
 
@@ -202,8 +202,8 @@ class GeneralController extends Controller
         if ($request->program_id == 3) {
 
             $field_of_study = FieldOfStudy::where('program_id', $request->program_id)->where('country_id', $request->country_id)
-            // ->where('grade', $request->grade)
-            ->get();
+                // ->where('grade', $request->grade)
+                ->get();
         }
 
 
@@ -271,38 +271,181 @@ class GeneralController extends Controller
         ]);
     }
 
-
-    public function paginate($items, $perPage, $page = null, $options = [])
+    public function teachers($program_id, Request $request)
     {
-        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
-        $items = $items instanceof Collection ? $items : Collection::make($items);
-        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
-    }
 
-    public function teachers($program_id){
-        // $programs = Program::select('id','name')->get();
-        $field_of_studies = FieldOfStudy::select('id','name','program_id')->where('program_id',$program_id)->get();
+        if ($program_id == 3) {
+            $rules = [
+                'country_id' => 'required',
+            ];
 
-          $teachers = User::where('role_name','teacher')
-       
-            ->whereHas('teacher_subjects',function($q) use($program_id){
-                $q->where('program_id',$program_id);
-            })
-            ->with('teacherQualifications')
-            ->with('country')
-            ->select('id','first_name','last_name','bio','country')
-            ->get();
-        
+            $validator = Validator::make($request->all(), $rules);
+
+            if ($validator->fails()) {
+                $messages = $validator->messages();
+                $errors = $messages->all();
+
+                return response()->json([
+
+                    'status' => 'false',
+                    'errors' => $errors,
+                ], 400);
+            }
+        }
+
+
+        //if program id is 3
+        if ($program_id == 3) {
+
+            $field_of_studies = FieldOfStudy::select('id', 'name', 'program_id')
+                ->where('program_id', $program_id)
+                ->where('country_id', $request->country_id)
+                ->get();
+            //if request has field_id
+            if ($request->has('field_id')) {
+                //if request has search
+                if ($request->has('search')) {
+                    $teachers = User::where('role_name', 'teacher')
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
+                            $q->where('program_id', $program_id)->where('country_id', $request->country_id)->where('field_id', $request->field_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->where(function ($q) use ($request) {
+                            $q->where('first_name', 'LIKE', "%$request->search%")
+                                ->orWhere('last_name', 'LIKE', "%$request->search%");
+                        })
+                        ->get();
+                } else {
+                    $teachers = User::where('role_name', 'teacher')
+
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
+                            $q->where('program_id', $program_id)->where('country_id', $request->country_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->get();
+                }
+            } else {
+                //if request has search
+                if ($request->has('search')) {
+                    $teachers = User::where('role_name', 'teacher')
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
+                            $q->where('program_id', $program_id)->where('country_id', $request->country_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->where(function ($q) use ($request) {
+                            $q->where('first_name', 'LIKE', "%$request->search%")
+                                ->orWhere('last_name', 'LIKE', "%$request->search%");
+                        })
+                        ->get();
+                } else {
+                    $teachers = User::where('role_name', 'teacher')
+
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
+                            $q->where('program_id', $program_id)->where('country_id', $request->country_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->get();
+                }
+            }
+        } else {
+            $field_of_studies = FieldOfStudy::select('id', 'name', 'program_id')->where('program_id', $program_id)->get();
+
+            //if request has field_id
+            if ($request->has('field_id')) {
+                //if request has search
+                if ($request->has('search')) {
+                    $teachers = User::where('role_name', 'teacher')
+
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
+                            $q->where('program_id', $program_id)->where('field_id', $request->field_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->where(function ($q) use ($request) {
+                            $q->where('first_name', 'LIKE', "%$request->search%")
+                                ->orWhere('last_name', 'LIKE', "%$request->search%");
+                        })
+                        ->get();
+                } else {
+                    $teachers = User::where('role_name', 'teacher')
+
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id) {
+                            $q->where('program_id', $program_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->get();
+                }
+            } else {
+                //if request has search
+                if ($request->has('search')) {
+                    $teachers = User::where('role_name', 'teacher')
+
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id) {
+                            $q->where('program_id', $program_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->where(function ($q) use ($request) {
+                            $q->where('first_name', 'LIKE', "%$request->search%")
+                                ->orWhere('last_name', 'LIKE', "%$request->search%");
+                        })
+                        ->get();
+                } else {
+                    $teachers = User::where('role_name', 'teacher')
+
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id) {
+                            $q->where('program_id', $program_id);
+                        })
+                        ->with('teacherQualifications')
+                        ->with('country')
+                        ->where('admin_approval', 'approved')
+                        ->where('status', 'active')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->get();
+                }
+            }
+        }
+
+
+
+
+
+
         $all_teachers = [];
-        
 
-        foreach($teachers as $teacher){
+
+        foreach ($teachers as $teacher) {
             $classes = AcademicClass::where('teacher_id',  $teacher->id)->where('status', 'completed')->count();
-            $programs = TeacherSubject::with('country','program')->where('user_id',  $teacher->id)->get();
+            $programs = TeacherSubject::with('country', 'program')->where('user_id',  $teacher->id)->get();
 
             $teacher_programs = [];
-            foreach($programs as $program)
-            {
+            foreach ($programs as $program) {
                 $Program = new stdClass();
                 $Program->program_id = $program->id;
                 $Program->program_name = $program['program']->name;
@@ -310,45 +453,125 @@ class GeneralController extends Controller
                 $Program->country = $program['country'] != '' ? $program['country']->name : null;
                 $Program->iso_code = $program['country'] != '' ? $program['country']->iso3 : null;
 
-                $teacher_programs [] = $Program;
+                $teacher_programs[] = $Program;
             }
             $subjects = TeacherSubject::where('user_id',  $teacher->id)->pluck('subject_id')->unique();
 
             $Teacher = new stdClass();
             $Teacher->id = $teacher->id;
-            $Teacher->name = $teacher->first_name. ' '.Str::limit($teacher->last_name,1,'').'.';
-            $Teacher->country = Country::where('id',$teacher->country)->select('name')->first();
+            $Teacher->name = $teacher->first_name . ' ' . Str::limit($teacher->last_name, 1, '') . '.';
+            $Teacher->country = Country::where('id', $teacher->country)->select('name')->first();
             $Teacher->bio = $teacher->bio;
             $Teacher->university = $teacher['teacherQualifications']->name_of_university;
             $Teacher->classes_taught = $classes;
-            
 
 
-             //-------rating--------
-             $average_rating = 5;
-             $rating_sum = UserFeedback::where('receiver_id',  $teacher->id)->sum('rating');
-             $total_reviews = UserFeedback::where('receiver_id',  $teacher->id)->count();
-             if ($total_reviews > 0) {
-                 $average_rating = $rating_sum / $total_reviews;
-             }
-             $reviews = UserFeedback::where('receiver_id',  $teacher->id)->get();
+
+            //-------rating--------
+            $average_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id',  $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id',  $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $reviews = UserFeedback::where('receiver_id',  $teacher->id)->get();
             $reviews_count = $reviews->groupBy('sender_id')->count();
 
             $Teacher->reviews_count  = $reviews_count;
-             $Teacher->average_rating = Str::limit($average_rating,3,'');
-             $Teacher->programs = $teacher_programs;
-             $Teacher->subjects = Subject::whereIn('id',$subjects)->select('id','name')->get();
+            $Teacher->average_rating = Str::limit($average_rating, 3, '');
+            $Teacher->programs = $teacher_programs;
+            $Teacher->subjects = Subject::whereIn('id', $subjects)->select('id', 'name')->get();
 
-            $all_teachers []=  $Teacher;
+            $all_teachers[] =  $Teacher;
         }
 
         return response()->json([
             'success' => true,
-            'teachers' => $all_teachers,
+            'teachers' => $this->paginate($all_teachers, $request->per_page ?? 10),
             'field_of_studies' => $field_of_studies,
         ]);
     }
 
+    public function all_teachers(Request $request)
+    {
+        if ($request->has('search')) {
+            $teachers = User::where('role_name', 'teacher')
+                ->with('teacher_subjects', 'teacherQualifications')
+                ->with('country')
+                ->where('admin_approval', 'approved')
+                ->where('status', 'active')
+                ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                ->where(function ($q) use ($request) {
+                    $q->where('first_name', 'LIKE', "%$request->search%")
+                        ->orWhere('last_name', 'LIKE', "%$request->search%");
+                })
+                ->get();
+        } else {
+            $teachers = User::where('role_name', 'teacher')
+                ->with('teacher_subjects', 'teacherQualifications')
+                ->with('country')
+                ->where('admin_approval', 'approved')
+                ->where('status', 'active')
+                ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                ->get();
+        }
 
-    
+        foreach ($teachers as $teacher) {
+            $classes = AcademicClass::where('teacher_id',  $teacher->id)->where('status', 'completed')->count();
+            $programs = TeacherSubject::with('country', 'program')->where('user_id',  $teacher->id)->get();
+
+            $teacher_programs = [];
+            foreach ($programs as $program) {
+                $Program = new stdClass();
+                $Program->program_id = $program->id;
+                $Program->program_name = $program['program']->name;
+                $Program->program_code = $program['program']->code;
+                $Program->country = $program['country'] != '' ? $program['country']->name : null;
+                $Program->iso_code = $program['country'] != '' ? $program['country']->iso3 : null;
+
+                $teacher_programs[] = $Program;
+            }
+            $subjects = TeacherSubject::where('user_id',  $teacher->id)->pluck('subject_id')->unique();
+
+            $Teacher = new stdClass();
+            $Teacher->id = $teacher->id;
+            $Teacher->name = $teacher->first_name . ' ' . Str::limit($teacher->last_name, 1, '') . '.';
+            $Teacher->country = Country::where('id', $teacher->country)->select('name')->first();
+            $Teacher->bio = $teacher->bio;
+            $Teacher->university = $teacher['teacherQualifications']->name_of_university;
+            $Teacher->classes_taught = $classes;
+
+
+
+            //-------rating--------
+            $average_rating = 5;
+            $rating_sum = UserFeedback::where('receiver_id',  $teacher->id)->sum('rating');
+            $total_reviews = UserFeedback::where('receiver_id',  $teacher->id)->count();
+            if ($total_reviews > 0) {
+                $average_rating = $rating_sum / $total_reviews;
+            }
+            $reviews = UserFeedback::where('receiver_id',  $teacher->id)->get();
+            $reviews_count = $reviews->groupBy('sender_id')->count();
+
+            $Teacher->reviews_count  = $reviews_count;
+            $Teacher->average_rating = Str::limit($average_rating, 3, '');
+            $Teacher->programs = $teacher_programs;
+            $Teacher->subjects = Subject::whereIn('id', $subjects)->select('id', 'name')->get();
+
+            $all_teachers[] =  $Teacher;
+        }
+
+        return response()->json([
+            'success' => true,
+            'teachers' => $this->paginate($all_teachers, $request->per_page ?? 10),
+        ]);
+    }
+
+
+    public function paginate($items, $perPage, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+    }
 }

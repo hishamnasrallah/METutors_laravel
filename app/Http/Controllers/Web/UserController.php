@@ -1746,8 +1746,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' =>  trans('api_messages.Language set successfully'),
-            'user' =>  $user,
+            'message' =>  trans('api_messages.LANGUAGE_SET_SUCCESSFULLY'),
         ]);
     }
 }

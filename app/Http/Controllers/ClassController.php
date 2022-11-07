@@ -398,7 +398,7 @@ class ClassController extends Controller
 
         // Adding Billing details
         if ($request->has('billing_info') && $request->billing_info != '') {
-            $billing_info = json_decode($request->billing_info);
+            $billing_info = json_decode(json_encode($request->billing_info));
             //Add or update billing details
             $billing_detail = BillingDetail::updateOrCreate([
                 'user_id'   => $token_user->id,
@@ -550,7 +550,7 @@ class ClassController extends Controller
         $course->start_time = $request->start_time;
         $course->end_time = $request->end_time;
         $course->status = 'pending';
-        // $course->save();
+        $course->save();
 
         //Adding Academic Classes data
         $classes = $request->classes;
@@ -576,7 +576,12 @@ class ClassController extends Controller
 
         $program = Program::find($request->program_id);
         $subject = Subject::find($request->subject_id);
-        $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->count();
+
+        $course_count = Course::where('subject_id', $subject->id)
+        ->where('program_id', $request->program_id)
+        ->where('course_code', '!=', null)  
+        ->count();
+
         if ($course_count != null) {
             $course_count =  $course_count + 1;
         } else {
@@ -584,7 +589,7 @@ class ClassController extends Controller
         }
 
 
-        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
+        return $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
 
         // Adding Course Code
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);

@@ -47,7 +47,11 @@ class ClassCron extends Command
      */
     public function handle()
     {
-        $classes = AcademicClass::where('start_date', "<=", Carbon::today()->format('Y-m-d'))
+        $today =  Carbon::now()->toISOString();
+        $today_date =  Carbon::parse($today)->format('Y-m-d');
+        $today_time =  Carbon::parse($today)->format('H:i:s');
+
+        $classes = AcademicClass::where('start_date', "<=", $today_date)
             ->where('status', "!=", "completed")
             ->get();
 
@@ -59,7 +63,7 @@ class ClassCron extends Command
             //sending notifications if students are not in the class
             #------students
             foreach ($attendees as  $attendee) {
-                if (Carbon::now() >= Carbon::parse($class->start_time)) {
+                if ($today >= $class->start_time) {
                     if (Attendance::where('user_id', $attendee)->where('academic_class_id', $class->id)->count() == 0) {
                         $attendee = User::findOrFail($attendee);
                         $custom_message = "Class has been started! Please join";
@@ -68,7 +72,7 @@ class ClassCron extends Command
                     }
                 }
                 //marking as absent if after class time student has not joined
-                if (Carbon::now() > Carbon::parse($class->end_time)) {
+                if ($today > $class->end_time) {
                     $attendance = Attendance::where('user_id', $attendee)->where('academic_class_id', $class->id)->first();
                     $custom_message = "You have been marked as absent in class";
                     if ($attendance == null) {
@@ -95,7 +99,7 @@ class ClassCron extends Command
             }
 
             //-----Marking teacher as absent if he did not attend the class
-            if (Carbon::parse($class->end_time) > Carbon::now()) {
+            if ($class->end_time > $today) {
                 $attendance = Attendance::where('user_id', $teacher)->where('academic_class_id', $class->id)->first();
                 if ($attendance == null) {
                     $userAttendence = new Attendance();

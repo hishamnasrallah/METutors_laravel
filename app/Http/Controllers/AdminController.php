@@ -147,7 +147,7 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => "Teacher performance",
-            'average_rating' => Str::limit($average_rating,3,''),
+            'average_rating' => Str::limit($average_rating, 3, ''),
         ]);
     }
 
@@ -320,7 +320,7 @@ class AdminController extends Controller
 
         $reassigned_classes = AcademicClass::where(['course_id' => $course->id, 'status' => 'reassigned'])->get();
         $course->course_progress = $progress;
-        $course['teacher']->teacher_rating = Str::limit($average_rating,3,'');
+        $course['teacher']->teacher_rating = Str::limit($average_rating, 3, '');
 
         return response()->json([
             'status' => true,
@@ -375,7 +375,7 @@ class AdminController extends Controller
         }
 
         $course->course_progress = $progress;
-        $course['teacher']->teacher_rating = Str::limit($average_rating,3,'');
+        $course['teacher']->teacher_rating = Str::limit($average_rating, 3, '');
 
         return response()->json([
             'status' => true,
@@ -872,7 +872,7 @@ class AdminController extends Controller
                         ]);
                     }
                     // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
+                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
                         "testimonial_id" => $feedback->testimonial->id,
@@ -1042,7 +1042,7 @@ class AdminController extends Controller
                         ]);
                     }
                     // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
+                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
                         "title" => $feedback->testimonial->name,
@@ -1131,7 +1131,7 @@ class AdminController extends Controller
                 $feedbacks['sender'] = $feedback->sender;
             }
             // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-            $feedbacks['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
+            $feedbacks['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
             $feedbacks['feedbacks'][] = array(
                 "title" => $feedback->testimonial->name,
@@ -1205,7 +1205,7 @@ class AdminController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
 
-            $teacher->average_rating = Str::limit($average_rating,3,'');
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
         }
 
         return response()->json([
@@ -1582,7 +1582,7 @@ class AdminController extends Controller
 
         if ($request->has('search')) {
 
-            $pending_teachers = User::with('country','teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)
                 ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
@@ -1594,7 +1594,7 @@ class AdminController extends Controller
                 })->orderBy('id', 'desc')
                 ->get();
 
-            $rejected_teachers = User::with('country','teacher_interview_request','teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
+            $rejected_teachers = User::with('country', 'teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')
                 ->where(function ($query) use ($request) {
@@ -1608,11 +1608,11 @@ class AdminController extends Controller
                 ->get();
         } else {
 
-            $pending_teachers = User::with('country','teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)->orderBy('id', 'desc')
                 ->get();
 
-            $rejected_teachers = User::with( 'country','teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
+            $rejected_teachers = User::with('country', 'teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')->orderBy('id', 'desc')
                 ->get();
@@ -2049,8 +2049,69 @@ class AdminController extends Controller
     public function program_subjects(Request $request, $program_id)
     {
 
-        $subjects = Subject::with('program', 'country', 'field')->where('program_id', $program_id)->get();
         $field_of_studies = FieldOfStudy::with('program', 'country')->where('program_id', $program_id)->get();
+
+        if ($request->has('price_start')) {
+            if ($request->has('field_id')) {
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->where('field_id', $request->field_id)
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->where('field_id', $request->field_id)
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                }
+            } else {
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                }
+            }
+        } else {
+            if ($request->has('field_id')) {
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->where('field_id', $request->field_id)
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->where('field_id', $request->field_id)
+                        ->paginate($request->per_page ?? 10);
+                }
+            } else {
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('program_id', $program_id)
+                        ->paginate($request->per_page ?? 10);
+                }
+            }
+        }
+
+
+
+        /// IF program is national
 
         if ($program_id == 3) {
             $rules = [
@@ -2071,7 +2132,75 @@ class AdminController extends Controller
             }
 
             $country_id = $request->country_id;
-            $subjects = Subject::with('program', 'country', 'field')->where('program_id', $program_id)->where('country_id', $country_id)->get();
+
+            if ($request->has('price_start')) {
+                if ($request->has('field_id')) {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('field_id', $request->field_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('field_id', $request->field_id)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+                    }
+                } else {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+                    }
+                }
+            } else {
+                if ($request->has('field_id')) {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('field_id', $request->field_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('field_id', $request->field_id)
+                            ->paginate($request->per_page ?? 10);
+                    }
+                } else {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->paginate($request->per_page ?? 10);
+                    }
+                }
+            }
+
+
+
             $field_of_studies = FieldOfStudy::with('program', 'country')->where('program_id', $program_id)->where('country_id', $country_id)->get();
         }
 
@@ -2083,8 +2212,31 @@ class AdminController extends Controller
         ]);
     }
 
-    public function all_subjects(){
-        $subjects = Subject::with('program', 'country', 'field')->get();
+    public function all_subjects(Request $request)
+    {
+        if ($request->has('price_start')) {
+            if ($request->has('search')) {
+                $subjects = Subject::with('program', 'country', 'field')
+                    ->where('name', 'LIKE', "%$request->search%")
+                    ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                    ->paginate($request->per_page ?? 10);
+            } else {
+                $subjects = Subject::with('program', 'country', 'field')
+                    ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                    ->paginate($request->per_page ?? 10);
+            }
+        } else {
+            if ($request->has('search')) {
+                $subjects = Subject::with('program', 'country', 'field')
+                    ->where('name', 'LIKE', "%$request->search%")
+                    ->paginate($request->per_page ?? 10);
+            } else {
+                $subjects = Subject::with('program', 'country', 'field')
+                    ->paginate($request->per_page ?? 10);
+            }
+        }
+
+
         $field_of_studies = FieldOfStudy::with('program', 'country')->get();
 
         return response()->json([
@@ -2382,7 +2534,7 @@ class AdminController extends Controller
                     ]);
                 }
                 // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                $feedbacks[$flag]['average_rating'] = Str::limit($average_rating,3,''); //feedback average rating
+                $feedbacks[$flag]['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
                 $feedbacks[$flag]['feedbacks'][] = array(
 
@@ -2644,7 +2796,7 @@ class AdminController extends Controller
             if ($total_reviews > 0) {
                 $average_rating = $rating_sum / $total_reviews;
             }
-            $student->average_rating =  Str::limit($average_rating,3,'');
+            $student->average_rating =  Str::limit($average_rating, 3, '');
             //finding student courses
             $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
             if (count($student_courses) == 0) {
@@ -2701,7 +2853,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  Str::limit($average_rating,3,'');
+                $student->average_rating =  Str::limit($average_rating, 3, '');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2756,7 +2908,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  Str::limit($average_rating,3,'');
+                $student->average_rating =  Str::limit($average_rating, 3, '');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2808,7 +2960,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  Str::limit($average_rating,3,'');
+                $student->average_rating =  Str::limit($average_rating, 3, '');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2890,7 +3042,7 @@ class AdminController extends Controller
             'message' => 'All bookings!',
             'student' => $student,
             'total_bookings' => count($bookings),
-            'average_rating' => Str::limit($average_rating,3,''),
+            'average_rating' => Str::limit($average_rating, 3, ''),
             // 'attendence_count' => $attendence_count,
             // 'completed_clasess' => $completed_clasess,
             'attendence_rate' => $attendence_rate,
@@ -2948,7 +3100,7 @@ class AdminController extends Controller
             'message' => 'Student profile!',
             'total_courses' => count($bookings),
             'completed_courses' => count($completed_courses),
-            'average_rating' => Str::limit($average_rating,3,''),
+            'average_rating' => Str::limit($average_rating, 3, ''),
             'total_spendings' => $total_spendings,
             'attendence_rate' => $attendence_rate,
             'student' => $student_details,
@@ -3004,7 +3156,7 @@ class AdminController extends Controller
         if ($total_reviews > 0) {
             $average_rating = $rating_sum / $total_reviews;
         }
-        $student->average_rating = Str::limit($average_rating,3,'');
+        $student->average_rating = Str::limit($average_rating, 3, '');
 
         //Calculating Assignment completion rate
         $assignment_completion_rate = 100;
@@ -3048,7 +3200,7 @@ class AdminController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
             $teacher = $class['teacher'];
-            $teacher->average_rating = Str::limit($average_rating,3,'');
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
 
             //Checking class Attendence
             $attendence = Attendance::where('academic_class_id', $class->id)->first();
@@ -3422,7 +3574,7 @@ class AdminController extends Controller
             'teacher' => $teacher,
             'total_bookings' => count($courses),
             'rating_count' => count($points_array),
-            'average_rating' => Str::limit($average_rating,3,''),
+            'average_rating' => Str::limit($average_rating, 3, ''),
             'attendence_rate' => round($attendence_rate),
             'bookings' => $courses,
         ]);
@@ -4043,7 +4195,7 @@ class AdminController extends Controller
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 
-            $teacher->average_rating = Str::limit($average_rating,3,'');
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
             $teacher->reviews_count  = $reviews_count;
             array_push($featured_teachers, $teacher);
             $teacher->programs = $programs;
@@ -4053,7 +4205,7 @@ class AdminController extends Controller
         $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(3);
         $teachers_list = [];
         foreach ($featured_teachers as $featured_teacher) {
-            $featured_teacher->teacher->last_name = Str::limit($featured_teacher->teacher->last_name,1,'').'.';
+            $featured_teacher->teacher->last_name = Str::limit($featured_teacher->teacher->last_name, 1, '') . '.';
             array_push($teachers_list, $featured_teacher);
         }
 
@@ -4101,7 +4253,7 @@ class AdminController extends Controller
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 
-            $teacher->average_rating = Str::limit($average_rating,3,'');
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
             $teacher->reviews_count  = $reviews_count;
             $teacher->teacher_students_count  = $students_count;
             array_push($featured_teachers, $teacher);
@@ -4118,7 +4270,7 @@ class AdminController extends Controller
                 ->unique();
 
             $featured_teacher->subjects = Subject::whereIn('id', $subjects)->get();
-            $featured_teacher->last_name = Str::limit($featured_teacher->last_name,1,'').'.';
+            $featured_teacher->last_name = Str::limit($featured_teacher->last_name, 1, '') . '.';
             array_push($teachers_list, $featured_teacher);
         }
 

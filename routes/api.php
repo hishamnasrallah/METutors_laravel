@@ -395,8 +395,6 @@ Route::get('teachers/teacher-detail/{$teacher_id}', 'FeedbackController@teacher_
 Route::get('teacher-profile', 'Web\UserController@teacher_public_profile');
 
 
-
-
 //**************** classes routes ****************
 Route::get('class-attendees/{class_id}', 'TeacherController@classAttendees');
 Route::get('todays-classes', 'TeacherController@todaysClasses');
@@ -547,6 +545,7 @@ Route::get('admin/approval-request', 'AdminController@approval_request');
 Route::get('admin/subject/{subject_id}/featured-teacher', 'AdminController@featured_teacher');
 Route::get('admin/featured-teachers', 'AdminController@featured_teachers_list');
 Route::get('teachers/program/{program_id}', 'GeneralController@teachers');
+Route::get('all-teachers', 'GeneralController@all_teachers');
 Route::get('admin/course/{course_id}/refund/account-detail', 'AdminController@refund_account_detail');
 Route::post('admin/course/{course_id}/refund', 'AdminController@process_refund');
 

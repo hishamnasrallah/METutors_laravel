@@ -41,7 +41,7 @@ class SubjectController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
 
         $subjects = Subject::with('program', 'country', 'field')->get();
@@ -81,7 +81,9 @@ class SubjectController extends Controller
             'program_id' => 'required',
             'field_id' => 'required',
             'name' => 'required',
+            'name_ar' => 'required',
             'description' => 'required',
+            'description_ar' => 'required',
             'price_per_hour' => 'required',
         ];
 
@@ -104,17 +106,19 @@ class SubjectController extends Controller
             ], 400);
         }
 
-        $subject=new subject();
-        $subject->program_id=$request->program_id;
-        $subject->field_id=$request->field_id;
-        if($request->program_id == 3){
+        $subject = new subject();
+        $subject->program_id = $request->program_id;
+        $subject->field_id = $request->field_id;
+        if ($request->program_id == 3) {
 
-                 $subject->country_id=$request->country_id;
-                 $subject->grade=$request->grade;
-            }
-        $subject->name=$request->name;
-        $subject->description=$request->description;
-        $subject->price_per_hour=$request->price_per_hour;
+            $subject->country_id = $request->country_id;
+            $subject->grade = $request->grade;
+        }
+        $subject->name = $request->name;
+        $subject->name_ar = $request->name_ar;
+        $subject->description = $request->description;
+        $subject->description_ar = $request->description_ar;
+        $subject->price_per_hour = $request->price_per_hour;
         $subject->save();
 
         $subject = Subject::with('program', 'country', 'field')->find($subject->id);

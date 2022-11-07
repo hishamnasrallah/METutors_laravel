@@ -38,7 +38,8 @@ class CourseCron extends Command
      */
     public function handle()
     {
-        $courses = Course::with('classes')->whereHas('classes', function ($q) {
+        $courses = Course::with('classes')
+        ->whereHas('classes', function ($q) {
             $q->where('status', 'completed');
         })
             ->where('status', '!=', "completed")->get();
