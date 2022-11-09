@@ -513,10 +513,24 @@ class ClassController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        if ($request->total_hours < 0.5) {
+        if ($request->total_hours < 0.5 ) {
             return response()->json([
                 'status' => false,
                 'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
+            ], 400);
+        }
+
+        if ($request->total_hours > 0.5 ) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You can not book a demo more than 30 minutes',
+            ], 400);
+        }
+
+        if ($request->total_classes > 1) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You can not add more than one class in demo.',
             ], 400);
         }
 
@@ -589,7 +603,7 @@ class ClassController extends Controller
         }
 
 
-        return $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
+        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
 
         // Adding Course Code
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
@@ -636,13 +650,20 @@ class ClassController extends Controller
         }
 
         $user = User::find($token_user->id);
-        $user->is_demo = '1';
+        $user->is_demo = 1;
         $user->update();
+
+
+        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id', $token_user->id)->first();
+
+        $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
 
         return response()->json([
             'status' => true,
             'message' => 'Demo course created successfully',
-            'course' => $course
+            'course' => $course,
+            'token' => $token
         ]);
     }
 

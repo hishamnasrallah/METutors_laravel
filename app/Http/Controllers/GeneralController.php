@@ -302,18 +302,21 @@ class GeneralController extends Controller
                 ->where('country_id', $request->country_id)
                 ->get();
             //if request has field_id
-            if ($request->has('field_id')) {
+            if ($request->has('field_ids')) {
+                $field_ids = json_decode($request->field_ids);
                 //if request has search
                 if ($request->has('search')) {
                     $teachers = User::where('role_name', 'teacher')
-                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
-                            $q->where('program_id', $program_id)->where('country_id', $request->country_id)->where('field_id', $request->field_id);
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $field_ids) {
+                            $q->where('program_id', $program_id)
+                            ->where('country_id', $request->country_id)
+                            ->whereIn('field_id', $field_ids);;
                         })
                         ->with('teacherQualifications')
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->where(function ($q) use ($request) {
                             $q->where('first_name', 'LIKE', "%$request->search%")
                                 ->orWhere('last_name', 'LIKE', "%$request->search%");
@@ -329,7 +332,7 @@ class GeneralController extends Controller
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->get();
                 }
             } else {
@@ -343,7 +346,7 @@ class GeneralController extends Controller
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->where(function ($q) use ($request) {
                             $q->where('first_name', 'LIKE', "%$request->search%")
                                 ->orWhere('last_name', 'LIKE', "%$request->search%");
@@ -359,27 +362,31 @@ class GeneralController extends Controller
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->get();
                 }
             }
         } else {
-            $field_of_studies = FieldOfStudy::select('id', 'name', 'program_id')->where('program_id', $program_id)->get();
+            $field_of_studies = FieldOfStudy::select('id', 'name', 'program_id')
+            ->where('program_id', $program_id)
+            ->get();
 
-            //if request has field_id
-            if ($request->has('field_id')) {
+            //if request has field_ids
+            if ($request->has('field_ids')) {
+                $field_ids = json_decode($request->field_ids);
                 //if request has search
                 if ($request->has('search')) {
                     $teachers = User::where('role_name', 'teacher')
 
-                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
-                            $q->where('program_id', $program_id)->where('field_id', $request->field_id);
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $field_ids) {
+                            $q->where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids);
                         })
                         ->with('teacherQualifications')
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->where(function ($q) use ($request) {
                             $q->where('first_name', 'LIKE', "%$request->search%")
                                 ->orWhere('last_name', 'LIKE', "%$request->search%");
@@ -395,7 +402,7 @@ class GeneralController extends Controller
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->get();
                 }
             } else {
@@ -410,7 +417,7 @@ class GeneralController extends Controller
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->where(function ($q) use ($request) {
                             $q->where('first_name', 'LIKE', "%$request->search%")
                                 ->orWhere('last_name', 'LIKE', "%$request->search%");
@@ -426,7 +433,7 @@ class GeneralController extends Controller
                         ->with('country')
                         ->where('admin_approval', 'approved')
                         ->where('status', 'active')
-                        ->select('id', 'first_name', 'last_name', 'bio', 'country')
+                        ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
                         ->get();
                 }
             }
@@ -445,15 +452,21 @@ class GeneralController extends Controller
             $programs = TeacherSubject::with('country', 'program')->where('user_id',  $teacher->id)->get();
 
             $teacher_programs = [];
+            $all_programs = [];
             foreach ($programs as $program) {
-                $Program = new stdClass();
-                $Program->program_id = $program->id;
-                $Program->program_name = $program['program']->name;
-                $Program->program_code = $program['program']->code;
-                $Program->country = $program['country'] != '' ? $program['country']->name : null;
-                $Program->iso_code = $program['country'] != '' ? $program['country']->iso3 : null;
-
-                $teacher_programs[] = $Program;
+            
+                if(!(in_array($program->program_id,$all_programs))){
+                    $all_programs[] = $program->program_id ;
+                    $Program = new stdClass();
+                    $Program->program_id = $program->program_id;
+                    $Program->program_name = $program['program']->name;
+                    $Program->program_code = $program['program']->code;
+                    $Program->country = $program['country'] != '' ? $program['country']->name : null;
+                    $Program->iso_code = $program['country'] != '' ? $program['country']->iso3 : null;
+    
+                    $teacher_programs[] = $Program;
+                   
+                }
             }
             $subjects = TeacherSubject::where('user_id',  $teacher->id)->pluck('subject_id')->unique();
 
@@ -463,6 +476,7 @@ class GeneralController extends Controller
             $Teacher->country = Country::where('id', $teacher->country)->select('name')->first();
             $Teacher->bio = $teacher->bio;
             $Teacher->university = $teacher['teacherQualifications']->name_of_university;
+            $Teacher->avatar =  $teacher->avatar;
             $Teacher->classes_taught = $classes;
 
 
@@ -494,42 +508,89 @@ class GeneralController extends Controller
 
     public function all_teachers(Request $request)
     {
-        if ($request->has('search')) {
-            $teachers = User::where('role_name', 'teacher')
-                ->with('teacher_subjects', 'teacherQualifications')
-                ->with('country')
-                ->where('admin_approval', 'approved')
-                ->where('status', 'active')
-                ->select('id', 'first_name', 'last_name', 'bio', 'country')
-                ->where(function ($q) use ($request) {
-                    $q->where('first_name', 'LIKE', "%$request->search%")
-                        ->orWhere('last_name', 'LIKE', "%$request->search%");
-                })
-                ->get();
-        } else {
-            $teachers = User::where('role_name', 'teacher')
-                ->with('teacher_subjects', 'teacherQualifications')
-                ->with('country')
-                ->where('admin_approval', 'approved')
-                ->where('status', 'active')
-                ->select('id', 'first_name', 'last_name', 'bio', 'country')
-                ->get();
+        $field_of_studies = FieldOfStudy::select('id', 'name', 'program_id')
+        ->get();
+
+        
+
+        if($request->has('field_ids')){
+            $field_ids = json_decode($request->field_ids);
+            if ($request->has('search')) {
+                $teachers = User::where('role_name', 'teacher')
+                    ->with('teacher_subjects', 'teacherQualifications')
+                    ->with('country')
+                    ->where('admin_approval', 'approved')
+                    ->where('status', 'active')
+                    ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
+                    ->where(function ($q) use ($request) {
+                        $q->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%");
+                    })
+                    ->whereHas('teacher_subjects', function ($q) use ($field_ids) {
+                        $q->whereIn('field_id', $field_ids);
+                    })                  
+                    ->get();
+            } else {
+                $teachers = User::where('role_name', 'teacher')
+                    ->with('teacher_subjects', 'teacherQualifications')
+                    ->with('country')
+                    ->where('admin_approval', 'approved')
+                    ->where('status', 'active')
+                    ->whereHas('teacher_subjects', function ($q) use ($field_ids) {
+                        $q->whereIn('field_id', $field_ids);
+                    })   
+                    ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
+                    ->get();
+            }
+
+        }else{
+            if ($request->has('search')) {
+                $teachers = User::where('role_name', 'teacher')
+                    ->with('teacher_subjects', 'teacherQualifications')
+                    ->with('country')
+                    ->where('admin_approval', 'approved')
+                    ->where('status', 'active')
+                    ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
+                    ->where(function ($q) use ($request) {
+                        $q->where('first_name', 'LIKE', "%$request->search%")
+                            ->orWhere('last_name', 'LIKE', "%$request->search%");
+                    })
+                    ->get();
+            } else {
+                $teachers = User::where('role_name', 'teacher')
+                    ->with('teacher_subjects', 'teacherQualifications')
+                    ->with('country')
+                    ->where('admin_approval', 'approved')
+                    ->where('status', 'active')
+                    ->select('id', 'first_name', 'last_name', 'bio', 'country','avatar')
+                    ->get();
+            }
         }
+        
 
         foreach ($teachers as $teacher) {
             $classes = AcademicClass::where('teacher_id',  $teacher->id)->where('status', 'completed')->count();
             $programs = TeacherSubject::with('country', 'program')->where('user_id',  $teacher->id)->get();
 
             $teacher_programs = [];
+            $all_programs = [];
             foreach ($programs as $program) {
-                $Program = new stdClass();
-                $Program->program_id = $program->id;
-                $Program->program_name = $program['program']->name;
-                $Program->program_code = $program['program']->code;
-                $Program->country = $program['country'] != '' ? $program['country']->name : null;
-                $Program->iso_code = $program['country'] != '' ? $program['country']->iso3 : null;
 
-                $teacher_programs[] = $Program;
+                if(!(in_array($program->program_id,$all_programs))){
+                    $all_programs[] = $program->program_id ;
+                    $Program = new stdClass();
+                    $Program->program_id = $program->program_id;
+                    $Program->program_name = $program['program']->name;
+                    $Program->program_code = $program['program']->code;
+                    $Program->country = $program['country'] != '' ? $program['country']->name : null;
+                    $Program->iso_code = $program['country'] != '' ? $program['country']->iso3 : null;
+    
+                    $teacher_programs[] = $Program;
+                   
+                }
+
+                
+                
             }
             $subjects = TeacherSubject::where('user_id',  $teacher->id)->pluck('subject_id')->unique();
 
@@ -538,6 +599,7 @@ class GeneralController extends Controller
             $Teacher->name = $teacher->first_name . ' ' . Str::limit($teacher->last_name, 1, '') . '.';
             $Teacher->country = Country::where('id', $teacher->country)->select('name')->first();
             $Teacher->bio = $teacher->bio;
+            $Teacher->avatar = $teacher->avatar;
             $Teacher->university = $teacher['teacherQualifications']->name_of_university;
             $Teacher->classes_taught = $classes;
 
@@ -564,6 +626,7 @@ class GeneralController extends Controller
         return response()->json([
             'success' => true,
             'teachers' => $this->paginate($all_teachers, $request->per_page ?? 10),
+            'field_of_studies' => $field_of_studies,
         ]);
     }
 

@@ -144,6 +144,14 @@ class PricingController extends Controller
 
         $today_date = Carbon::now()->toISOString();
         $coupon = Coupon::where('coupon_id', $request->promo_code)->first();
+        
+        if($coupon == ''){
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon not found',
+            ], 404);
+        }
+
         if ($today_date > $coupon->expiry_date) {
             return response()->json([
                 'status' => false,
