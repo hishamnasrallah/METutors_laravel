@@ -420,6 +420,8 @@ class ClassController extends Controller
         $brand = 'VISA'; // MASTER OR MADA
 
         $id = Str::random('64');
+         $user_country=Country::find($user['billing_info']->country);
+        $user_country=$user_country->name;
 
         $request['testMode']='EXTERNAL';
         $request['merchantTransactionId']=$id ;
@@ -427,7 +429,7 @@ class ClassController extends Controller
         $request['billing.street1']=$user['billing_info']->street;
         $request['billing.city']=$user['billing_info']->city;
         $request['billing.state']=$user['billing_info']->state;
-        $request['billing.country']=$user['billing_info']->country;
+        $request['billing.country']=$user_country;
         $request['billing.postcode']=$user['billing_info']->postcode;
         $request['customer.givenName']=$user->first_name;
         $request['customer.surname']=$user->last_name;
