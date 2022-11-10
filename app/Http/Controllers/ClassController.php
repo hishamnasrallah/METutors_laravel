@@ -420,6 +420,18 @@ class ClassController extends Controller
         $brand = 'VISA'; // MASTER OR MADA
 
         $id = Str::random('64');
+
+        $request['testMode']='EXTERNAL';
+        $request['merchantTransactionId']=$id ;
+        $request['customer.email']=$user->email;
+        $request['billing.street1']=$user['billing_info']->street;
+        $request['billing.city']=$user['billing_info']->city;
+        $request['billing.state']=$user['billing_info']->state;
+        $request['billing.country']=$user['billing_info']->country;
+        $request['billing.postcode']=$user['billing_info']->postcode;
+        $request['customer.givenName']=$user->first_name;
+        $request['customer.surname']=$user->last_name;
+        // return $request;
         $payment = LaravelHyperpay::addMerchantTransactionId($id)
             ->addBilling(new HyperPayBilling())
             ->checkout($trackable_data, $user, $amount, $brand, $request);
@@ -441,6 +453,9 @@ class ClassController extends Controller
     //********* Create Course *********
     public function demo_course(Request $request)
     {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         $rules = [
             'field_of_study' =>  'required',
 
@@ -510,13 +525,19 @@ class ClassController extends Controller
             $course->book_info = $request->book_info;
         }
 
-        $token_1 = JWTAuth::getToken();
-        $token_user = JWTAuth::toUser($token_1);
+      
 
         if ($request->total_hours < 0.5 ) {
             return response()->json([
                 'status' => false,
                 'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
+            ], 400);
+        }
+
+        if ($token_user->is_demo == 1 ) {
+            return response()->json([
+                'status' => false,
+                'message' => trans('Your demo class has been ended'),
             ], 400);
         }
 
@@ -2477,5 +2498,38 @@ class ClassController extends Controller
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
         return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+    }
+
+    public function test_hyperpay(Request $request){
+
+        $id = Str::random('64');
+         $user = User::with('billing_info')
+            ->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')
+            ->findOrFail('1358');
+
+        $request['testMode']='EXTERNAL';
+        $request['merchantTransactionId']=$id ;
+        $request['customer.email']=$user->email;
+        $request['billing.street1']=$user['billing_info']->street;
+        $request['billing.city']=$user['billing_info']->city;
+        $request['billing.state']=$user['billing_info']->state;
+        $request['billing.country']=$user['billing_info']->country;
+        $request['billing.postcode']=$user['billing_info']->postcode;
+        $request['customer.givenName']=$user->first_name;
+        $request['customer.surname']=$user->last_name;
+        return $request;
+        
+       
+        $trackable_data = [
+            'course_id' => 38,
+            'course_code' => 'AP-math-1002'
+        ];
+
+        $amount = $request->total_price;
+        $brand = 'VISA'; // MASTER OR MADA
+        return $payment = LaravelHyperpay::addMerchantTransactionId($id)
+            ->addBilling(new HyperPayBilling())
+            ->checkout($trackable_data, $user, $amount, $brand, $request);
+        
     }
 }

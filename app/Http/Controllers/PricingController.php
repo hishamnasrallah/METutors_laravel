@@ -143,13 +143,13 @@ class PricingController extends Controller
         $total_amount = $total_hours * $subject->price_per_hour;
 
         $today_date = Carbon::now()->toISOString();
-        $coupon = Coupon::where('coupon_id', $request->promo_code)->first();
+        $coupon = Coupon::where('name', $request->promo_code)->first();
         
         if($coupon == ''){
             return response()->json([
                 'status' => false,
-                'message' => 'Coupon not found',
-            ], 404);
+                'message' => 'Invalid coupon',
+            ], 400);
         }
 
         if ($today_date > $coupon->expiry_date) {

@@ -123,6 +123,7 @@ Route::group(['middleware' => ['cors', 'share', 'LangMiddleware']], function () 
     Route::get('view-class/{id}', 'ClassController@view_class');
     Route::Post('create-course', 'ClassController@create_course');
     Route::Post('create-class', 'ClassController@create_course');
+    Route::Post('test_hyperpay', 'ClassController@test_hyperpay');
     Route::Post('demo-class', 'ClassController@demo_course');
     Route::Post('add-classes', 'ClassController@add_classes');
 

@@ -61,7 +61,7 @@ class AssignmentController extends Controller
             $users = [];
             $assignees = $assignment->assignees;
             foreach ($assignees as $assignee) {
-                $assignment->status =  $assignee->status;
+                // $assignment->status =  $assignee->status;
                 $user = $assignees->whereIn('user_id', $users)->first();
                 if ($user == null) {
                     $assignment->assignees = $user;
@@ -102,7 +102,7 @@ class AssignmentController extends Controller
                 foreach ($course->assignments as $assignment) {
                     $users = [];
                     $assignees = $assignment->assignees;
-                    $assignment->status =  $assignees[0]->status;
+                    // $assignment->status =  $assignees[0]->status;
                 }
             }
 

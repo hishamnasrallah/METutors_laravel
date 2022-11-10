@@ -20,7 +20,7 @@ class CouponController extends Controller
         $token_user = JWTAuth::toUser($token_1);
 
         $rules = [
-            'name' =>  'required|string',
+            'name' =>  'required|string|unique:coupons',
             'expiry_date' =>  'required',
             'description' =>  'required|string',
             'discount' =>  'required|integer',
@@ -47,7 +47,7 @@ class CouponController extends Controller
         $coupon_id = 'COP' . random_int(1000,9999);
 
         $coupon->coupon_id = $coupon_id;
-        $coupon->name = $request->name;
+        $coupon->name = str_replace(' ','',$request->name);
         $coupon->expiry_date = $request->expiry_date;
         $coupon->description = $request->description;
         $coupon->discount = $request->discount;
@@ -63,14 +63,15 @@ class CouponController extends Controller
 
     public function coupons(Request $request)
     {
-        $coupons = Coupon::paginate($request->per_page ?? 10);
+        $coupons = Coupon::orderBy('id', 'desc')->paginate($request->per_page ?? 10);
 
         if ($request->has('search')) {
             $coupons = Coupon::where('name', 'LIKE', "%$request->search%")
                 ->orWhere('description', 'LIKE', "%$request->search%")
                 ->orWhereDate('expiry_date', $request->search)
-                ->orWhere('coupon_id', $request->search)
+                ->orWhere('coupon_id','LIKE', "%$request->search%")
                 ->orWhere('discount', $request->search)
+                ->orderBy('id', 'desc')
                 ->paginate($request->per_page ?? 10);
         }
 
