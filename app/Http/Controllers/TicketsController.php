@@ -233,7 +233,7 @@ class TicketsController extends Controller
         $admin_message = "New Ticket has been opened!";
         $admin = User::where('role_name', 'admin')->first();
 
-        $tickets=Ticket::with('category', 'priority', 'user')->find($ticket->id);
+        $tickets = Ticket::with('category', 'priority', 'user')->find($ticket->id);
 
 
         // event(new OpenTicketEvent($user->id, $user, $teacher_message, $ticket));
@@ -276,7 +276,10 @@ class TicketsController extends Controller
 
         $user = $token_user;
         // return $user->id;
-        $tickets = Ticket::with('category', 'priority', 'user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with('category', 'priority', 'user')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         foreach ($tickets as $ticket) {
             $latest_comment = $ticket->ticket_comments->first();

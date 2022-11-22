@@ -10,23 +10,23 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class AssignmentDeadlineEvent implements ShouldBroadcast
+class PreClassHourEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    
-    public $course, $user, $custom_message, $assignment,$reminder;
+
+    public $userid, $user, $custom_message, $class;
+
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($course, $user, $custom_message, $assignment,$reminder)
+    public function __construct($userid, $user, $custom_message, $class)
     {
-        $this->course = $course;
-        $this->user=$user;
-        $this->custom_message=$custom_message;
-        $this->assignment= $assignment;
-        $this->reminder= $reminder;
+        $this->userid = $userid;
+        $this->user = $user;
+        $this->custom_message = $custom_message;
+        $this->class = $class;
     }
 
     /**
@@ -41,6 +41,6 @@ class AssignmentDeadlineEvent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'assignment-deadline';
+        return 'pre_class_hour';
     }
 }

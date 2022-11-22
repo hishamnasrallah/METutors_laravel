@@ -11,12 +11,11 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class ClassStartedJob implements ShouldQueue
+class TeacherAbsentClassJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $userid, $user, $custom_message, $class;
-
     /**
      * Create a new job instance.
      *
@@ -45,14 +44,27 @@ class ClassStartedJob implements ShouldQueue
 
         $data = array('email' =>  $user_email, 'user' =>  $this->user, 'class' => $this->class);
 
-        Mail::send('email.class_started', $data, function ($message) use ($to_email) {
-        $message->to($to_email)->subject('Today,s class just started');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.teacher_absent_class', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Teacher absent from class');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        } elseif ($this->user->role_name == 'teacher') {
+            Mail::send('email.teacher_absent_class', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('You missed a class today');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        } else {
+            Mail::send('email.teacher_absent_class', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Request a make-up class');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
         // //********* Sending Cancalation Email ends **********//
 
         $notification = new Notification();
-        $notification->type = "App\Events\ClassStartedEvent";
+        $notification->type = "App\Events\TeacherAbsentClassEvent";
         $notification->notifiable_type = "App\Models\AcademicClass";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;

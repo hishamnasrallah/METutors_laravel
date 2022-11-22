@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 /*
 |--------------------------------------------------------------------------
-| API RoutesF
+| API Routes
 |--------------------------------------------------------------------------
 |
 | Here is where you can register API routes for your application. These
@@ -15,9 +15,10 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
+Route::get('testing_verify', 'GeneralController@testing_verify');
 Route::group(['middleware' => ['cors', 'share', 'jwt.verify']], function () {
 
-    Route::get('testing_verify', 'GeneralController@testing_verify');
+   
 });
 
 Route::group(['middleware' => ['cors', 'share', 'LangMiddleware']], function () {
@@ -637,6 +638,15 @@ Route::get('payment/details', 'PaymentController@payment_details');
 Route::Post('payment/{payment_id}/refund', 'PaymentController@refund');
 Route::Post('payment/refund2', 'PaymentController@refund2');
 // Route::get('test', 'TestController@test');
+
+##### Payment records
+Route::get('teacher/payment-records', 'PaymentController@payment_records');
+Route::get('teacher/pending-payments/details', 'PaymentController@pending_payments');
+Route::post('teacher/payments/add-dispute', 'PaymentController@add_dispute');
+Route::get('teacher/payments/dispute-reason', 'PaymentController@dispute_reason');
+Route::get('teacher/payments/dispute-details', 'PaymentController@dispute_details');
+Route::post('teacher/payments/dispute-comment', 'PaymentController@dispute_comment');
+Route::post('teacher/payment-request', 'PaymentController@payment_request');
 
 //**************** classes routes ****************
 Route::resource('highlighted-topic', 'HighlightedTopicController');

@@ -980,7 +980,7 @@ class ClassController extends Controller
         $currentdate = Carbon::parse($currentISO)->format('Y-m-d');
         $db_date = Carbon::parse($class->start_date)->format('Y-m-d');
 
-        if ($db_date >= $currentdate) {
+        if ($currentdate >= $db_date) {
             // $dayOrNight = substr($class->start_time, 6, 9);
             // $trimed_time = Str::limit($class->start_time, 5, '');
             // $final_time = $trimed_time;
@@ -1020,6 +1020,7 @@ class ClassController extends Controller
                 ->whereTime('end_time', '>=', $start_time)
                 ->whereTime('end_time', '<=', $end_time)
                 ->get();
+
 
             if (count($classes) > 0) {
                 return response()->json([
@@ -1066,7 +1067,9 @@ class ClassController extends Controller
                 } else {
                     $class->class_id = $responseBody['class_id'];
                 }
-                $academic_class = AcademicClass::find($request->academic_class_id);
+
+                $academic_class = AcademicClass::with('student', 'teacher')->find($request->academic_class_id);
+
                 $reschedule_class = new RescheduleClass();
                 $reschedule_class->rescheduled_by = $token_user->id;
                 $reschedule_class->academic_class_id =  $academic_class->id;
@@ -1079,15 +1082,15 @@ class ClassController extends Controller
                 $reschedule_class->save();
                 $class->update();
 
-                $student = User::findOrFail($token_user->id);
-                $teacher = User::findOrFail($academic_class->teacher_id);
+                $teacher = User::findOrFail($token_user->id);
+                $student = User::findOrFail($academic_class->student_id);
                 $teacher_message = "Class rescheduled successfully!";
                 $student_message = "Teacher rescheduled a class!";
 
-                // event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
-                // event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
-                // dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message));
-                // dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message));
+                event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
+                event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
+                dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message,'teacher'));
+                dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message,'teacher'));
 
 
                 return response()->json([

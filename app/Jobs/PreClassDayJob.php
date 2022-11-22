@@ -11,12 +11,10 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class ClassStartedJob implements ShouldQueue
+class PreClassDayJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
     public $userid, $user, $custom_message, $class;
-
     /**
      * Create a new job instance.
      *
@@ -38,21 +36,22 @@ class ClassStartedJob implements ShouldQueue
      */
     public function handle()
     {
-        //*********** Sending Cancalation Email to Student  ************\\
+        //*********** Sending Email to Student  ************\\
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'user' =>  $this->user, 'class' => $this->class);
+        $data = array('user' => $this->user, 'class' => $this->class);
 
-        Mail::send('email.class_started', $data, function ($message) use ($to_email) {
-        $message->to($to_email)->subject('Today,s class just started');
+        Mail::send('email.pre_class_day', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('Reminder - you have a class tomorrow');
            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
-        // //********* Sending Cancalation Email ends **********//
+        // //******** Email ends **********//
 
+        //Notification
         $notification = new Notification();
-        $notification->type = "App\Events\ClassStartedEvent";
+        $notification->type = "App\Events\PreClassEvent";
         $notification->notifiable_type = "App\Models\AcademicClass";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;

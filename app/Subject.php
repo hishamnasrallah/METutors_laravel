@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Subject extends Model
 {
 
-    protected $fillable = ['program_id', 'country_id', 'grade', 'field_id', 'name', 'description', 'price_per_hour', 'status'];
+    protected $fillable = ['program_id', 'country_id', 'grade', 'field_id', 'name','name_ar','title','title_ar','description','description_ar', 'price_per_hour', 'status'];
 
     public function teacherSubject()
     {

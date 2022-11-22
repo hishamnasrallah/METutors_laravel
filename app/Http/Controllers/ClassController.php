@@ -40,9 +40,11 @@ use App\Jobs\ClassStartedJob;
 use App\Jobs\CourseBookingJob;
 use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
+use App\Models\Assignment;
 use App\Models\BillingDetail;
 use App\Models\HighlightedTopic;
 use App\Models\LastActivity;
+use App\Models\Order;
 use App\Models\RejectedCourse;
 use App\TeacherAvailability;
 use App\TeacherProgram;
@@ -164,8 +166,10 @@ class ClassController extends Controller
 
         if ($request->has('teacher_id')) {
             $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
-            $availability_start = Carbon::parse($teacher_specification->availability_start_date);
-            $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+            if ($teacher_specification) {
+                $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+                $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+            }
         }
 
 
@@ -319,7 +323,7 @@ class ClassController extends Controller
         }
 
 
-        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program')->find($course->id);
+        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program', 'order')->find($course->id);
 
         // Adding Course Code
         $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
@@ -366,6 +370,8 @@ class ClassController extends Controller
         }
 
         $user = User::find($token_user->id);
+        $admin = User::where('role_name', 'admin')->first();
+
         if ($request->has('teacher_id')) {
             $teacher = User::find($request->teacher_id);
             // Event notification
@@ -380,7 +386,7 @@ class ClassController extends Controller
             $noTeacher = new NoTeacherCourse();
             $noTeacher->course_id = $course->id;
             $noTeacher->save();
-            $admin = User::where('role_name', 'admin')->first();
+
 
             // Event notification
             $admin_message = 'New Course Created! Kindly assign teacher!';
@@ -420,27 +426,76 @@ class ClassController extends Controller
         $brand = 'VISA'; // MASTER OR MADA
 
         $id = Str::random('64');
-         $user_country=Country::find($user['billing_info']->country);
-        $user_country=$user_country->name;
+        $user_country = Country::find($user['billing_info']->country);
+        $user_country = $user_country->iso2;
 
-        $request['testMode']='EXTERNAL';
-        $request['merchantTransactionId']=$id ;
-        $request['customer.email']=$user->email;
-        $request['billing.street1']=$user['billing_info']->street;
-        $request['billing.city']=$user['billing_info']->city;
-        $request['billing.state']=$user['billing_info']->state;
-        $request['billing.country']=$user_country;
-        $request['billing.postcode']=$user['billing_info']->postcode;
-        $request['customer.givenName']=$user->first_name;
-        $request['customer.surname']=$user->last_name;
-        // return $request;
-        $payment = LaravelHyperpay::addMerchantTransactionId($id)
-            ->addBilling(new HyperPayBilling())
-            ->checkout($trackable_data, $user, $amount, $brand, $request);
+
+        $myRequest = new Request();
+        $myRequest->setMethod('get'); //default METHOD
+
+        $myRequest['testMode'] = 'EXTERNAL';
+        $myRequest['merchantTransactionId'] = $id;
+        $myRequest['customer.email'] = $user->email;
+        $myRequest['billing.street1'] = $user['billing_info']->street;
+        $myRequest['billing.city'] = $user['billing_info']->city;
+        $myRequest['billing.state'] = $user['billing_info']->state;
+        $myRequest['billing.country'] = $user_country;
+        $myRequest['billing.postcode'] = $user['billing_info']->postcode;
+        $myRequest['customer.givenName'] = $user->first_name;
+        $myRequest['customer.surname'] = $user->last_name;
+        // return $myRequest;
+        // $payment = LaravelHyperpay::addMerchantTransactionId($id)
+        //     ->addBilling(new HyperPayBilling())
+        //     ->checkout($trackable_data, $user, $amount, $brand, $myRequest);
+
+
+
+        //**************** HYPERPAY CURL implementation starts ***************** 
+
+        $url = "https://eu-test.oppwa.com/v1/checkouts";
+        $data = "entityId=8ac7a4ca80b2d4470180b3d5cdf604c6" .
+            "&amount=".$amount .
+            "&currency=USD" .
+            "&paymentType=DB" .
+            // "&registrations[0].id=8ac7a4a2848b0cf20184991ba9d359c6" .
+            // "&registrations[1].id=8ac7a4a1848b40370184991baa9520e4" .
+            // "&standingInstruction.source=CIT" .
+            // "&standingInstruction.mode=REPEATED" .
+            "&merchantTransactionId=" . $id .
+            "&customer.email=" . $user->email .
+            "&billing.street1=" . $user['billing_info']->street .
+            "&billing.city=" . $user['billing_info']->city .
+            "&billing.state=" . $user['billing_info']->state .
+            "&billing.country=" . $user_country .
+            "&billing.postcode=" . $user['billing_info']->postcode .
+            "&customer.givenName=" . $user->first_name .
+            "&customer.surname=" . $user->last_name ;
+            // "&standingInstruction.type=UNSCHEDULED";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $payment = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return response()->json([
+                'status' => false,
+                'message' => curl_error($ch),
+            ], 400);
+        }
+        curl_close($ch);
+
+        //**************** HYPERPAY CURL implementation ends ***************** 
 
         $payment = json_decode(json_encode($payment));
-        $script_url = $payment->original->script_url;
-        $shopperResultUrl = $payment->original->shopperResultUrl;
+        $payment =  json_decode($payment);
+        $script_url = 'https://test.oppwa.com/v1/paymentWidgets.js?checkoutId=' . $payment->id;
+        // $shopperResultUrl = $payment->original->shopperResultUrl;
         $redirect_url = $request->redirect_url;
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
@@ -527,23 +582,23 @@ class ClassController extends Controller
             $course->book_info = $request->book_info;
         }
 
-      
 
-        if ($request->total_hours < 0.5 ) {
+
+        if ($request->total_hours < 0.5) {
             return response()->json([
                 'status' => false,
                 'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
             ], 400);
         }
 
-        if ($token_user->is_demo == 1 ) {
+        if ($token_user->is_demo == 1) {
             return response()->json([
                 'status' => false,
                 'message' => trans('Your demo class has been ended'),
             ], 400);
         }
 
-        if ($request->total_hours > 0.5 ) {
+        if ($request->total_hours > 0.5) {
             return response()->json([
                 'status' => false,
                 'message' => 'You can not book a demo more than 30 minutes',
@@ -615,9 +670,9 @@ class ClassController extends Controller
         $subject = Subject::find($request->subject_id);
 
         $course_count = Course::where('subject_id', $subject->id)
-        ->where('program_id', $request->program_id)
-        ->where('course_code', '!=', null)  
-        ->count();
+            ->where('program_id', $request->program_id)
+            ->where('course_code', '!=', null)
+            ->count();
 
         if ($course_count != null) {
             $course_count =  $course_count + 1;
@@ -998,10 +1053,66 @@ class ClassController extends Controller
         $brand = 'VISA'; // MASTER OR MADA
 
         $id = Str::random('64');
-        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        // $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        // $payment = json_decode(json_encode($payment));
+        // $script_url = $payment->original->script_url;
+        // $shopperResultUrl = $payment->original->shopperResultUrl;
+        // $redirect_url = $request->redirect_url;
+        // // return view('payment_form', compact('script_url', 'shopperResultUrl'));
+        // return response()->json([
+        //     'status' => true,
+        //     'message' => trans('api_messages.CHECKOUT_PREPARED_SUCCESSFULLY'),
+        //     'script_url' => $script_url,
+        //     'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
+        //     'course' => $course
+        // ]);
+
+        $user_country = Country::find($user['billing_info']->country);
+        $user_country = $user_country->iso2;
+        $url = "https://eu-test.oppwa.com/v1/checkouts";
+        $data = "entityId=8ac7a4ca80b2d4470180b3d5cdf604c6" .
+            "&amount=".$amount .
+            "&currency=USD" .
+            "&paymentType=DB" .
+            // "&registrations[0].id=8ac7a4a2848b0cf20184991ba9d359c6" .
+            // "&registrations[1].id=8ac7a4a1848b40370184991baa9520e4" .
+            // "&standingInstruction.source=CIT" .
+            // "&standingInstruction.mode=REPEATED" .
+            "&merchantTransactionId=" . $id .
+            "&customer.email=" . $user->email .
+            "&billing.street1=" . $user['billing_info']->street .
+            "&billing.city=" . $user['billing_info']->city .
+            "&billing.state=" . $user['billing_info']->state .
+            "&billing.country=" . $user_country .
+            "&billing.postcode=" . $user['billing_info']->postcode .
+            "&customer.givenName=" . $user->first_name .
+            "&customer.surname=" . $user->last_name ;
+            // "&standingInstruction.type=UNSCHEDULED";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $payment = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return response()->json([
+                'status' => false,
+                'message' => curl_error($ch),
+            ], 400);
+        }
+        curl_close($ch);
+
+        //**************** HYPERPAY CURL implementation ends ***************** 
+
         $payment = json_decode(json_encode($payment));
-        $script_url = $payment->original->script_url;
-        $shopperResultUrl = $payment->original->shopperResultUrl;
+        $payment =  json_decode($payment);
+        $script_url = 'https://test.oppwa.com/v1/paymentWidgets.js?checkoutId=' . $payment->id;
+        // $shopperResultUrl = $payment->original->shopperResultUrl;
         $redirect_url = $request->redirect_url;
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
@@ -2502,36 +2613,16 @@ class ClassController extends Controller
         return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
     }
 
-    public function test_hyperpay(Request $request){
+    public function test_hyperpay(Request $request)
+    {
+        $today =  Carbon::now()->toISOString();
+        $today_date =  Carbon::parse($today)->format('Y-m-d');
+        $today_time =  Carbon::parse($today)->format('H:i:s');
 
-        $id = Str::random('64');
-         $user = User::with('billing_info')
-            ->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')
-            ->findOrFail('1358');
-
-        $request['testMode']='EXTERNAL';
-        $request['merchantTransactionId']=$id ;
-        $request['customer.email']=$user->email;
-        $request['billing.street1']=$user['billing_info']->street;
-        $request['billing.city']=$user['billing_info']->city;
-        $request['billing.state']=$user['billing_info']->state;
-        $request['billing.country']=$user['billing_info']->country;
-        $request['billing.postcode']=$user['billing_info']->postcode;
-        $request['customer.givenName']=$user->first_name;
-        $request['customer.surname']=$user->last_name;
-        return $request;
-        
-       
-        $trackable_data = [
-            'course_id' => 38,
-            'course_code' => 'AP-math-1002'
-        ];
-
-        $amount = $request->total_price;
-        $brand = 'VISA'; // MASTER OR MADA
-        return $payment = LaravelHyperpay::addMerchantTransactionId($id)
-            ->addBilling(new HyperPayBilling())
-            ->checkout($trackable_data, $user, $amount, $brand, $request);
-        
+        return $classes = AcademicClass::with('student', 'teacher', 'course.order')
+            ->whereDate('start_date', "<=", $today_date)
+            ->whereNotIn('status', ['completed', 'teacher_absent', 'student_absent'])
+            ->where('teacher_id', "!=", null)
+            ->get();
     }
 }

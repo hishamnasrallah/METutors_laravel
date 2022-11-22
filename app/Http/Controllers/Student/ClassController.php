@@ -1186,9 +1186,24 @@ class ClassController extends Controller
 
             $program = Program::where('code', $request->program)->first();
 
-            $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['pending', 'active', 'inprogress'])->orderBy('id', 'desc')->get();
-            $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->orderBy('id', 'desc')->get();
-            $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->orderBy('id', 'desc')->get();
+            $active_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')
+                ->whereIn('id', $classroom)
+                ->whereIn('status', ['pending', 'active', 'inprogress'])
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $cancelled_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')
+                ->whereIn('id', $classroom)
+                ->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])
+                ->orderBy('id', 'desc')
+                ->get();
+
+            $completed_courses = Course::with('subject.country', 'language', 'program', 'teacher.teacher_qualification', 'classes')
+                ->whereIn('id', $classroom)
+                ->where('status', 'completed')
+                ->orderBy('id', 'desc')
+                ->get();
+
             $lastActivity_course = LastActivity::with('course.classes', 'course.subject.country', 'course.language', 'course.program', 'course.teacher.teacher_qualification')
                 ->where('user_id', $token_user->id)
                 ->where('role_name', $token_user->role_name)
@@ -1602,7 +1617,7 @@ class ClassController extends Controller
         $currentdate = Carbon::parse($currentISO)->format('Y-m-d');
         $db_date = Carbon::parse($class->start_date)->format('Y-m-d');
 
-        if ($db_date >= $currentdate) {
+        if ($currentdate >= $db_date) {
 
             // $dayOrNight = substr($class->start_time, 6, 9);
             // $trimed_time = Str::limit($class->start_time, 5, '');
@@ -1748,6 +1763,17 @@ class ClassController extends Controller
                     $reschedule_class->status = 'rescheduled_by_student';
                     $reschedule_class->save();
 
+                    $academic_class = AcademicClass::findOrFail($request->academic_class_id);
+                    $student = User::findOrFail($token_user->id);
+                    $teacher = User::findOrFail($academic_class->teacher_id);
+                    $teacher_message = "Class rescheduled successfully!";
+                    $student_message = "Teacher rescheduled a class!";
+
+                    event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
+                    event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
+                    dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message, 'student'));
+                    dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message, 'student'));
+
                     return response()->json([
                         'status' => true,
                         'message' => trans('api_messages.CLASS_RESCHEDULED_SUCCESSFULLY'),
@@ -1817,6 +1843,17 @@ class ClassController extends Controller
                     $reschedule_class->day = $request->day;
                     $reschedule_class->status = 'rescheduled_by_student';
                     $reschedule_class->save();
+
+                    $academic_class = AcademicClass::findOrFail($request->academic_class_id);
+                    $student = User::findOrFail($token_user->id);
+                    $teacher = User::findOrFail($academic_class->teacher_id);
+                    $teacher_message = "Class rescheduled successfully!";
+                    $student_message = "Teacher rescheduled a class!";
+
+                    event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
+                    event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
+                    dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message, 'student'));
+                    dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message, 'student'));
 
                     return response()->json([
                         'status' => true,

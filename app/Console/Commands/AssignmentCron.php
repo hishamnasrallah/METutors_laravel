@@ -42,7 +42,7 @@ class AssignmentCron extends Command
         $today = Carbon::today()->toISOString();
         $today_date = Carbon::parse($today)->format('Y-m-d');
 
-        $assignments = Assignment::whereDate('deadline', '<=', $today_date)
+        $assignments = Assignment::whereDate('deadline', '<', $today_date)
             ->where('status', "!=", 'completed')
             ->get();
 

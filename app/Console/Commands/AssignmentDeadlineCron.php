@@ -43,22 +43,48 @@ class AssignmentDeadlineCron extends Command
      */
     public function handle()
     {
-        $tomorrow = Carbon::tomorrow()->toISOString();
+        //if assignment is expired tomorrow
+        $tomorrow = Carbon::now()->addDay(1)->toISOString();
         $tomorrow_date = Carbon::parse($tomorrow)->format('Y-m-d');
 
-        $assignments = Assignment::whereDate('deadline',$tomorrow_date)->get();
+        $assignments = Assignment::with('course')->whereDate('deadline', $tomorrow_date)->get();
 
-        foreach ($assignments as $assignment) {
-            $course = Course::findOrFail($assignment->course_id);
-            $student = User::findOrFail($course->student_id);
-            $teacher = User::findOrFail($course->teacher_id);
-            $custom_message = "Today is the last date of assignment! please  complete your assignment and submitt";
+        if (count($assignments) > 0) {
+            foreach ($assignments as $assignment) {
+                $course = Course::with('teacher','student')->findOrFail($assignment->course_id);
+                $student = User::findOrFail($course->student_id);
+                $teacher = User::findOrFail($course->teacher_id);
+                $custom_message = "First reminder - Course assignment due tomorrow";
+                $reminder = 1;
 
-            //emails and notifications
-            event(new AssignmentDeadlineEvent($student->id, $student, $custom_message, $assignment));
-            event(new AssignmentDeadlineEvent($teacher->id, $teacher, $custom_message, $assignment));
-            dispatch(new AssignmentDeadlineJob($student->id, $student, $custom_message, $assignment));
-            dispatch(new AssignmentDeadlineJob($teacher->id, $teacher, $custom_message, $assignment));
+                //emails and notifications
+                event(new AssignmentDeadlineEvent($course, $student, $custom_message, $assignment, $reminder));
+                event(new AssignmentDeadlineEvent($course, $teacher, $custom_message, $assignment, $reminder));
+                dispatch(new AssignmentDeadlineJob($course, $student, $custom_message, $assignment, $reminder));
+                dispatch(new AssignmentDeadlineJob($course, $teacher, $custom_message, $assignment, $reminder));
+            }
+        }
+
+        //if assignment is expiring today
+        $today = Carbon::now()->toISOString();
+        $today_date = Carbon::parse($today)->format('Y-m-d');
+
+        $assignments = Assignment::with('course')->whereDate('deadline', $today_date)->get();
+
+        if (count($assignments) > 0) {
+            foreach ($assignments as $assignment) {
+                $course = Course::with('teacher','student')->findOrFail($assignment->course_id);
+                $student = User::findOrFail($course->student_id);
+                $teacher = User::findOrFail($course->teacher_id);
+                $custom_message = "Second reminder - Course assignment due today";
+                $reminder = 2;
+
+                //emails and notifications
+                event(new AssignmentDeadlineEvent($course, $student, $custom_message, $assignment, $reminder));
+                event(new AssignmentDeadlineEvent($course, $teacher, $custom_message, $assignment, $reminder));
+                dispatch(new AssignmentDeadlineJob($course, $student, $custom_message, $assignment, $reminder));
+                dispatch(new AssignmentDeadlineJob($course, $teacher, $custom_message, $assignment, $reminder));
+            }
         }
     }
 }

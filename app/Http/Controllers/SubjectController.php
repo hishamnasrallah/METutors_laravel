@@ -48,9 +48,31 @@ class SubjectController extends Controller
         // $subjects=Subject::all();
 
         if (isset($request->field_id)) {
-
-            $subjects = Subject::where('field_id', $request->field_id)->get();
+            $subjects = Subject::with('program', 'country', 'field')->where('field_id', $request->field_id)->get();
         }
+
+        if ($request->has('search')) {
+
+            if ($request->has('field_id')) {
+                $subjects = Subject::with('program', 'country', 'field')
+                    ->where('field_id', $request->field_id)
+                    ->where(function ($q) use ($request) {
+                        $q->where('name', 'LIKE', "%$request->search%")
+                            ->orWhere('name_ar', 'LIKE', "%$request->search%")
+                            ->orWhere('description', 'LIKE', "%$request->search%")
+                            ->orWhere('description_ar', 'LIKE', "%$request->search%");
+                    })
+                    ->get();
+            } else {
+                $subjects = Subject::with('program', 'country', 'field')
+                    ->where('name', 'LIKE', "%$request->search%")
+                    ->orWhere('name_ar', 'LIKE', "%$request->search%")
+                    ->orWhere('description', 'LIKE', "%$request->search%")
+                    ->orWhere('description_ar', 'LIKE', "%$request->search%")
+                    ->get();
+            }
+        }
+
 
         return response()->json([
 

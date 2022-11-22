@@ -10,12 +10,10 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class AbsentClassEvent implements ShouldBroadcast
+class TeacherAbsentClassEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
     public $userid, $user, $custom_message, $class;
-
     /**
      * Create a new event instance.
      *
@@ -41,6 +39,6 @@ class AbsentClassEvent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'absent_class';
+        return 'teacher_absent_class';
     }
 }

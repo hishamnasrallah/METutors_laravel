@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
+use App\TeacherSubject;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -43,12 +44,37 @@ class CourseBookingJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'course' => $this->course);
+        $teacher_grade = '';
+        if ($this->user->role_name == 'teacher' || $this->user->role_name == 'admin') {
+            $teacher = TeacherSubject::where('user_id', $this->course->teacher)->whereNotNull('grade')->max('grade');
+            if ($teacher) {
+                $teacher_grade = $teacher->grade;
+            }
+        }
 
-        Mail::send('email.cancelled_course', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Booked!');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        $mail_subject = 'New course booking on MEtutors - order number ' . $this->course->order->booking_id;
+        $data = array('user' =>  $this->user, 'course' => $this->course, 'grade' => $teacher_grade);
+
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.book_course', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course booking');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+        if ($this->user->role_name == 'teacher') {
+            Mail::send('email.book_course', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course booking - action needed');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.book_course', $data, function ($message) use ($to_email,$mail_subject) {
+                $message->to($to_email)->subject($mail_subject);
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+
         // //******** Email ends **********//
 
         //Notification

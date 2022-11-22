@@ -11,12 +11,11 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class PreClassJob implements ShouldQueue
+class StudentAbsentClassJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $userid, $user, $custom_message, $class;
-
     /**
      * Create a new job instance.
      *
@@ -38,22 +37,34 @@ class PreClassJob implements ShouldQueue
      */
     public function handle()
     {
-        //*********** Sending Email to Student  ************\\
+        //*********** Sending Cancalation Email to Student  ************\\
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'class' => $this->class);
+        $data = array('email' =>  $user_email, 'user' =>  $this->user, 'class' => $this->class);
 
-        Mail::send('email.class', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Classs is about to start!');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
-        // //******** Email ends **********//
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.student_absent_class', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Student absent from class');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        } elseif ($this->user->role_name == 'teacher') {
+            Mail::send('email.student_absent_class', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Your student was absent today');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        } else {
+            Mail::send('email.student_absent_class', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('You missed a class today');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
 
-        //Notification
+        // //********* Sending Cancalation Email ends **********//
+
         $notification = new Notification();
-        $notification->type = "App\Events\PreClassEvent";
+        $notification->type = "App\Events\AbsentClassEvent";
         $notification->notifiable_type = "App\Models\AcademicClass";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;

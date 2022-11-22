@@ -10,12 +10,10 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class PreClassEvent implements ShouldBroadcast
+class PreClassDayEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
     public $userid, $user, $custom_message, $class;
-
     /**
      * Create a new event instance.
      *
@@ -41,6 +39,6 @@ class PreClassEvent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'pre_class';
+        return 'pre_class_day';
     }
 }
