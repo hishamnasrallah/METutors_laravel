@@ -1558,7 +1558,8 @@ class AdminController extends Controller
 
         $teachers = User::with('teacher_interview_request')
             ->where('role_name', 'teacher')
-            ->where('status', 'suspended')->orderBy('id', 'desc')
+            ->where('status', 'suspended')
+            ->orderBy('id', 'desc')
             ->get();
         // } else {
 
@@ -2211,7 +2212,7 @@ class AdminController extends Controller
             }
 
 
-           
+
 
 
             $field_of_studies = FieldOfStudy::with('program', 'country')
@@ -2289,7 +2290,7 @@ class AdminController extends Controller
         }
 
 
-       
+
 
         $field_of_studies = FieldOfStudy::with('program', 'country')->get();
 
@@ -2789,6 +2790,13 @@ class AdminController extends Controller
             ], 400);
         } else {
             $teacher = User::findOrFail($request->teacher_id);
+
+            if ($teacher->admin_approval != 'approved' && ($request->status == 'active' || $request->status == 'inactive')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Please approve this teacher first',
+                ], 400);
+            } 
             $teacher->status = $request->status;
             $teacher->update();
             $admin_message = "Teacher Status Changed Successfully";

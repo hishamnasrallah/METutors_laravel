@@ -177,10 +177,10 @@ class TeacherController extends Controller
         $teacher = User::find($token_user->id);
 
         $reviews = UserFeedback::with('sender', 'course', 'feedback')
-        ->where('receiver_id', $teacher->id)
-        ->where('course_id', $course_id)
-        ->get();
-        
+            ->where('receiver_id', $teacher->id)
+            ->where('course_id', $course_id)
+            ->get();
+
         return response()->json([
             'success' => true,
             'message' => 'Course reviews!',
@@ -332,13 +332,18 @@ class TeacherController extends Controller
             $room->update();
         }
 
-        $teacher_message = 'Course Accepted Successfully!';
-        $student_message = 'Teacher Accepted Your Course!';
+        $admin = User::where('role_name', 'admin')->first();
+
+        $teacher_message = 'Thank you for accepting to teach the course COURSE ID ' . $course->tcourse_code . ', booking number' . $course->course_order->booking_id ?? null;
+        $student_message = 'Congratulations, ' . $course->teacher->first_name . ' has accepted to teach your new course COURSE ID ' . $course->course_code;
+        $admin_message = 'Teacher' . $course->teacher->first_name . '  TIN' . $course->teacher->id_number . ' has accepted to teach COURSE ID' . $course->course_code . '  with ' . $course->student->first_name . ' SIN' . $course->student->id_number;
 
         event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
         event(new AcceptCourse($course, $course->student_id, $student_message, $user));
+        event(new AcceptCourse($course, $course->student_id, $admin_message, $admin));
         dispatch(new AcceptCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
         dispatch(new AcceptCourseJob($course, $course->student_id, $student_message, $user));
+        dispatch(new AcceptCourseJob($course, $course->student_id, $admin_message, $admin));
 
         return response()->json([
             'success' => true,
@@ -401,13 +406,19 @@ class TeacherController extends Controller
             $room->status = 'declined_by_teacher';
             $room->update();
         }
-        $teacher_message = "Course Rejected Successfully";
-        $student_message = "Teacher Rejected your Course";
+        $admin = User::where('role_name', 'admin')->first();
+
+        $teacher_message = 'You have declined to teach the course COURSE ID ' . $course->course_code . ', booking number' . ($course->course_order->booking_id) ?? null;
+        $student_message = $course->teacher->first_name . ' has declined to teach your new course COURSE ID ' . $course->course_code.'Please check your email for futher instructions.';
+        $admin_message = 'Teacher' . $course->teacher->first_name . '  TIN' . $course->teacher->id_number . ' has declied to teach COURSE ID' . $course->course_code . '  with ' . $course->student->first_name . ' SIN' . $course->student->id_number;
+
 
         event(new RejectCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
         event(new RejectCourseEvent($course, $course->student_id, $student_message, $user));
+        event(new RejectCourseEvent($course, $course->student_id, $admin_message, $admin));
         dispatch(new RejectCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
         dispatch(new RejectCourseJob($course, $course->student_id, $student_message, $user));
+        dispatch(new RejectCourseJob($course, $course->student_id, $admin_message, $admin));
 
         $course->status = "declined_by_teacher";
         // $course->teacher_id = null;
@@ -590,7 +601,7 @@ class TeacherController extends Controller
 
         $teacher = User::find($token_user->id);
         $course = Course::with('subject', 'language', 'program', 'student', 'student')->find($course_id);
-        $highlighted_topics = HighlightedTopic::where('course_id',$course_id)->get();
+        $highlighted_topics = HighlightedTopic::where('course_id', $course_id)->get();
 
         $totalClases = AcademicClass::where('course_id', $course_id)->where($userrole, $token_user->id)->count();
         $completedClases = AcademicClass::where('course_id', $course_id)->where('status', 'completed')->where($userrole, $token_user->id)->count();
@@ -616,7 +627,7 @@ class TeacherController extends Controller
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
                 'course_progress' => $courseProgress,
-                'highlighted_topics'=>$highlighted_topics,
+                'highlighted_topics' => $highlighted_topics,
                 'topics' => $class_topics,
                 'unclassified_classes' => $remaining_classes,
             ]);
@@ -653,7 +664,7 @@ class TeacherController extends Controller
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
                 'course_progress' => $courseProgress,
-                'highlighted_topics'=>$highlighted_topics,
+                'highlighted_topics' => $highlighted_topics,
                 'topics' => $topics_array,
                 'unclassified_classes' => $remaining_classes,
             ]);

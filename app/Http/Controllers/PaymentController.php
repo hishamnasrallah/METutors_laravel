@@ -99,7 +99,7 @@ class PaymentController extends Controller
         }
 
         $course = Course::findOrFail($request->course_id);
-        if($course->status == 'pending'){
+        if ($course->status == 'pending') {
             return response()->json([
                 'status' => false,
                 'message' => 'The course has already booked',
@@ -247,88 +247,109 @@ class PaymentController extends Controller
 
         $resourcePath = $request->get('resource_path');
         $checkout_id = $request->get('id');
-        $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
+        // $payment_details = LaravelHyperpay::paymentStatus($resourcePath, $checkout_id);
+
+        $url = "https://eu-test.oppwa.com/v1/checkouts/" . $checkout_id . "/payment";
+        $url .= "?entityId=8ac7a4ca80b2d4470180b3d5cdf604c6";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $payment_details = curl_exec($ch);
+        if (curl_errno($ch)) {
+            // return curl_error($ch);
+            return response()->json([
+                'status' => false,
+                'message' =>  curl_errno($ch),
+            ], 400);
+        }
+        curl_close($ch);
 
         $paymentDetails = json_decode(json_encode($payment_details));
 
         // If we got success Response From HyperPay
-        if ($paymentDetails->original->transaction_status == 'success') {
+        // if ($paymentDetails->original->transaction_status == 'success') {
 
-            $course = Course::findOrFail($request->course_id);
-            $Classes = $request->classes;
-            $requestedClasses = AcademicClass::whereIn('id', $Classes)->get();
+        $course = Course::findOrFail($request->course_id);
+        $Classes = $request->classes;
+        $requestedClasses = AcademicClass::whereIn('id', $Classes)->get();
 
-            $classes = [];
-            foreach ($requestedClasses as $class) {
-                $apiURL = 'https://api.braincert.com/v2/schedule';
-                $postInput = [
-                    'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
-                    'title' =>  "title",
-                    'timezone' => 90,
-                    'start_time' => Carbon::parse($class->start_time)->format('G:i a'),
-                    'end_time' => Carbon::parse($class->end_time)->format('G:i a'),
-                    'date' => Carbon::parse($class->start_date)->format('Y-m-d'),
-                    'currency' => "USD",
-                    'ispaid' => null,
-                    'is_recurring' => 0,
-                    'repeat' => 0,
-                    'weekdays' => $course->weekdays,
-                    'end_date' => Carbon::parse($class->start_date)->format('Y-m-d'),
-                    'seat_attendees' => null,
-                    'record' => 0,
-                    'isRecordingLayout ' => 1,
-                    'isVideo  ' => 1,
-                    'isBoard ' => 1,
-                    'isLang ' => null,
-                    'isRegion ' => null,
-                    'isCorporate ' => null,
-                    'isScreenshare ' => 1,
-                    'isPrivateChat  ' => 0,
-                    'description ' => null,
-                    'keyword ' => null,
-                    'format ' => "json",
-                ];
+        $classes = [];
+        foreach ($requestedClasses as $class) {
+            $apiURL = 'https://api.braincert.com/v2/schedule';
+            $postInput = [
+                'apikey' =>  'xKUyaLJHtbvBUtl3otJc',
+                'title' =>  "title",
+                'timezone' => 90,
+                'start_time' => Carbon::parse($class->start_time)->format('G:i a'),
+                'end_time' => Carbon::parse($class->end_time)->format('G:i a'),
+                'date' => Carbon::parse($class->start_date)->format('Y-m-d'),
+                'currency' => "USD",
+                'ispaid' => null,
+                'is_recurring' => 0,
+                'repeat' => 0,
+                'weekdays' => $course->weekdays,
+                'end_date' => Carbon::parse($class->start_date)->format('Y-m-d'),
+                'seat_attendees' => null,
+                'record' => 0,
+                'isRecordingLayout ' => 1,
+                'isVideo  ' => 1,
+                'isBoard ' => 1,
+                'isLang ' => null,
+                'isRegion ' => null,
+                'isCorporate ' => null,
+                'isScreenshare ' => 1,
+                'isPrivateChat  ' => 0,
+                'description ' => null,
+                'keyword ' => null,
+                'format ' => "json",
+            ];
 
-                $client = new Client();
-                $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
+            $client = new Client();
+            $response = $client->request('POST', $apiURL, ['form_params' => $postInput]);
 
-                $statusCode = $response->getStatusCode();
-                $academic_class = AcademicClass::findOrFail($class->id);
-                $responseBody = json_decode($response->getBody(), true);
-                if ($responseBody['status'] == "ok") {
+            $statusCode = $response->getStatusCode();
+            $academic_class = AcademicClass::findOrFail($class->id);
+            $responseBody = json_decode($response->getBody(), true);
+            if ($responseBody['status'] == "ok") {
 
-                    $academic_class->title = "class";
-                    $academic_class->lesson_name = "lesson";
-                    $academic_class->class_id = $responseBody['class_id'];
-                    $academic_class->status = "scheduled";
-                    $course->status = "active";
-                    $course->update();
-                    $academic_class->save();
-                } else {
-                    return response()->json([
-                        'status' => false,
-                        'message' => $responseBody['error'],
+                $academic_class->title = "class";
+                $academic_class->lesson_name = "lesson";
+                $academic_class->class_id = $responseBody['class_id'];
+                $academic_class->status = "scheduled";
+                $course->status = "active";
+                $course->update();
+                $academic_class->save();
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => $responseBody['error'],
 
-                    ], 400);
-                }
+                ], 400);
             }
-            // return $classes;
-
-            $classes = AcademicClass::whereIn('id', $Classes)->get();
-            return response()->json([
-                'status' => true,
-                'message' => "Payment details!",
-                'payment_details' => $payment_details,
-                'course' => $course,
-                'classes' => $classes,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => $paymentDetails->original->message,
-                'payment_details' => $payment_details,
-            ], 400);
         }
+        // return $classes;
+
+        $classes = AcademicClass::whereIn('id', $Classes)->get();
+        return response()->json([
+            'status' => true,
+            'message' => "Payment details!",
+            'payment_details' => json_decode($payment_details),
+            'course' => $course,
+            'classes' => $classes,
+        ]);
+        // } else {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => $paymentDetails->original->message,
+        //         'payment_details' => $payment_details,
+        //     ], 400);
+        // }
     }
 
     public function payment_details(Request $request)
@@ -605,7 +626,7 @@ class PaymentController extends Controller
                             $completed_classes = AcademicClass::with('course.subject')
                                 ->where('course_id', $record->course_id)
                                 ->where('status', 'completed')
-                                ->where('payment_status', 'pending')
+                                ->where('payment_status', 'in_progress')
                                 ->get();
 
                             if (count($completed_classes) > 0) {
@@ -672,7 +693,7 @@ class PaymentController extends Controller
 
                             $completed_classes = AcademicClass::with('course.subject')->where('course_id', $record->course_id)
                                 ->where('status', 'completed')
-                                ->where('payment_status', 'pending')
+                                ->where('payment_status', 'in_progress')
                                 ->get();
 
                             if (count($completed_classes) > 0) {
@@ -788,7 +809,7 @@ class PaymentController extends Controller
         }
     }
 
-    public function pending_payments(Request $request)
+    public function pending_payment_details(Request $request)
     {
         $rules = [
             'transaction_id' => 'required|string',
@@ -812,6 +833,7 @@ class PaymentController extends Controller
 
         $records = TeacherPayment::with('course.course_order', 'course.subject')
             ->where('payment_status', 'pending')
+            ->where('transaction_id', $request->transaction_id)
             ->where('user_id', $token_user->id)
             ->get();
 
@@ -821,19 +843,19 @@ class PaymentController extends Controller
         if (count($payment_records) > 0) {
             foreach ($payment_records as $payment_record) {
 
-                $course = new stdClass();
-                $course->transaction_id = $payment_record[0]->transaction_id;
-                $course->month = Carbon::parse($payment_record[0]->created_at)->format('M Y');
-                $course->status =  'pending';
+                // // $course = new stdClass();
+                // $transaction_id = $payment_record[0]->transaction_id;
+                // $course_month = Carbon::parse($payment_record[0]->created_at)->format('M Y');
+                // $course_status =  'pending';
 
-                $dispute_payment = TeacherPayment::where('transaction_id', $payment_record[0]->transaction_id)
+                $dispute_payment = TeacherPayment::where('transaction_id', $request->transaction_id)
                     ->where('is_dispute', '1')
                     ->first();
 
                 if ($dispute_payment == '') {
-                    $course->request_payment =  0;
+                    $request_payment =  1;
                 } else {
-                    $course->request_payment =  1;
+                    $request_payment =  0;
                 }
 
 
@@ -844,10 +866,9 @@ class PaymentController extends Controller
                 $overall_amount = 0;
 
                 foreach ($courses as $record) {
-
                     $completed_classes = AcademicClass::with('course.subject')->where('course_id', $record->course_id)
                         ->where('status', 'completed')
-                        ->where('payment_status', 'pending')
+                        ->where('payment_status', 'in_progress')
                         ->get();
 
                     $total_hours =  $completed_classes->sum('duration');
@@ -864,22 +885,29 @@ class PaymentController extends Controller
                     $course1->total_hours = $total_hours;
                     $course1->total_amount = $total_amount;
                     $course1->is_dispute =  $record->is_dispute;
+                    $course1->reason =  $record->reason;
                     $pending_courses[] = $course1;
                     $total_classes = $total_classes + count($completed_classes);
                     $overall_amount = $overall_amount + $total_amount;
                 }
 
-
-                $course->total_classes = $total_classes;
-                $course->total_amount = $overall_amount;
-                $course->courses =  $pending_courses;
-                $pending_array[] = $course;
+               
+                $pending_array['request_payment']=$request_payment;
+                $pending_array['total_classes']=$total_classes;
+                $pending_array['total_amount']=$overall_amount;
+                $pending_array['courses']=$pending_courses;
+                // $course->total_classes = $total_classes;
+                // $course->total_amount = $overall_amount;
+                // $course->courses =  $pending_courses;
+                // $pending_array[] = $course;
             }
         }
 
         return response()->json([
             'status' => true,
             'message' => "Pending payments details",
+            // 'request_payment' => $request_payment,
+            // 'transaction_id' => $payment_record[0]->transaction_id,
             'payment_records' => $pending_array,
         ]);
     }
@@ -909,17 +937,18 @@ class PaymentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $payments = TeacherPayment::where('transaction_id', $request->transaction_id)
+         $payments = TeacherPayment::where('transaction_id', $request->transaction_id)
             ->whereIn('course_id', $request->courses)
             ->get();
+
         if (count($payments) < 1) {
             return response()->json([
                 'status' => false,
-                'message' => "no record found",
+                'message' => "no record found with this transaction id",
             ], 400);
         }
 
-        foreach ($payments as $payment) {
+        foreach ($payments as $payment) { 
             $payment->is_dispute = 1;
             $payment->reason = $request->reason;
             $payment->save();
@@ -1030,8 +1059,15 @@ class PaymentController extends Controller
             ->where('transaction_id', $request->transaction_id)
             ->first();
 
+        if(!$ticket){
+            return response()->json([
+                'status' => 'false',
+                'errors' => 'no records found with this transaction id',
+            ], 400);
+        }
 
-        $latest_comment = $ticket->dispute_comments->first();
+
+        $latest_comment = DisputeComment::where('dispute_id',$ticket->dispute_id)->latest()->first();
         if ($latest_comment) {
             $ticket->last_reply = $latest_comment->created_at;
         } else {
@@ -1063,13 +1099,21 @@ class PaymentController extends Controller
                 'errors' => $errors,
             ], 400);
         }
-        $tick = DisputeTicket::where('dispute_id', $request->dispute_id)->first();
-        if ($tick->status == "Closed") {
+        $ticket = DisputeTicket::where('dispute_id', $request->dispute_id)->first();
+        if ($ticket == '') {
+            return response()->json([
+                'status' => false,
+                'message' => trans('Invalid dispute id'),
+            ], 400);
+        }
+
+        if ($ticket->status == "Closed") {
             return response()->json([
                 'status' => 'false',
                 'message' => trans('api_messages.TICKET_CLOSED_U_NOT_ADD_COMMENT'),
             ], 400);
         }
+
 
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
@@ -1089,12 +1133,13 @@ class PaymentController extends Controller
             'file' => $file,
         ]);
 
-        $tick->updated_at = Carbon::now();
-        $tick->update();
+        $ticket->updated_at = Carbon::now();
+        $ticket->update();
 
         return response()->json([
             'message' => true,
             'status' => "Reply has been submitted",
+            'comment' => $comment,
         ]);
     }
 

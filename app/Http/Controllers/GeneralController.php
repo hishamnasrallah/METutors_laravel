@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
 use App\Models\AcademicClass;
+use App\Models\Course;
 use App\Models\TeacherPayment;
 use App\Models\UserFeedback;
 use App\TeacherSubject;
@@ -49,30 +50,15 @@ class GeneralController extends Controller
     {
 
 
-        $url = "https://eu-test.oppwa.com/v1/checkouts/C3529BE8B125274B00BA11E511DC821B.uat01-vm-tx02/payment";
-        $url .= "?entityId=8ac7a4ca80b2d4470180b3d5cdf604c6";
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
-        ));
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $payment_details = curl_exec($ch);
-        if (curl_errno($ch)) {
-            // return curl_error($ch);
-            return response()->json([
-                'status' => false,
-                'payment_details' =>  curl_errno($ch),
-            ], 400);
-        }
-        curl_close($ch);
+        $courses = Course::with('classes')
+        ->whereHas('classes', function ($q) {
+            $q->where('status', 'completed');
+        })
+            ->where('status', '!=', "completed")->get();
 
         return response()->json([
             'status' => true,
-            'payment_details' =>  json_decode($payment_details),
+            'payment_details' =>  $courses,
         ]);
     }
 
@@ -333,10 +319,10 @@ class GeneralController extends Controller
                 //if request has search
                 if ($request->has('search')) {
                     $teachers = User::where('role_name', 'teacher')
-                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $field_ids) {
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $field_ids,$request) {
                             $q->where('program_id', $program_id)
                                 ->where('country_id', $request->country_id)
-                                ->whereIn('field_id', $field_ids);;
+                                ->whereIn('field_id', $field_ids);
                         })
                         ->with('teacherQualifications')
                         ->with('country')
@@ -351,8 +337,10 @@ class GeneralController extends Controller
                 } else {
                     $teachers = User::where('role_name', 'teacher')
 
-                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request) {
-                            $q->where('program_id', $program_id)->where('country_id', $request->country_id);
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id, $request,$field_ids) {
+                            $q->where('program_id', $program_id)
+                            ->where('country_id', $request->country_id)
+                            ->whereIn('field_id', $field_ids);
                         })
                         ->with('teacherQualifications')
                         ->with('country')
@@ -421,8 +409,9 @@ class GeneralController extends Controller
                 } else {
                     $teachers = User::where('role_name', 'teacher')
 
-                        ->whereHas('teacher_subjects', function ($q) use ($program_id) {
-                            $q->where('program_id', $program_id);
+                        ->whereHas('teacher_subjects', function ($q) use ($program_id,$field_ids) {
+                            $q->where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids);
                         })
                         ->with('teacherQualifications')
                         ->with('country')

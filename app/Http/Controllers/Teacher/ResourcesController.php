@@ -231,11 +231,11 @@ class ResourcesController extends Controller
         $student_message = "Resource has been added!";
         $teacher_message = "Resource has been added!";
 
-        //Emails and notifications
-        // event(new AddResourceEvent($teacher->id, $teacher_message, $resource1, $teacher));
-        // event(new AddResourceEvent($student->id, $student_message, $resource1, $student));
-        // dispatch(new AddResourceJob($teacher->id, $teacher_message, $resource1, $teacher));
-        // dispatch(new AddResourceJob($student->id, $student_message, $resource1, $student));
+        // Emails and notifications
+        event(new AddResourceEvent($teacher->id, $teacher_message, $resource1, $teacher));
+        event(new AddResourceEvent($student->id, $student_message, $resource1, $student));
+        dispatch(new AddResourceJob($teacher->id, $teacher_message, $resource1, $teacher));
+        dispatch(new AddResourceJob($student->id, $student_message, $resource1, $student));
 
         return response()->json([
             'status' => true,

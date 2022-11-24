@@ -14,7 +14,7 @@ class PaymentTransferCron extends Command
      *
      * @var string
      */
-    protected $signature = 'payment:transfer';
+    protected $signature = 'payment:records';
 
     /**
      * The console command description.
@@ -61,6 +61,9 @@ class PaymentTransferCron extends Command
                 $teacher_payment->transaction_id = $transaction_id;
                 $teacher_payment->user_id = $class->teacher_id;
                 $teacher_payment->save();
+
+                $class->payment_status = 'in_progress';
+                $class->update();
             }
         }
     }

@@ -9,7 +9,7 @@
                         <div class="card-body">
 
                             @if ($user->role_name == 'teacher')
-                                <p>Hi <b>Teacher Sucess Team,</b></p>
+                                <p>Hi <b>{{ $user->first_name }},</b></p>
                                 <p>You have received feedback from <b>{{ $feedback->sender->first_name }}</b> on
                                     <b>{{ $feedback->course->course_name }}</b> ID
                                     <b>{{ $feedback->course->course_code }}</b> with booking number

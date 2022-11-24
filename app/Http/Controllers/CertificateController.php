@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewCertificateEvent;
+use App\Jobs\NewCertificateJob;
 use App\Models\Certificate;
 use App\Models\ClassRoom;
 use App\Models\Course;
+use App\Models\User;
 use App\Models\UserFeedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -26,10 +29,12 @@ class CertificateController extends Controller
             ], 400);
         }
 
+
         $courses = Course::where('student_id', $token_user->id)
             ->where('status', 'completed')
             ->get();
 
+        $user = User::findOrFail($token_user->id);
         foreach ($courses as $course) {
             $certificate = Certificate::where('student_id', $token_user->id)
                 ->where('course_id', $course->id)
@@ -41,6 +46,9 @@ class CertificateController extends Controller
                 $user_certificate->student_id = $token_user->id;
                 $user_certificate->course_id = $course->id;
                 $user_certificate->save();
+
+                event(new NewCertificateEvent( $user,'Your certificate is ready to download', $user_certificate));
+                dispatch(new NewCertificateJob( $user,'Your certificate is ready to download', $user_certificate));
             }
         }
 

@@ -46,7 +46,10 @@ class CourseBookingJob implements ShouldQueue
 
         $teacher_grade = '';
         if ($this->user->role_name == 'teacher' || $this->user->role_name == 'admin') {
-            $teacher = TeacherSubject::where('user_id', $this->course->teacher)->whereNotNull('grade')->max('grade');
+            $teacher = TeacherSubject::where('user_id', $this->course->teacher->id)
+            ->whereNotNull('grade')
+            ->max('grade');
+
             if ($teacher) {
                 $teacher_grade = $teacher->grade;
             }

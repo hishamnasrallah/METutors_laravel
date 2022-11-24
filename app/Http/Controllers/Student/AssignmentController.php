@@ -85,7 +85,7 @@ class AssignmentController extends Controller
                 foreach ($course->assignments as $assignment) {
                     $users = [];
                     $assignees = $assignment->assignees;
-                    $assignment->status =  $assignees[0]->status;
+                    // $assignment->status =  $assignees[0]->status;
                 }
             }
             if ($request->status == 'completed') {
@@ -184,6 +184,7 @@ class AssignmentController extends Controller
                 $user_assignment->file = $request->file;
             }
             $user_assignment->status = 'resubmitted';
+            $user_assignment->updated_at = Carbon::now();
             $user_assignment->save();
 
             // Event notification
@@ -212,6 +213,7 @@ class AssignmentController extends Controller
             $userAssignment->file = $request->file;
         }
         $userAssignment->status = 'submitted';
+        $userAssignment->updated_at = Carbon::now();
         $userAssignment->update();
 
         $userAssignment->user_assignment_status = 'submitted';

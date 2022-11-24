@@ -45,12 +45,28 @@ class RejectCourseJob implements ShouldQueue
         $courseMessage = $this->message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'courseMessage' =>  $courseMessage, 'course' => $this->course);
+        $data = array('user' =>  $this->user, 'courseMessage' =>  $courseMessage, 'course' => $this->course);
 
-        Mail::send('email.course', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Rejected');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.course_rejected', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course declined');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'teacher') {
+            Mail::send('email.course_rejected', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course declined');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.course_rejected', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Tutor for new course booking to be reassigned - action needed');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
         //********* Sending Rejection Email ends **********//
 
         $notification = new Notification();

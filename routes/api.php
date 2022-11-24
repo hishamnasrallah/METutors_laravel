@@ -21,132 +21,131 @@ Route::group(['middleware' => ['cors', 'share', 'jwt.verify']], function () {
    
 });
 
-Route::group(['middleware' => ['cors', 'share', 'LangMiddleware']], function () {
-
-
-
-
-
-    Route::post('admin/schedule-meeting', 'AdminController@schedule_meeting');
-    Route::get('join-meeting/{interview_request_id}', 'AdminController@join_meeting');
-
-
-    //**************** Student routes starts****************
-
-    Route::get('student/dashboard', 'Student\DashboardController@dashboard');
-    Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
-
-    Route::get('student/classroom', 'Student\ClassController@courses');
-    Route::get('student/courses/search-course', 'Student\ClassController@search_course');
-    Route::get('student/classes/{id}', 'Student\ClassController@course_detail');
-
-    //**************** Syllabus routes ****************
-    Route::get('student/syllabus/{course_id}', 'Student\SyllabusController@syllabusDashboard');
-
-
-    //**************** Assignment routes ****************
-    Route::get('student/assignments/{id}', 'Student\AssignmentController@assignmentDashboard');
-    Route::get('student/assignment/{id}', 'Student\AssignmentController@assignmentDetail');
-    Route::Post('student/assignment/{id}', 'Student\AssignmentController@submitAssignment');
-    // Route::get('student/assignment/{assignment_id}/user', 'Student\AssignmentController@userAssignment');
-    Route::get('student/assignment/user/{user_assignment_id}', 'Student\AssignmentController@userAssignment');
-
-    //**************** Resources routes ****************
-    Route::get('student/resources/{course_id}', 'Student\ResourcesController@classResources');
-    Route::get('student/resource/{resource_id}', 'Student\ResourcesController@editResource');
-    Route::post('student/resource/update/{resource_id}', 'Student\ResourcesController@updateResource');
-
-    //**************** Student routes ends****************
-
-
-
-    Route::post('change-video', 'Panel\UserController@change_video');
-    Route::post('change-avatar', 'Panel\UserController@change_avatar');
-    Route::post('change-cover', 'Panel\UserController@change_cover');
-
-    Route::post('teacher/profile', 'Panel\UserController@teacher_update_profile');
-
-    //**************** Teacher routes starts****************
-
-    Route::get('teacher/profile', 'Teacher\DashboardController@profile');
-    Route::get('teacher/dashboard', 'Teacher\DashboardController@dashboard');
-    Route::get('teacher/classes', 'Teacher\DashboardController@classes_dashboard');
-
-    Route::get('teacher/classroom', 'Teacher\ClassController@courses');
-    Route::get('teacher/courses/search', 'Teacher\ClassController@search_course');
-    Route::get('teacher/classes/{id}', 'Teacher\ClassController@course_detail');
-
-    //**************** Syllabus routes ****************
-    Route::get('teacher/syllabus/{course_id}', 'Teacher\SyllabusController@syllabusDashboard');
-    Route::post('teacher/syllabus/topic', 'Teacher\SyllabusController@addTopic');
-    Route::get('teacher/syllabus/topic/{topic_id}', 'Teacher\SyllabusController@editTopic');
-    Route::post('teacher/syllabus/topic/update', 'Teacher\SyllabusController@updateTopic');
-    Route::delete('teacher/syllabus/topic/{id}', 'Teacher\SyllabusController@deleteTopic');
-
-    //**************** Edit class name ****************
-    Route::patch('teacher/class/{acadamic_class_id}', 'Teacher\SyllabusController@editTopicClass');
-
-
-    //**************** Assignment routes ****************
-    Route::get('teacher/assignment/{id}', 'Teacher\AssignmentController@assignmentDetail');
-    Route::post('teacher/assignment/update/{id}/', 'Teacher\AssignmentController@updateAssignment');
-    Route::delete('teacher/assignment/{id}', 'Teacher\AssignmentController@deleteAssignment');
-    Route::post('teacher/assignment', 'Teacher\AssignmentController@addAssignment');
-    Route::get('teacher/assignments/{id}', 'Teacher\AssignmentController@assignmentDashboard');
-    Route::get('teacher/course/{course_id}/assignees', 'Teacher\AssignmentController@assignees');
-    Route::post('teacher/assignment/{assignment_id}/accept', 'Teacher\AssignmentController@acceptAssignment');
-    Route::post('teacher/assignment/{assignment_id}/reject', 'Teacher\AssignmentController@rejectAssignment');
-    Route::get('teacher/assignment/{assignment_id}/user/{user_id}', 'Teacher\AssignmentController@userAssignment');
-    Route::post('teacher/assignment/{assignment_id}/extend', 'Teacher\AssignmentController@extendDate');
-
-    //**************** Resources routes ****************
+Route::group(['middleware' => ['cors', 'share']], function () {
     Route::post('upload', 'Teacher\ResourcesController@uploadFiles');
-    Route::post('onboarding', 'Teacher\ResourcesController@onboarding');
-    Route::delete('file/{id}', 'Teacher\ResourcesController@deleteFile');
-    Route::get('teacher/resources/{course_id}', 'Teacher\ResourcesController@classResources');
-    Route::post('teacher/resource/update/{resource_id}', 'Teacher\ResourcesController@updateResource');
-    Route::get('teacher/resource/{resource_id}', 'Teacher\ResourcesController@editResource');
-    Route::delete('teacher/resource/{resource_id}', 'Teacher\ResourcesController@delResource');
-    Route::post('teacher/class/{class_id}/resource', 'Teacher\ResourcesController@addResource');
+    Route::group(['middleware' => [ 'LangMiddleware']], function () {
 
-
-    //**************** Teacher routes ends****************
-
-    Route::get('access-token', 'TwilioController@generate_token');
-
-
-    //*************** */ Faq Api's***************
-
-    //************** / Manage Classes Api's***************
-
-    Route::Post('course/request', 'ClassController@request_course');
-
-    Route::get('view-class/{id}', 'ClassController@view_class');
-    Route::Post('create-course', 'ClassController@create_course');
-    Route::Post('create-class', 'ClassController@create_course');
-    Route::Post('test_hyperpay', 'ClassController@test_hyperpay');
-    Route::Post('demo-class', 'ClassController@demo_course');
-    Route::Post('add-classes', 'ClassController@add_classes');
-
-    Route::Post('course/payment-retry', 'ClassController@course_payment_retry');
-
-    Route::Post('del-session', 'ClassController@del_session');
-    Route::Post('update-session', 'ClassController@update_session');
-
-    Route::get('teacherProfile', 'ClassController@teacher_profile');
-    Route::get('teachers/search', 'ClassController@search_tutor');
-    Route::Post('schedule-class', 'ClassController@schedule_class');
-    Route::get('classes/show', 'ClassController@show_classes');
-    Route::post('classes/class-detail', 'ClassController@class_detail');
-    Route::get('class/launch/{id}', 'ClassController@class_url');
-    Route::get('classes/search', 'ClassController@search_class');
-    Route::get('registered-students', 'ClassController@registered_students');
-    Route::get('registered-teachers', 'ClassController@registered_teachers');
-
-    Route::get('search-student', 'ClassController@search_student');
-    Route::get('courses', 'ClassController@courses');
-    Route::get('courses/search-course', 'ClassController@search_course');
-    Route::get('courses/course-detail/{id}', 'ClassController@course_detail');
+        Route::post('admin/schedule-meeting', 'AdminController@schedule_meeting');
+        Route::get('join-meeting/{interview_request_id}', 'AdminController@join_meeting');
+    
+    
+        //**************** Student routes starts****************
+    
+        Route::get('student/dashboard', 'Student\DashboardController@dashboard');
+        Route::get('student/classes', 'Student\DashboardController@classes_dashboard');
+    
+        Route::get('student/classroom', 'Student\ClassController@courses');
+        Route::get('student/courses/search-course', 'Student\ClassController@search_course');
+        Route::get('student/classes/{id}', 'Student\ClassController@course_detail');
+    
+        //**************** Syllabus routes ****************
+        Route::get('student/syllabus/{course_id}', 'Student\SyllabusController@syllabusDashboard');
+    
+    
+        //**************** Assignment routes ****************
+        Route::get('student/assignments/{id}', 'Student\AssignmentController@assignmentDashboard');
+        Route::get('student/assignment/{id}', 'Student\AssignmentController@assignmentDetail');
+        Route::Post('student/assignment/{id}', 'Student\AssignmentController@submitAssignment');
+        // Route::get('student/assignment/{assignment_id}/user', 'Student\AssignmentController@userAssignment');
+        Route::get('student/assignment/user/{user_assignment_id}', 'Student\AssignmentController@userAssignment');
+    
+        //**************** Resources routes ****************
+        Route::get('student/resources/{course_id}', 'Student\ResourcesController@classResources');
+        Route::get('student/resource/{resource_id}', 'Student\ResourcesController@editResource');
+        Route::post('student/resource/update/{resource_id}', 'Student\ResourcesController@updateResource');
+    
+        //**************** Student routes ends****************
+    
+    
+    
+        Route::post('change-video', 'Panel\UserController@change_video');
+        Route::post('change-avatar', 'Panel\UserController@change_avatar');
+        Route::post('change-cover', 'Panel\UserController@change_cover');
+    
+        Route::post('teacher/profile', 'Panel\UserController@teacher_update_profile');
+    
+        //**************** Teacher routes starts****************
+    
+        Route::get('teacher/profile', 'Teacher\DashboardController@profile');
+        Route::get('teacher/dashboard', 'Teacher\DashboardController@dashboard');
+        Route::get('teacher/classes', 'Teacher\DashboardController@classes_dashboard');
+    
+        Route::get('teacher/classroom', 'Teacher\ClassController@courses');
+        Route::get('teacher/courses/search', 'Teacher\ClassController@search_course');
+        Route::get('teacher/classes/{id}', 'Teacher\ClassController@course_detail');
+    
+        //**************** Syllabus routes ****************
+        Route::get('teacher/syllabus/{course_id}', 'Teacher\SyllabusController@syllabusDashboard');
+        Route::post('teacher/syllabus/topic', 'Teacher\SyllabusController@addTopic');
+        Route::get('teacher/syllabus/topic/{topic_id}', 'Teacher\SyllabusController@editTopic');
+        Route::post('teacher/syllabus/topic/update', 'Teacher\SyllabusController@updateTopic');
+        Route::delete('teacher/syllabus/topic/{id}', 'Teacher\SyllabusController@deleteTopic');
+    
+        //**************** Edit class name ****************
+        Route::patch('teacher/class/{acadamic_class_id}', 'Teacher\SyllabusController@editTopicClass');
+    
+    
+        //**************** Assignment routes ****************
+        Route::get('teacher/assignment/{id}', 'Teacher\AssignmentController@assignmentDetail');
+        Route::post('teacher/assignment/update/{id}/', 'Teacher\AssignmentController@updateAssignment');
+        Route::delete('teacher/assignment/{id}', 'Teacher\AssignmentController@deleteAssignment');
+        Route::post('teacher/assignment', 'Teacher\AssignmentController@addAssignment');
+        Route::get('teacher/assignments/{id}', 'Teacher\AssignmentController@assignmentDashboard');
+        Route::get('teacher/course/{course_id}/assignees', 'Teacher\AssignmentController@assignees');
+        Route::post('teacher/assignment/{assignment_id}/accept', 'Teacher\AssignmentController@acceptAssignment');
+        Route::post('teacher/assignment/{assignment_id}/reject', 'Teacher\AssignmentController@rejectAssignment');
+        Route::get('teacher/assignment/{assignment_id}/user/{user_id}', 'Teacher\AssignmentController@userAssignment');
+        Route::post('teacher/assignment/{assignment_id}/extend', 'Teacher\AssignmentController@extendDate');
+    
+        //**************** Resources routes ****************
+    
+        Route::post('onboarding', 'Teacher\ResourcesController@onboarding');
+        Route::delete('file/{id}', 'Teacher\ResourcesController@deleteFile');
+        Route::get('teacher/resources/{course_id}', 'Teacher\ResourcesController@classResources');
+        Route::post('teacher/resource/update/{resource_id}', 'Teacher\ResourcesController@updateResource');
+        Route::get('teacher/resource/{resource_id}', 'Teacher\ResourcesController@editResource');
+        Route::delete('teacher/resource/{resource_id}', 'Teacher\ResourcesController@delResource');
+        Route::post('teacher/class/{class_id}/resource', 'Teacher\ResourcesController@addResource');
+    
+    
+        //**************** Teacher routes ends****************
+    
+        Route::get('access-token', 'TwilioController@generate_token');
+    
+    
+        //*************** */ Faq Api's***************
+    
+        //************** / Manage Classes Api's***************
+    
+        Route::Post('course/request', 'ClassController@request_course');
+    
+        Route::get('view-class/{id}', 'ClassController@view_class');
+        Route::Post('create-course', 'ClassController@create_course');
+        Route::Post('create-class', 'ClassController@create_course');
+        Route::Post('test_hyperpay', 'ClassController@test_hyperpay');
+        Route::Post('demo-class', 'ClassController@demo_course');
+        Route::Post('add-classes', 'ClassController@add_classes');
+    
+        Route::Post('course/payment-retry', 'ClassController@course_payment_retry');
+    
+        Route::Post('del-session', 'ClassController@del_session');
+        Route::Post('update-session', 'ClassController@update_session');
+    
+        Route::get('teacherProfile', 'ClassController@teacher_profile');
+        Route::get('teachers/search', 'ClassController@search_tutor');
+        Route::Post('schedule-class', 'ClassController@schedule_class');
+        Route::get('classes/show', 'ClassController@show_classes');
+        Route::post('classes/class-detail', 'ClassController@class_detail');
+        Route::get('class/launch/{id}', 'ClassController@class_url');
+        Route::get('classes/search', 'ClassController@search_class');
+        Route::get('registered-students', 'ClassController@registered_students');
+        Route::get('registered-teachers', 'ClassController@registered_teachers');
+    
+        Route::get('search-student', 'ClassController@search_student');
+        Route::get('courses', 'ClassController@courses');
+        Route::get('courses/search-course', 'ClassController@search_course');
+        Route::get('courses/course-detail/{id}', 'ClassController@course_detail');
+    });    
 });
 
 Route::group(['namespace' => 'Auth', 'middleware' => ['cors', 'share']], function () {
@@ -641,7 +640,7 @@ Route::Post('payment/refund2', 'PaymentController@refund2');
 
 ##### Payment records
 Route::get('teacher/payment-records', 'PaymentController@payment_records');
-Route::get('teacher/pending-payments/details', 'PaymentController@pending_payments');
+Route::get('teacher/pending-payments/details', 'PaymentController@pending_payment_details');
 Route::post('teacher/payments/add-dispute', 'PaymentController@add_dispute');
 Route::get('teacher/payments/dispute-reason', 'PaymentController@dispute_reason');
 Route::get('teacher/payments/dispute-details', 'PaymentController@dispute_details');

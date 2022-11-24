@@ -15,6 +15,6 @@ class DisputeTicket extends Model
 
     public function dispute_comments()
     {
-        return $this->hasMany(DisputeComment::class,'dispute_id','dispute_id')->latest();
+        return $this->hasMany(DisputeComment::class,'dispute_id','dispute_id');
     }
 }

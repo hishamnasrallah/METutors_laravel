@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
+use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\Feedback;
+use App\Models\RescheduleClass;
 use App\Models\User;
+use App\Models\UserAssignment;
 use App\Models\UserFeedback;
 use App\Subject;
 use Carbon\Carbon;
@@ -64,6 +67,95 @@ class DashboardController extends Controller
             $startDate = Carbon::parse($startDate)->format('Y-m-d');
             $current_date = Carbon::now()->format('Y-m-d');
 
+
+            //************ On time assignments *******************/
+            $assignments = UserAssignment::where('user_id', $user_id)
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                ->where('status', 'completed')
+                ->pluck('assignment_id')
+                ->unique();
+
+            $ontime_assignments = 0;
+            foreach ($assignments as $assignment) {
+                $Assigment = Assignment::findOrFail($assignment);
+                $user_assigment = UserAssignment::where('user_id', $user_id)
+                    ->where('assignment_id', $assignment)
+                    ->latest()
+                    ->first();
+
+                if (Carbon::parse($user_assigment->updated_at)->format('Y-m-d') <= $Assigment->deadline) {
+                    $ontime_assignments++;
+                }
+            }
+
+            $last_assignments = UserAssignment::where('user_id', $user_id)
+                // ->whereBetween('created_at', [$compareDate, $endDate])
+                ->whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
+                ->where('status', 'completed')
+                ->pluck('assignment_id')
+                ->unique();
+
+            $last_ontime_assignments = 0;
+            foreach ($last_assignments as $assignment) {
+                $Assigment = Assignment::findOrFail($assignment);
+                $user_assigment = UserAssignment::where('user_id', $user_id)
+                    ->where('assignment_id', $assignment)
+                    ->latest()
+                    ->first();
+
+                if (Carbon::parse($user_assigment->updated_at)->format('Y-m-d') <= $Assigment->deadline) {
+                    $last_ontime_assignments++;
+                }
+            }
+
+            $ontime_assignments_growth = 0;
+            $greater = 0;
+            $greater = $ontime_assignments > $last_ontime_assignments ? $ontime_assignments : $last_ontime_assignments;
+            // return $token_user->created_at;
+            if ($greater > 0 && $ontime_assignments == 0 && $token_user->created_at <= $compareDate) {
+                $ontime_assignments_growth = "-100";
+            } elseif ($greater > 0 && $last_ontime_assignments == 0 && $token_user->created_at <= $compareDate) {
+                $ontime_assignments_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate && $ontime_assignments_growth == 0) {
+                $ontime_assignments_growth = (($ontime_assignments - $last_ontime_assignments) / $greater) * 100;
+            } else {
+            }
+
+
+
+
+            //************ Classes rescheduled count *******************/
+            $rescheduled_classes = RescheduleClass::where('rescheduled_by', $user_id)
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                ->pluck('academic_class_id')
+                ->unique();
+            $rescheduled_classes_count = count($rescheduled_classes);
+
+            $last_rescheduled_classes = RescheduleClass::where('rescheduled_by', $user_id)
+                ->whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
+                ->pluck('academic_class_id')
+                ->unique();
+            $last_rescheduled_classes_count = count($last_rescheduled_classes);
+
+            $rescheduled_classes_growth = 0;
+            $greater = 0;
+            $greater = $rescheduled_classes_count > $last_rescheduled_classes_count ? $rescheduled_classes_count : $last_rescheduled_classes_count;
+            // return $token_user->created_at;
+
+            if ($greater > 0 && $rescheduled_classes_count == 0 && $token_user->created_at <= $compareDate) {
+                $rescheduled_classes_growth = '-100';
+            } elseif ($greater > 0 && $last_rescheduled_classes_count == 0 && $token_user->created_at <= $compareDate) {
+                $rescheduled_classes_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate) {
+                $rescheduled_classes_growth = (($rescheduled_classes_count - $last_rescheduled_classes_count) / $greater) * 100;
+            } else {
+            }
+
+
             // $classes = AcademicClass::whereBetween('start_date', [$endDate, $startDate])->get();
 
 
@@ -89,8 +181,17 @@ class DashboardController extends Controller
             $greater = 0;
             $greater = count($completed_courses) > count($last_completed_courses) ? count($completed_courses) : count($last_completed_courses);
             // return $token_user->created_at;
-            if ($greater > 0 && $token_user->created_at <= $compareDate) {
-                $completed_courses_growth = ((count($last_completed_courses) - count($completed_courses)) / $greater) * 100;
+            // if ($greater > 0 && $token_user->created_at <= $compareDate) {
+            //     $completed_courses_growth = ((count($last_completed_courses) - count($completed_courses)) / $greater) * 100;
+            // }
+
+            if ($greater > 0 && count($completed_courses) == 0 && $token_user->created_at <= $compareDate) {
+                $completed_courses_growth = '-100';
+            } elseif ($greater > 0 && count($last_completed_courses) == 0 && $token_user->created_at <= $compareDate) {
+                $completed_courses_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate) {
+                $completed_courses_growth = ((count($completed_courses) - count($last_completed_courses)) / $greater) * 100;
+            } else {
             }
 
 
@@ -133,31 +234,40 @@ class DashboardController extends Controller
                 ->count();
 
             $attended_classes = Attendance::where('user_id', $user_id)
-            // ->whereBetween('created_at', [$endDate, $current_date])
-            ->whereDate('created_at', '>=', $endDate)
-            ->whereDate('created_at', '<=', $current_date)
-            ->where('status', 'present')
-            ->count();
+                // ->whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                ->where('status', 'present')
+                ->count();
 
             //Attendence Growth
             $last_attended_classes = Attendance::where('user_id', $user_id)
-            // ->whereBetween('created_at', [$compareDate, $endDate])
-            ->whereDate('created_at', '>=', $compareDate)
-            ->whereDate('created_at', '<=', $endDate)
-            ->where('status', 'present')
-            ->count();
+                // ->whereBetween('created_at', [$compareDate, $endDate])
+                ->whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
+                ->where('status', 'present')
+                ->count();
 
             $attendence_growth = 0;
             $greater = 0;
             $greater = $attended_classes > $last_attended_classes ? $attended_classes : $last_attended_classes;
-            if ($greater > 0 && $token_user->created_at <= $compareDate) {
-                $attendence_growth = (($last_attended_classes - $attended_classes) / $greater) * 100;
+            // if ($greater > 0 && $token_user->created_at <= $compareDate) {
+            //     $attendence_growth = (($last_attended_classes - $attended_classes) / $greater) * 100;
+            // }
+
+            if ($greater > 0 && $attended_classes == 0 && $token_user->created_at <= $compareDate) {
+                $attendence_growth = '-100';
+            } elseif ($greater > 0 && $last_attended_classes == 0 && $token_user->created_at <= $compareDate) {
+                $attendence_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate) {
+                $attendence_growth = (($attended_classes - $last_attended_classes) / $greater) * 100;
+            } else {
             }
             // return $current_date;
             // return $endDate.$Carbion(z);
             $total_payment = Course::whereDate('created_at', '>=', $endDate)
-            ->whereDate('created_at', '<=', $current_date)
-            // whereBetween('created_at', [$endDate, $current_date])
+                ->whereDate('created_at', '<=', $current_date)
+                // whereBetween('created_at', [$endDate, $current_date])
                 ->where($userrole, $user_id)
                 ->where('course_code', '!=', null)
                 ->sum('total_price');
@@ -165,15 +275,23 @@ class DashboardController extends Controller
             // return $total_payment = Course::whereBetween('created_at', [$endDate, $current_date])->where($userrole, $user_id)->sum('total_price');
             //Payment Growth
             $total_last_payment = Course::whereDate('created_at', '>=', $compareDate)
-            ->whereDate('created_at', '<=', $endDate)
-            // whereBetween('created_at', [$compareDate, $endDate])
-            ->where($userrole, $user_id)
-            ->sum('total_price');
+                ->whereDate('created_at', '<=', $endDate)
+                // whereBetween('created_at', [$compareDate, $endDate])
+                ->where($userrole, $user_id)
+                ->sum('total_price');
             $payment_growth = 0;
             $greater = 0;
             $greater = $total_payment > $total_last_payment ? $total_payment : $total_last_payment;
-            if ($greater > 0 && $token_user->created_at <= $compareDate) {
-                $payment_growth = (($total_last_payment - $total_payment) / $greater) * 100;
+            // if ($greater > 0 && $token_user->created_at <= $compareDate) {
+            //     $payment_growth = (($total_last_payment - $total_payment) / $greater) * 100;
+            // }
+            if ($greater > 0 && $total_payment == 0 && $token_user->created_at <= $compareDate) {
+                $payment_growth = '-100';
+            } elseif ($greater > 0 && $total_last_payment == 0 && $token_user->created_at <= $compareDate) {
+                $payment_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate) {
+                $payment_growth = (($total_payment - $total_last_payment) / $greater) * 100;
+            } else {
             }
 
             $overall_progress = 0;
@@ -209,8 +327,17 @@ class DashboardController extends Controller
             $overall_progress_growth = 0;
             $greater = 0;
             $greater = $overall_progress > $last_progress ? $overall_progress : $last_progress;
-            if ($token_user->created_at <= $compareDate && $greater > 0) {
-                $overall_progress_growth = (($last_progress - $overall_progress) / $greater) * 100;
+            // if ($token_user->created_at <= $compareDate && $greater > 0) {
+            //     $overall_progress_growth = (($last_progress - $overall_progress) / $greater) * 100;
+            // }
+
+            if ($greater > 0 && $overall_progress == 0 && $token_user->created_at <= $compareDate) {
+                $overall_progress_growth = '-100';
+            } elseif ($greater > 0 && $last_progress == 0 && $token_user->created_at <= $compareDate) {
+                $overall_progress_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate) {
+                $overall_progress_growth = (($overall_progress - $last_progress) / $greater) * 100;
+            } else {
             }
 
 
@@ -219,8 +346,14 @@ class DashboardController extends Controller
                 "status" => true,
                 "message" => "todays classes",
                 "todays_date" => $todays_date,
+                "homework_submitted_ontime" => $ontime_assignments,
+                "last_homework_submitted_ontime" => $last_ontime_assignments,
+                "homework_submitted_ontime_growth" => round($ontime_assignments_growth),
+                "rescheduled_classes_count" => $rescheduled_classes_count,
+                "last_rescheduled_classes_count" => $last_rescheduled_classes_count,
+                "rescheduled_classes_growth" => round($rescheduled_classes_growth),
                 "attendence_rate" => floatval(Str::limit($attendence_rate, 4, '')),
-                "attendence_growth" => $attendence_growth,
+                "attendence_growth" => round($attendence_growth),
                 "attendence_rate_last_count" =>  $last_attendence_rate,
                 "total_progress" => floatval(Str::limit($overall_progress, 4, '')),
                 "total_progress_growth" => round($overall_progress_growth),
@@ -270,7 +403,7 @@ class DashboardController extends Controller
                 ->where('status', '!=', 'pending')
                 ->orderBy('start_time', 'asc')
                 ->get();
-                
+
             $total_classes = AcademicClass::where($userrole, $user_id)->count();
             $attended_classes = Attendance::where('user_id', $user_id)->count();
             $total_payment = Course::where($userrole, $user_id)->sum('total_price');
@@ -289,11 +422,39 @@ class DashboardController extends Controller
                 $overall_progress = 100;
             }
 
+            //************ On time assignments *******************/
+            $assignments = UserAssignment::where('user_id', $user_id)
+                ->where('status', 'completed')
+                ->pluck('assignment_id')
+                ->unique();
+
+            //************ On time assignments count *******************/
+            $ontime_assignments = 0;
+            foreach ($assignments as $assignment) {
+                $Assigment = Assignment::findOrFail($assignment);
+                $user_assigment = UserAssignment::where('user_id', $user_id)
+                    ->where('assignment_id', $assignment)
+                    ->latest()
+                    ->first();
+
+                if (Carbon::parse($user_assigment->updated_at)->format('Y-m-d') <= $Assigment->deadline) {
+                    $ontime_assignments++;
+                }
+            }
+
+            //************ Classes rescheduled count *******************/
+            $rescheduled_classes = RescheduleClass::where('rescheduled_by', $user_id)
+                ->pluck('academic_class_id')
+                ->unique();
+            $rescheduled_classes_count = count($rescheduled_classes);
+
 
             return response()->json([
                 "status" => true,
                 "message" => "todays classes",
                 "todays_date" => $todays_date,
+                "homework_submitted_ontime" => $ontime_assignments,
+                "rescheduled_classes_count" => $rescheduled_classes_count,
                 "attendence_rate" => ceil($attendence_rate),
                 "total_progress" => ceil($overall_progress),
                 "total_payment" => $total_payment,
