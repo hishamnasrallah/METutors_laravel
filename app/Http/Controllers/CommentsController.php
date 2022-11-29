@@ -66,10 +66,10 @@ class CommentsController extends Controller
         $admin_message = "Ticket Comment added";
         $admin = User::where('role_name', 'admin')->first();
 
-        event(new TicketResponseEvent($user->id, $user, $teacher_message, $comment));
-        event(new TicketResponseEvent($admin->id, $admin, $teacher_message, $comment));
-        dispatch(new TicketResponseJob($user->id, $user, $teacher_message, $comment));
-        dispatch(new TicketResponseJob($admin->id, $admin, $teacher_message, $comment));
+        event(new TicketResponseEvent($user->id, $user, $teacher_message, $tick));
+        event(new TicketResponseEvent($admin->id, $admin, $teacher_message, $tick));
+        dispatch(new TicketResponseJob($user->id, $user, $teacher_message, $tick));
+        dispatch(new TicketResponseJob($admin->id, $admin, $teacher_message, $tick));
 
         return response()->json([
             'message' => 'success',

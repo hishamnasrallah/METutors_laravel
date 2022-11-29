@@ -27,6 +27,7 @@ use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\ClassTopic;
 use App\Models\Course;
+use App\Models\CourseStat;
 use App\Models\HighlightedTopic;
 use App\Models\RejectedCourse;
 use App\Models\Resource;
@@ -332,6 +333,12 @@ class TeacherController extends Controller
             $room->update();
         }
 
+        $course_stat = CourseStat::where('teacher_id', $token_user->id)->where('course_id', $course->id)->first();
+        if ($course_stat) {
+            $course_stat->accepted_at = Carbon::now()->toISOString();
+            $course_stat->update();
+        }
+
         $admin = User::where('role_name', 'admin')->first();
 
         $teacher_message = 'Thank you for accepting to teach the course COURSE ID ' . $course->tcourse_code . ', booking number' . $course->course_order->booking_id ?? null;
@@ -409,7 +416,7 @@ class TeacherController extends Controller
         $admin = User::where('role_name', 'admin')->first();
 
         $teacher_message = 'You have declined to teach the course COURSE ID ' . $course->course_code . ', booking number' . ($course->course_order->booking_id) ?? null;
-        $student_message = $course->teacher->first_name . ' has declined to teach your new course COURSE ID ' . $course->course_code.'Please check your email for futher instructions.';
+        $student_message = $course->teacher->first_name . ' has declined to teach your new course COURSE ID ' . $course->course_code . 'Please check your email for futher instructions.';
         $admin_message = 'Teacher' . $course->teacher->first_name . '  TIN' . $course->teacher->id_number . ' has declied to teach COURSE ID' . $course->course_code . '  with ' . $course->student->first_name . ' SIN' . $course->student->id_number;
 
 

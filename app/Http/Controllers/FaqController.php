@@ -72,12 +72,14 @@ class FaqController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
-            'description' => 'required|string',
+            'answer' => 'required|string',
+            'topic_id' => 'required|integer',
         ]);
 
         $faq = new Faq();
         $faq->title = $request->title;
-        $faq->description = $request->description;
+        $faq->answer = $request->answer;
+        $faq->topic_id = $request->topic_id;
         $faq->save();
 
         return response()->json([

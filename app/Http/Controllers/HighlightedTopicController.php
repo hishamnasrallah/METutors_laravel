@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AddHighlightedTopicEvent;
+use App\Jobs\AddHighlightedTopicJob;
 use App\Models\HighlightedTopic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use JWTAuth;
 
 class HighlightedTopicController extends Controller
 {
@@ -55,15 +58,26 @@ class HighlightedTopicController extends Controller
             ], 400);
         }
 
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
         $topic = new HighlightedTopic();
         $topic->name = $request->name;
         $topic->confidence_scale = $request->confidence_scale;
         $topic->course_id = $request->course_id;
         $topic->save();
 
+        //emails and notifications
+         $teacher  = $topic->course->teacher;
+        event(new AddHighlightedTopicEvent($token_user,$topic,'topic added successfully'));
+        event(new AddHighlightedTopicEvent($teacher,$topic,'new topic added'));
+        dispatch(new AddHighlightedTopicJob($token_user,$topic,'topic added successfully'));
+        dispatch(new AddHighlightedTopicJob($teacher,$topic,'new topic added'));
+        
+
         return response()->json([
             'status' => true,
-            'messaege' => 'Highlighted topic successfully added',
+            'message' => 'Highlighted topic successfully added',
             'highlighted_topic' => $topic,
         ]);
     }

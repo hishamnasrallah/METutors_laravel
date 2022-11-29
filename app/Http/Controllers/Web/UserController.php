@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Web;
 use App\Events\PrefrenceSettingEvent;
 use App\Events\ProfileSettingEvent;
 use App\Events\SecuritySettingEvent;
+use App\Events\UpdateResourceEvent;
+use App\Events\UploadResourceDocumentEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\PrefrenceSettingJob;
 use App\Jobs\ProfileSettingJob;
 use App\Jobs\SecuritySettingJob;
+use App\Jobs\UpdateResourceJob;
+use App\Jobs\UploadResourceDocumentJob;
 use App\Models\AcademicClass;
 use App\Models\Badge;
 use App\Models\BecomeInstructor;
@@ -1697,7 +1701,34 @@ class UserController extends Controller
         $document->user_role = $token_user->role_name;
         $document->save();
 
-        $new_doc = ResourceDocument::with('user')->find($document->id);
+        $new_doc = ResourceDocument::with('user','course')->find($document->id);
+        $course = Course::findOrFail($request->course_id);
+
+        if($token_user->role_name == 'teacher'){
+            $teacher = User::findOrFail($token_user->id);
+            $student = User::findOrFail($course->student_id); 
+            $student_message = "Resource document has been updated!";    
+            $teacher_message = "Resource document has been updated!";
+            //Emails and notifications
+            event(new UploadResourceDocumentEvent($teacher->id, $teacher_message, $new_doc, $teacher,'teacher'));
+            event(new UploadResourceDocumentEvent($student->id, $student_message, $new_doc, $student,'teacher'));
+            dispatch(new UploadResourceDocumentJob($teacher->id, $teacher_message, $new_doc, $teacher,'teacher'));
+            dispatch(new UploadResourceDocumentJob($student->id, $student_message, $new_doc, $student,'teacher'));
+        }
+
+        if($token_user->role_name == 'student'){
+            $student = User::findOrFail($token_user->id);
+            $teacher = User::findOrFail($course->teacher_id); 
+            $student_message = "Resource document has been updated!";    
+            $teacher_message = "Resource document has been updated!";
+            //Emails and notifications
+            event(new UploadResourceDocumentEvent($teacher->id, $teacher_message, $new_doc, $teacher,'student'));
+            event(new UploadResourceDocumentEvent($student->id, $student_message, $new_doc, $student,'student'));
+            dispatch(new UploadResourceDocumentJob($teacher->id, $teacher_message, $new_doc, $teacher,'student'));
+            dispatch(new UploadResourceDocumentJob($student->id, $student_message, $new_doc, $student,'student'));
+        }
+        
+       
 
 
         return response()->json([

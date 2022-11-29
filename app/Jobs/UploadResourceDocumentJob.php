@@ -11,27 +11,26 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class UpdateResourceJob implements ShouldQueue
+class UploadResourceDocumentJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $userid, $custom_message, $resource, $user;
-
+    public $userid, $custom_message, $resource, $user, $uploaded_by;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($userid, $custom_message, $resource, $user)
+    public function __construct($userid, $custom_message, $resource, $user,$uploaded_by)
     {
         $this->connection = 'database';
         $this->userid = $userid;
         $this->custom_message = $custom_message;
         $this->resource = $resource;
         $this->user = $user;
+        $this->uploaded_by = $uploaded_by;
     }
-
     /**
      * Execute the job.
      *
@@ -44,18 +43,18 @@ class UpdateResourceJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'resource' => $this->resource);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'resource' => $this->resource,'uploaded_by' => $this->uploaded_by);
 
         if ($this->user->role_name == 'teacher') {
-            Mail::send('email.update_resource', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('A resource updated on your course successfully ');
+            Mail::send('email.update_resource_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New document added to your course successfully ');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
         }
 
         if ($this->user->role_name == 'student') {
-            Mail::send('email.update_resource', $data, function ($message) use ($to_email) {
-                $message->to($to_email)->subject('A resource on your course has been updated ');
+            Mail::send('email.update_resource_document', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New document added to your course');
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
         }
@@ -64,8 +63,8 @@ class UpdateResourceJob implements ShouldQueue
 
         //********* Realtime Notification **********
         $notification = new Notification();
-        $notification->type = "App\Events\UpdateResourceEvent";
-        $notification->notifiable_type = "App\Models\Resource";
+        $notification->type = "App\Events\UpdateResourceDocumentEvent";
+        $notification->notifiable_type = "App\Models\ResourceDocument";
         $notification->notifiable_id = $this->user->id;
         $notification->message = $this->custom_message;
         $notification->data =  $this->resource;

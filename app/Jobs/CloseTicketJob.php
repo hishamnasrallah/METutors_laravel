@@ -40,12 +40,13 @@ class CloseTicketJob implements ShouldQueue
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
+        $email_subject = ' Update on support ticket no. ' . $this->ticket->ticket_id;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'ticket' => $this->ticket);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'ticket' => $this->ticket);
 
-        Mail::send('email.ticket', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Ticket Status Changed!');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+        Mail::send('email.ticket_closed', $data, function ($message) use ($to_email, $email_subject) {
+            $message->to($to_email)->subject($email_subject);
+            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         // //******** Email ends **********//
 

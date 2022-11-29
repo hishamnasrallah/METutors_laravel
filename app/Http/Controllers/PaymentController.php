@@ -12,6 +12,7 @@ use App\Jobs\CompletePaymentJob;
 use App\Models\AcademicClass;
 use App\Models\ClassRoom;
 use App\Models\Course;
+use App\Models\CourseStat;
 use App\Models\DisputeComment;
 use App\Models\DisputeTicket;
 use App\Models\Order;
@@ -161,6 +162,13 @@ class PaymentController extends Controller
         $order->user_id = $course->student_id;
         $order->course_id = $course->id;
         $order->transaction_id = $paymentDetails->id;
+
+        //Creating Course Stats
+        $course_stat = new CourseStat();
+        $course_stat->teacher_id = $request->teacher_id;
+        $course_stat->course_id = $course->id;
+        $course_stat->save();
+
 
         //Assigning booking_id
         $Order = Order::whereNotNull('booking_id')->latest()->first();
@@ -891,11 +899,11 @@ class PaymentController extends Controller
                     $overall_amount = $overall_amount + $total_amount;
                 }
 
-               
-                $pending_array['request_payment']=$request_payment;
-                $pending_array['total_classes']=$total_classes;
-                $pending_array['total_amount']=$overall_amount;
-                $pending_array['courses']=$pending_courses;
+
+                $pending_array['request_payment'] = $request_payment;
+                $pending_array['total_classes'] = $total_classes;
+                $pending_array['total_amount'] = $overall_amount;
+                $pending_array['courses'] = $pending_courses;
                 // $course->total_classes = $total_classes;
                 // $course->total_amount = $overall_amount;
                 // $course->courses =  $pending_courses;
@@ -937,7 +945,7 @@ class PaymentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-         $payments = TeacherPayment::where('transaction_id', $request->transaction_id)
+        $payments = TeacherPayment::where('transaction_id', $request->transaction_id)
             ->whereIn('course_id', $request->courses)
             ->get();
 
@@ -948,7 +956,7 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        foreach ($payments as $payment) { 
+        foreach ($payments as $payment) {
             $payment->is_dispute = 1;
             $payment->reason = $request->reason;
             $payment->save();
@@ -1059,7 +1067,7 @@ class PaymentController extends Controller
             ->where('transaction_id', $request->transaction_id)
             ->first();
 
-        if(!$ticket){
+        if (!$ticket) {
             return response()->json([
                 'status' => 'false',
                 'errors' => 'no records found with this transaction id',
@@ -1067,7 +1075,7 @@ class PaymentController extends Controller
         }
 
 
-        $latest_comment = DisputeComment::where('dispute_id',$ticket->dispute_id)->latest()->first();
+        $latest_comment = DisputeComment::where('dispute_id', $ticket->dispute_id)->latest()->first();
         if ($latest_comment) {
             $ticket->last_reply = $latest_comment->created_at;
         } else {
@@ -1132,6 +1140,7 @@ class PaymentController extends Controller
             'comment' => $request->comment,
             'file' => $file,
         ]);
+        $comment->user;
 
         $ticket->updated_at = Carbon::now();
         $ticket->update();

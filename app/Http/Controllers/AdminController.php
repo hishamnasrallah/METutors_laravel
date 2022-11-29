@@ -2059,65 +2059,84 @@ class AdminController extends Controller
         }
         $field_of_studies = FieldOfStudy::with('program', 'country')->where('program_id', $program_id)->get();
 
-        if ($request->has('price_start')) {
-            if ($request->has('field_ids')) {
-                $field_ids = json_decode($request->field_ids);
-                if ($request->has('search')) {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->where('name', 'LIKE', "%$request->search%")
-                        ->whereIn('field_id', $field_ids)
-                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
-                        ->paginate($request->per_page ?? 10);
+        if ($program_id != 3) {
+            if ($request->has('price_start')) {
+                if ($request->has('field_ids')) {
+                    $field_ids = json_decode($request->field_ids);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
+                    }
                 } else {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->whereIn('field_id', $field_ids)
-                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
-                        ->paginate($request->per_page ?? 10);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->get();
+                    }
                 }
             } else {
-                if ($request->has('search')) {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->where('name', 'LIKE', "%$request->search%")
-                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
-                        ->paginate($request->per_page ?? 10);
+                if ($request->has('field_ids')) {
+                    $field_ids = json_decode($request->field_ids);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->paginate($request->per_page ?? 10);
+                    }
                 } else {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
-                        ->paginate($request->per_page ?? 10);
-                }
-            }
-        } else {
-            if ($request->has('field_ids')) {
-                $field_ids = json_decode($request->field_ids);
-                if ($request->has('search')) {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->where('name', 'LIKE', "%$request->search%")
-                        ->whereIn('field_id', $field_ids)
-                        ->paginate($request->per_page ?? 10);
-                } else {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->whereIn('field_id', $field_ids)
-                        ->paginate($request->per_page ?? 10);
-                }
-            } else {
-                if ($request->has('search')) {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->where('name', 'LIKE', "%$request->search%")
-                        ->paginate($request->per_page ?? 10);
-                } else {
-                    $subjects = Subject::with('program', 'country', 'field')
-                        ->where('program_id', $program_id)
-                        ->paginate($request->per_page ?? 10);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->paginate($request->per_page ?? 10);
+                    }
                 }
             }
         }
+
 
 
 
@@ -2154,6 +2173,12 @@ class AdminController extends Controller
                             ->where('name', 'LIKE', "%$request->search%")
                             ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
                     } else {
                         $subjects = Subject::with('program', 'country', 'field')
                             ->where('program_id', $program_id)
@@ -2161,6 +2186,11 @@ class AdminController extends Controller
                             ->whereIn('field_id', $field_ids)
                             ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
                     }
                 } else {
                     if ($request->has('search')) {
@@ -2170,16 +2200,25 @@ class AdminController extends Controller
                             ->where('name', 'LIKE', "%$request->search%")
                             ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
                     } else {
                         $subjects = Subject::with('program', 'country', 'field')
                             ->where('program_id', $program_id)
                             ->where('country_id', $country_id)
                             ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->get();
                     }
                 }
             } else {
-                if ($request->has('field_id')) {
+                if ($request->has('field_ids')) {
                     $field_ids = json_decode($request->field_ids);
                     if ($request->has('search')) {
                         $subjects = Subject::with('program', 'country', 'field')
@@ -2188,12 +2227,25 @@ class AdminController extends Controller
                             ->whereIn('field_id', $field_ids)
                             ->where('name', 'LIKE', "%$request->search%")
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
                     } else {
                         $subjects = Subject::with('program', 'country', 'field')
                             ->where('program_id', $program_id)
                             ->where('country_id', $country_id)
                             ->whereIn('field_id', $field_ids)
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
                     }
                 } else {
                     if ($request->has('search')) {
@@ -2202,11 +2254,20 @@ class AdminController extends Controller
                             ->where('country_id', $country_id)
                             ->where('name', 'LIKE', "%$request->search%")
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
                     } else {
                         $subjects = Subject::with('program', 'country', 'field')
                             ->where('program_id', $program_id)
                             ->where('country_id', $country_id)
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->get();
                     }
                 }
             }
@@ -2221,8 +2282,10 @@ class AdminController extends Controller
                 ->get();
         }
 
-        $min_price = $subjects->min('price_per_hour');
-        $max_price = $subjects->max('price_per_hour');
+
+        $min_price = $Subjects->min('price_per_hour');
+        $max_price = $Subjects->max('price_per_hour');
+
 
 
         return response()->json([
@@ -2230,7 +2293,9 @@ class AdminController extends Controller
             'program' => $program,
             'subjects' => $subjects,
             'min_price' => $min_price ?? 0,
+            'requested_min_price' => json_decode($request->price_start) ?? 0,
             'max_price' => $max_price ?? 0,
+            'requested_max_price' => json_decode($request->price_end) ?? 0,
             'field_of_studies' => $field_of_studies,
         ]);
     }
@@ -2796,7 +2861,7 @@ class AdminController extends Controller
                     'status' => false,
                     'message' => 'Please approve this teacher first',
                 ], 400);
-            } 
+            }
             $teacher->status = $request->status;
             $teacher->update();
             $admin_message = "Teacher Status Changed Successfully";

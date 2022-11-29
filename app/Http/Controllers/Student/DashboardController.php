@@ -223,7 +223,7 @@ class DashboardController extends Controller
                 ->with('teacher', 'course', 'course.subject.country', 'course.student', 'course.teacher', 'course.program')
                 ->whereDate('start_date', $current_date)
                 ->where($userrole, $user_id)
-                ->where('status', '!=', 'pending')
+                ->whereIn('status', ['scheduled','inprogress'])
                 ->orderBy('start_time', 'desc')
                 ->get();
 

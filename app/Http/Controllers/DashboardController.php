@@ -7,6 +7,7 @@ use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Course;
+use App\Models\CourseStat;
 use App\Models\Feedback;
 use App\Models\RescheduleClass;
 use App\Models\User;
@@ -155,47 +156,90 @@ class DashboardController extends Controller
                 ->where('status', 'completed')
                 ->count();
 
-            //************ On time assignments *******************/
-            $assignments = UserAssignment::where('user_id', $user_id)
-                ->whereDate('created_at', '>=', $endDate)
+
+
+            //************ Student teacher Matching time  *******************/
+
+            $teacher_matching_time = CourseStat::whereDate('created_at', '>=', $endDate)
                 ->whereDate('created_at', '<=', $current_date)
-                ->where('status', 'completed')
-                ->pluck('assignment_id')
-                ->unique();
+                // whereBetween('created_at', [$endDate, $current_date])
+                ->where('teacher_id', $user_id)
+                ->whereNotNull('accepted_at')
+                ->get();
+            $average_meet_time = 0;
+            $average_array = [];
+            if (count($teacher_matching_time) > 0) {
+                foreach ($teacher_matching_time as $stat) {
+                    $created_at = $stat->created_at;
+                    $accepted_at = $stat->accepted_at;
 
-            $ontime_assignments = 0;
-            foreach ($assignments as $assignment) {
-                $Assigment = Assignment::findOrFail($assignment);
-                $user_assigment = UserAssignment::where('user_id', $user_id)
-                    ->where('assignment_id', $assignment)
-                    ->latest()
-                    ->first();
-
-                if (Carbon::parse($user_assigment->updated_at)->format('Y-m-d') <= $Assigment->deadline) {
-                    $ontime_assignments++;
+                    $average_array[] = Carbon::parse($accepted_at)->diffInHours(Carbon::parse($created_at));
                 }
+
+                $average_meet_time = array_sum($average_array) / count($average_array);
             }
 
-            $last_assignments = UserAssignment::where('user_id', $user_id)
+
+            $last_teacher_matching_time = CourseStat::whereDate('created_at', '>=', $compareDate)
+                ->whereDate('created_at', '<=', $endDate)
+                // whereBetween('created_at', [$endDate, $current_date])
+                ->where('teacher_id', $user_id)
+                ->get();
+
+            $last_average_array = [];
+            $last_average_meet_time = 0;
+
+            if (count($last_teacher_matching_time) > 0) {
+                foreach ($last_teacher_matching_time as $stat) {
+                    $last_created_at = $stat->created_at;
+                    $last_accepted_at = $stat->accepted_at;
+
+                    $last_average_array[] = Carbon::parse($last_accepted_at)->diffInHours(Carbon::parse($last_created_at));
+                }
+
+                $last_average_meet_time = array_sum($last_average_array) / count($last_average_array);
+            }
+
+
+            $average_meet_time_growth = 0;
+            $greater = 0;
+            $greater = $average_meet_time > $last_average_meet_time ? $average_meet_time : $last_average_meet_time;
+            // return $token_user->created_at;
+            if ($greater > 0 && $average_meet_time == 0 && $token_user->created_at <= $compareDate) {
+                $average_meet_time_growth = "-100";
+            } elseif ($greater > 0 && $last_average_meet_time == 0 && $token_user->created_at <= $compareDate) {
+                $average_meet_time_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate && $average_meet_time_growth == 0) {
+                $average_meet_time_growth = (($average_meet_time - $last_average_meet_time) / $greater) * 100;
+            } else {
+            }
+
+            //************ On time assignments *******************/
+            $ontime_assignments = 0;
+            $assignments = Assignment::where('created_by', $user_id)
+                ->whereDate('created_at', '>=', $endDate)
+                ->whereDate('created_at', '<=', $current_date)
+                // ->where('status', 'completed')
+                ->pluck('id');
+
+            if (count($assignments) > 0) {
+                $ontime_assignments = count($assignments);
+            }
+
+
+
+            $last_ontime_assignments = 0;
+            $last_assignments = Assignment::where('created_by', $user_id)
                 // ->whereBetween('created_at', [$compareDate, $endDate])
                 ->whereDate('created_at', '>=', $compareDate)
                 ->whereDate('created_at', '<=', $endDate)
-                ->where('status', 'completed')
-                ->pluck('assignment_id')
-                ->unique();
+                // ->where('status', 'completed')
+                ->pluck('id');
 
-            $last_ontime_assignments = 0;
-            foreach ($last_assignments as $assignment) {
-                $Assigment = Assignment::findOrFail($assignment);
-                $user_assigment = UserAssignment::where('user_id', $user_id)
-                    ->where('assignment_id', $assignment)
-                    ->latest()
-                    ->first();
-
-                if (Carbon::parse($user_assigment->updated_at)->format('Y-m-d') <= $Assigment->deadline) {
-                    $last_ontime_assignments++;
-                }
+            if (count($last_assignments) > 0) {
+                $last_ontime_assignments = count($last_assignments);
             }
+
 
             $ontime_assignments_growth = 0;
             $greater = 0;
@@ -289,7 +333,22 @@ class DashboardController extends Controller
                 $completed_courses_growth = (($total_completed_courses - $total_last_completed_courses) / $greater) * 100;
             } else {
             }
-            // return $endDate . ' - ' . $current_date;
+
+            //Teacher Student matching time Growth
+            $matching_time_growth = 0;
+            $last_matching_time = 0;
+            $lmatching_time = 0;
+            $greater = 0;
+            $greater = $total_completed_courses > $total_last_completed_courses ? $total_completed_courses : $total_last_completed_courses;
+
+            if ($greater > 0 && $total_completed_courses == 0 && $token_user->created_at <= $compareDate) {
+                $completed_courses_growth = "-100";
+            } elseif ($greater > 0 && $total_last_completed_courses == 0 && $token_user->created_at <= $compareDate) {
+                $completed_courses_growth = '100';
+            } elseif ($greater > 0 && $token_user->created_at <= $compareDate) {
+                $completed_courses_growth = (($total_completed_courses - $total_last_completed_courses) / $greater) * 100;
+            } else {
+            }
 
             $newly_assigned_courses = Course::with('subject.country', 'student', 'program', 'classes')
                 // ->whereBetween('created_at', [$endDate, $current_date])
@@ -419,9 +478,9 @@ class DashboardController extends Controller
                 "status" => true,
                 "message" => "todays classes",
                 "todays_date" => $todays_date,
-                "homework_submitted_ontime" => $ontime_assignments,
-                "last_homework_submitted_ontime" => $last_ontime_assignments,
-                "homework_submitted_ontime_growth" => round($ontime_assignments_growth),
+                "homework_assigned" => $ontime_assignments,
+                "last_homework_assigned" => $last_ontime_assignments,
+                "homework_assigned_growth" => round($ontime_assignments_growth),
                 "attendence_rate" => floatval(Str::limit($attendence_rate, 4, '')),
                 "attendence_growth" => round($attendence_growth),
                 "attendence_rate_last_count" =>  $last_attendence_rate,
@@ -442,6 +501,9 @@ class DashboardController extends Controller
                 "total_newly_courses" => $total_newly_courses,
                 "newly_courses_growth" => round($newly_courses_growth),
                 "newly_courses_last_count" => $total_last_newly_courses,
+                "average_meet_time" => $average_meet_time,
+                "last_average_meet_time" => $last_average_meet_time,
+                "average_meet_time_growth" => round($average_meet_time_growth),
                 "missed_classes" => $missed_classes,
                 "todays_classes" => $todays_classes,
             ]);

@@ -654,17 +654,19 @@ class ClassController extends Controller
             ->pluck('course_id');
 
         //finding the course countries
-        $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+        $course_countries = course::whereIn('id', $classroom)->whereNotNull('country_id')->pluck('country_id')->unique();
         $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
 
-        $Countries = Countries::all();
-        $course_countries = [];
-        foreach ($countries as $country) {
-            $Country = $Countries->where('name.common', $country->name)->first();
-            $course_country = new stdClass();
-            $course_country->name = $Country->name->common;
-            $course_country->flag =  $Country->flag['flag-icon'];
-            array_push($course_countries, $course_country);
+        if (count($countries) > 0) {
+            $Countries = Countries::all();
+            $course_countries = [];
+            foreach ($countries as $country) {
+                $Country = $Countries->where('name.common', $country->name)->first();
+                $course_country = new stdClass();
+                $course_country->name = $Country->name->common;
+                $course_country->flag =  $Country->flag['flag-icon'];
+                array_push($course_countries, $course_country);
+            }
         }
         //finding the course countries end
 
