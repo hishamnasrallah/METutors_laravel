@@ -21,6 +21,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use \App\Mail\SendMailOtp;
+use App\Models\BillingDetail;
 use App\Models\ClassRoom;
 use App\Models\Course;
 use App\Models\UserFeedback;
@@ -64,6 +65,7 @@ class User extends Authenticatable implements JWTSubject
     private $permissions;
     private $user_group;
     private $userInfo;
+
 
 
 
@@ -326,15 +328,15 @@ class User extends Authenticatable implements JWTSubject
 
     public function userCertificates()
     {
-        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','certificates');
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document', 'certificates');
     }
     public function userDegrees()
     {
-        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','degrees');
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document', 'degrees');
     }
     public function userResume()
     {
-        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document','resume');
+        return $this->hasMany('App\TeacherDocument', 'user_id', 'id')->where('document', 'resume');
     }
     public function userDocuments()
     {
@@ -399,13 +401,6 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
-
-
-
-
-
-
-
     public function feedbacks()
     {
         return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
@@ -452,5 +447,10 @@ class User extends Authenticatable implements JWTSubject
     public function teacher_feedbacks()
     {
         return $this->hasMany(UserFeedback::class, 'receiver_id', 'id');
+    }
+
+    public function billing_info()
+    {
+        return $this->belongsTo(BillingDetail::class, 'id', 'user_id')->select('user_id','country','state','city','street','postcode');
     }
 }

@@ -123,9 +123,7 @@ class VerificationController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Verification Code Has Been Sent !!',
-
-
+            'message' => trans('api_messages.VERIFICATION_CODE_SENT'),
         ]);
 
         // }
@@ -288,7 +286,7 @@ class VerificationController extends Controller
                     return response()->json([
                         'status' => true,
                         // 'message' => $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
-                        'message' => 'Email verified Successfully! Please login to continue',
+                        'message' => trans('api_messages.EMAIL_VERIFIED_LOGIN_CONTINUE'),
                         'return_url' => $request->return_url ?? false,
 
                     ]);
@@ -296,14 +294,14 @@ class VerificationController extends Controller
             } else {
                 return response()->json([
                     'status' => false,
-                    'message' => 'user not found!!',
+                    'message' => trans('api_messages.USER_NOT_FOUND'),
 
                 ], 404);
             }
 
             return response()->json([
                 'status' => true,
-                'message' =>  $authUser->role_name == 'teacher' ? 'Email verified Successfully!' : 'Email verified Successfully! Please login to continue',
+                'message' =>  $authUser->role_name == 'teacher' ? trans('api_messages.EMAIL_VERIFIED_SUCCESSFULLY') : trans('api_messages.EMAIL_VERIFIED_LOGIN_CONTINUE'),
                 'return_url' => $request->return_url ?? false,
             ]);
         }

@@ -30,6 +30,10 @@ use Illuminate\Support\Facades\Storage;
 use Validator;
 use DateTime;
 use \App\Mail\SendMailInvite;
+use App\Models\Coupon;
+use App\Models\Order;
+use Carbon\Carbon;
+use JWTAuth;
 
 class PricingController extends Controller
 {
@@ -85,17 +89,124 @@ class PricingController extends Controller
 
 
         // print_r($total_h);die;
-
         $subject = Subject::find($request->subject_id);
+        $total_amount = $total_hours * $subject->price_per_hour;
+
+        if (JWTAuth::getToken()) {
+            $token_1 = JWTAuth::getToken();
+            $token_user = JWTAuth::toUser($token_1);
+            $user = User::with('billing_info')
+                ->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')
+                ->findOrFail($token_user->id);
+        } else {
+            $user = null;
+        }
+
+        //Assigning booking_id
+        $Order = Order::whereNotNull('booking_id')->latest()->first();
+        if ($Order != '') {
+            $id = str_replace('B', ' ', $Order->booking_id);
+            $id = $id + 1;
+            $booking_id = 'B'.$id;
+            $invoice_id = 'IN'.$id;
+        } else {
+            $booking_id = 'B100001';
+            $invoice_id = 'IN100001';
+        }
+
+
 
         return response()->json([
-
             'status' => true,
             'no_of_classes' => $classes,
             'price_per_hour' => $subject->price_per_hour,
             'total_hours' => $total_hours,
-            'total_amount' => $total_hours * $subject->price_per_hour,
+            'total_amount' => $total_amount,
+            'user' => $user,
+            'discount_percentage' => 0,
+            'discounted_amount' => $total_amount,
+            'discount' => 0,
+            'total_due_amount' => $total_amount,
+            'promo_code' => Null,
+            'booking_id' => $booking_id,
+            'invoice_id' => $invoice_id,
+        ]);
+    }
 
+    public function discounted_final_invoice(Request $request)
+    {
+        $rules = [
+            'promo_code' => 'required',
+            'subject_id' => 'required',
+            'classes' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $total_hours = 0;
+        $classes = 0;
+
+        foreach (json_decode(json_encode($request->classes)) as $class) {
+            $classes++;
+            $total_hours = $total_hours + $class->duration;
+        }
+
+        $subject = Subject::find($request->subject_id);
+        $total_amount = $total_hours * $subject->price_per_hour;
+
+        $today_date = Carbon::now()->toISOString();
+        $coupon = Coupon::where('name', $request->promo_code)->first();
+
+        if ($coupon == '') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid coupon',
+            ], 400);
+        }
+
+        if ($today_date > $coupon->expiry_date) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon expired',
+            ], 400);
+        }
+        $discounted_price = $total_amount - ($total_amount * ($coupon->discount / 100));
+
+        //Assigning booking_id
+        $Order = Order::whereNotNull('booking_id')->latest()->first();
+        if ($Order != ' ') {
+            $id = str_replace('B', ' ', $Order->booking_id);
+            $id = $id + 1;
+            $booking_id = 'B'.$id;
+            $invoice_id = 'IN'.$id;
+        } else {
+            $booking_id = 'B100001';
+            $invoice_id = 'IN100001';
+        }
+
+        return response()->json([
+            'status' => true,
+            'no_of_classes' => $classes,
+            'price_per_hour' => $subject->price_per_hour,
+            'total_hours' => $total_hours,
+            'total_amount' => $discounted_price,
+            'discount_percentage' => $coupon->discount,
+            'discounted_amount' => $discounted_price,
+            'discount' => $total_amount - $discounted_price,
+            'total_due_amount' => $total_amount,
+            'promo_code' => $request->promo_code,
+            'booking_id' => $booking_id,
+            'invoice_id' => $invoice_id,
         ]);
     }
 }

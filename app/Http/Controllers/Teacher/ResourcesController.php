@@ -45,7 +45,7 @@ class ResourcesController extends Controller
         if ($image == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'file not found!',
+                'message' => trans('api_messages.FILE_NOT_FOUND'),
 
             ], 400);
         }
@@ -60,7 +60,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'file deleted successfully!',
+            'message' => trans('api_messages.FILE_DELETED_SUCCESSFULLY'),
 
         ]);
     }
@@ -118,7 +118,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'files uploaded!',
+            'message' => trans('api_messages.FILES_UPLOADED'),
             'file' => [$array],
 
         ]);
@@ -178,7 +178,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'files uploaded!',
+            'message' => trans('api_messages.FILES_UPLOADED'),
             'file' => [$array],
 
         ]);
@@ -231,15 +231,15 @@ class ResourcesController extends Controller
         $student_message = "Resource has been added!";
         $teacher_message = "Resource has been added!";
 
-        //Emails and notifications
-        // event(new AddResourceEvent($teacher->id, $teacher_message, $resource1, $teacher));
-        // event(new AddResourceEvent($student->id, $student_message, $resource1, $student));
-        // dispatch(new AddResourceJob($teacher->id, $teacher_message, $resource1, $teacher));
-        // dispatch(new AddResourceJob($student->id, $student_message, $resource1, $student));
+        // Emails and notifications
+        event(new AddResourceEvent($teacher->id, $teacher_message, $resource1, $teacher));
+        event(new AddResourceEvent($student->id, $student_message, $resource1, $student));
+        dispatch(new AddResourceJob($teacher->id, $teacher_message, $resource1, $teacher));
+        dispatch(new AddResourceJob($student->id, $student_message, $resource1, $student));
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Added Successfully!',
+            'message' => trans('api_messages.RESOURCE_ADDED_SUCCESSFULLY'),
             'resource' => $resource1
         ]);
     }
@@ -257,7 +257,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resources Dasboard!',
+            'message' => 'Resources dashboard!',
             'teacher_other_documents' => $resource_teacher_documents,
             'student_other_documents' => $resource_student_documents,
             'course' => $course,
@@ -299,7 +299,7 @@ class ResourcesController extends Controller
         dispatch(new UpdateResourceJob($student->id, $student_message, $resource, $student));
         return response()->json([
             'status' => true,
-            'message' => 'Resource updated successfully!',
+            'message' => trans('api_messages.RESOURCE_UPDATED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }
@@ -320,7 +320,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Deleted successfully!',
+            'message' => trans('api_messages.RESOURCE_DELETED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }
@@ -341,7 +341,7 @@ class ResourcesController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Details!',
+            'message' => 'Resource details!',
             'resource' => $resource,
         ]);
     }

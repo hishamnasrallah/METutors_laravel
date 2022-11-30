@@ -78,7 +78,7 @@ class UserController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $signature=UserSignature::where('user_id',$token_user->id)->where('document',$request->document)->get();
+        $signature = UserSignature::where('user_id',$token_user->id)->where('document',$request->document)->get();
         if(count($signature) == 0){
             $sig=new UserSignature();
             $sig->document=$request->document;
@@ -95,9 +95,72 @@ class UserController extends Controller
 
          return response()->json([
                 'status' => 'true',
-                'message' => "Signature Submitted Successfully",
+                'message' => trans('api_messages.SIGNATURE_SUBMITTED_SUCCESSFULLY'),
             ]);
 
+    }
+
+
+    public function change_video(Request $request)
+    {
+        $rules = [
+
+            'video' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        if ($request->has('video')) {
+
+            $videoName = $request->video;
+            $teaching_quali = TeachingQualification::where('user_id', $token_user->id)->first();
+            $teaching_quali->video = $videoName;
+            $teaching_quali->update();
+
+
+            $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')
+                ->where('id', $token_user->id)
+                ->first();
+
+            $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
+
+            //Email and notifiaction
+            // event(new UpdateAvatarEvent($user->id, $user, "Avatar updated successfully!"));
+            // dispatch(new UpdateAvatarJob($user->id, $user, "Avatar updated successfully!"));
+
+            return response()->json([
+                'status' => true,
+                'message' => trans('api.messages.AVATAR_CHANGED_SUCCESSFULLY'),
+                'video' => $videoName,
+                'token' => $token
+
+
+            ]);
+
+
+            //************* Resource files ends **********\\
+        } else {
+
+            return response()->json([
+                'status' => true,
+                'message' => 'File not found',
+
+
+            ]);
+        }
     }
 
 
@@ -143,7 +206,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'avatar changes successfully',
+                'message' => trans('api_messages.AVATAR_CHANGED_SUCCESSFULLY'),
                 'avatar' => $imageName,
                 'token' => $token
 
@@ -156,7 +219,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'file not found',
+                'message' => trans('api_messages.FILE_NOT_FOUND'),
 
 
             ]);
@@ -201,7 +264,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'cover image changes successfully',
+                'message' => trans('api_messages.COVER_CHANGED_SUCCESSFULLY'),
                 'cover_img' => $imageName,
 
 
@@ -213,7 +276,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'file not found',
+                'message' => trans('api_messages.FILE_NOT_FOUND'),
 
 
             ]);
@@ -263,7 +326,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'true',
-                'message' => 'invite sent successfully ',
+                'message' => 'Invite sent successfully ',
             ]);
         } else {
 
@@ -360,7 +423,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' =>  'request does not exist'
+                'message' =>  'Request does not exist'
             ], 204);
         }
     }
@@ -483,7 +546,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' =>  'request does not exist'
+                'message' =>  'Request does not exist'
             ], 204);
         }
     }
@@ -548,7 +611,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'language added successfully',
+            'message' => 'Language added successfully',
             'language' => $lings,
         ]);
     }
@@ -591,7 +654,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'language added successfully',
+            'message' => 'Language added successfully',
             'language' => $lings,
         ]);
     }
@@ -662,7 +725,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'language added successfully',
+            'message' => 'Language added successfully',
             'language' => $lings,
         ]);
     }
@@ -699,7 +762,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'true',
-                'message' => 'removed successfully',
+                'message' => 'Removed successfully',
                 'subjects' => $subjects,
 
             ]);
@@ -719,7 +782,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'language added successfully',
+            'message' => 'Language added successfully',
             'language' => $lings,
         ]);
     }
@@ -770,7 +833,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'language added successfully',
+            'message' => 'Language added successfully',
             'language' => $lings,
         ]);
     }
@@ -812,7 +875,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' => 'language not found',
+                'message' => 'Language not found',
 
             ], 404);
         }
@@ -823,7 +886,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => 'true',
-            'message' => 'language removed successfully',
+            'message' => 'Language removed successfully',
             'language' => $lings,
         ]);
     }
@@ -1030,7 +1093,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully',
+                'message' => trans('api_messages.DATA_UPDATED_SUCCESSFULLY'),
                 'token' => $token,
                 'user' => $user,
             ]);
@@ -1099,7 +1162,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully',
+                'message' => 'Data updated succesfully',
                 'token' => $token,
                 'user' => $user,
             ]);
@@ -1126,7 +1189,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => false,
-                    'message' => 'please add language first',
+                    'message' => 'Please add language first',
                 ], 400);
             }
 
@@ -1253,7 +1316,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'data updated succesfully',
+                    'message' => 'Data updated succesfully',
                     'token' => $token,
                     'user' => $user,
                 ]);
@@ -1371,7 +1434,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'data updated succesfully',
+                    'message' => 'Data updated succesfully',
                     'token' => $token,
                     'user' => $user,
                 ]);
@@ -1459,7 +1522,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'data updated succesfully',
+                    'message' => 'Data updated succesfully',
                     'token' => $token,
                     'user' => $user,
                 ]);
@@ -1545,7 +1608,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'data updated succesfully',
+                    'message' => 'Data updated succesfully',
                     'token' => $token,
                     'user' => $user,
                 ]);
@@ -1614,7 +1677,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'data updated succesfully',
+                'message' => 'Data updated succesfully',
                 'token' => $token,
                 'user' => $user,
             ]);
@@ -1651,7 +1714,7 @@ class UserController extends Controller
             ], 400);
         }
         if (!$request->hasFile('documents')) {
-            return response()->json(['upload_file_not_found']);
+            return response()->json(['Upload_file_not_found']);
         }
 
         // $request->documents
@@ -1683,7 +1746,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => 'true',
-                    'message' =>  'documents uploaded successfully'
+                    'message' =>  'Documents uploaded successfully'
 
                 ]);
             }
@@ -1810,7 +1873,7 @@ class UserController extends Controller
 
                 return response()->json([
                     'status' => 'true',
-                    'message' =>  'Documents uploaded successfully! Please login to continue'
+                    'message' =>  trans('api_messages.DOCUMENTS_UPLOADED_LOGIN_CONTINUE')
 
                 ]);
             }
@@ -1819,7 +1882,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' =>  'user does not exist'
+                'message' =>  trans('api_messages.USER_NOT_EXIST')
             ], 404);
         }
     }
@@ -1948,7 +2011,7 @@ class UserController extends Controller
         return response()->json([
 
             'status' => true,
-            'message' => 'user documents',
+            'message' => 'User documents',
             'user' => $user,
 
         ]);
@@ -2659,7 +2722,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully',
+                'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY'),
                 'user' => $user,
             ]);
         }
@@ -2719,7 +2782,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully'
+                'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY')
 
             ]);
         }
@@ -2735,7 +2798,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => false,
-                    'message' => 'something went wrong',
+                    'message' => 'Something went wrong',
 
                 ], 400);
             } else {
@@ -2809,7 +2872,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'Profile details updated successfully',
+                    'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY'),
                     'user' => $user,
                 ]);
             }
@@ -2826,7 +2889,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => false,
-                    'message' => 'something went wrong',
+                    'message' => 'Something went wrong',
 
                 ]);
             } else {
@@ -2921,7 +2984,7 @@ class UserController extends Controller
                 return response()->json([
 
                     'status' => true,
-                    'message' => 'Profile details updated successfully',
+                    'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY'),
                     'user' => $user,
                 ]);
             }
@@ -3035,7 +3098,7 @@ class UserController extends Controller
             return response()->json([
 
                 'status' => true,
-                'message' => 'Profile details updated successfully'
+                'message' => trans('api_messages.PROFILE_DETAILS_UPDATED_SUCCESSFULLY')
 
             ]);
         }

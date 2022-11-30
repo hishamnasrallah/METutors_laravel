@@ -18,7 +18,7 @@ class PlatformParamController extends Controller
         $testimonials = Testimonial::all();
         return response()->json([
             'success' => true,
-            'message' => "All Platform Feedback Params",
+            'message' => "All platform feedback params",
             'testimonials' => $testimonials,
         ]);
     }

@@ -20,6 +20,12 @@ class Ticket extends Model
     {
         return $this->belongsTo(TicketCategory::class);
     }
+
+    public function comment()
+    {
+        return $this->belongsTo(Comment::class)->latest();
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);

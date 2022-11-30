@@ -84,10 +84,12 @@ class ProgramController extends Controller
     public function store(Request $request)
     {
         $rules = [
-
             'name' => 'required|unique:programs',
+            'name_ar' => 'required|unique:programs',
             'title' => 'required',
+            'title_ar' => 'required',
             'description' => 'required',
+            'description_ar' => 'required',
             'image' => 'required',
         ];
 
@@ -106,8 +108,11 @@ class ProgramController extends Controller
 
         $program = new Program();
         $program->name = $request->name;
+        $program->name_ar = $request->name_ar;
         $program->title = $request->title;
+        $program->title_ar = $request->title_ar;
         $program->description = $request->description;
+        $program->description_ar = $request->description_ar;
         if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
             $request->image->move(public_path('uploads/program_images'), $imageName);
@@ -166,7 +171,13 @@ class ProgramController extends Controller
     {
         $program = Program::findOrFail($id);
         $rules = [
-            'name' =>  Rule::unique('programs')->ignore($program->id, 'id'),
+            'name' => 'required',Rule::unique('programs')->ignore($program->id, 'id'),
+            'name_ar' => 'required',Rule::unique('programs')->ignore($program->id, 'id'),
+            'title' => 'required',
+            'title_ar' => 'required',
+            'description' => 'required',
+            'description_ar' => 'required',
+            'image' => 'required',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -186,8 +197,11 @@ class ProgramController extends Controller
             return response()->json(['message' => 'Data not found'], 404);
         }
         $program->name = $request->name;
+        $program->name_ar = $request->name_ar;
         $program->title = $request->title;
+        $program->title_ar = $request->title_ar;
         $program->description = $request->description;
+        $program->description_ar = $request->description_ar;
         if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
             $request->image->move(public_path('uploads/program_images'), $imageName);

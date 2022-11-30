@@ -16,6 +16,9 @@ use JWTAuth;
 class Course extends Model
 {
     use HasFactory;
+     protected $casts = [
+        'files' => 'array',
+    ];
 
     public function classes()
     {
@@ -144,4 +147,15 @@ class Course extends Model
     {
         return $this->belongsTo(ProgramCountry::class, 'country_id', 'id');
     }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'course_id', 'id');
+    }
+
+    public function course_order()
+    {
+        return $this->belongsTo(Order::class, 'id', 'course_id');
+    }
+    
 }

@@ -27,6 +27,7 @@ use App\Models\CanceledCourse;
 use App\Models\ClassRoom;
 use App\Models\ClassTopic;
 use App\Models\Course;
+use App\Models\CourseStat;
 use App\Models\HighlightedTopic;
 use App\Models\RejectedCourse;
 use App\Models\Resource;
@@ -128,7 +129,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Progress',
+            'message' => 'Course progress',
             'course' => $course,
             'percentage' => $percentage
         ]);
@@ -146,7 +147,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Class Attendence!',
+            'message' => 'Class attendence!',
             'attendees' => $attendees
         ]);
     }
@@ -177,13 +178,13 @@ class TeacherController extends Controller
         $teacher = User::find($token_user->id);
 
         $reviews = UserFeedback::with('sender', 'course', 'feedback')
-        ->where('receiver_id', $teacher->id)
-        ->where('course_id', $course_id)
-        ->get();
-        
+            ->where('receiver_id', $teacher->id)
+            ->where('course_id', $course_id)
+            ->get();
+
         return response()->json([
             'success' => true,
-            'message' => 'Course Reviews!',
+            'message' => 'Course reviews!',
             'reviews' => $reviews,
         ]);
     }
@@ -199,7 +200,7 @@ class TeacherController extends Controller
         $courses = Course::with('student', 'program', 'country', 'field', 'classes')->where('teacher_id', $teacher->id)->where('status', 'pending')->get();
         return response()->json([
             'success' => true,
-            'message' => 'Newly Assigned Courses!',
+            'message' => 'Newly assigned courses!',
             'courses' => $courses,
         ]);
     }
@@ -221,7 +222,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Todays Classes!',
+            'message' => 'Todays classes!',
             'todays_classes' => $todays_classes,
         ]);
     }
@@ -240,13 +241,13 @@ class TeacherController extends Controller
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Course Could not be rescheduled!',
+                'message' => 'Course could not be rescheduled!',
             ], 400);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Course Rescheduled Successfully!',
+            'message' => 'Course rescheduled successfully!',
         ]);
     }
     //************* Acccept Course *************
@@ -332,17 +333,28 @@ class TeacherController extends Controller
             $room->update();
         }
 
-        $teacher_message = 'Course Accepted Successfully!';
-        $student_message = 'Teacher Accepted Your Course!';
+        $course_stat = CourseStat::where('teacher_id', $token_user->id)->where('course_id', $course->id)->first();
+        if ($course_stat) {
+            $course_stat->accepted_at = Carbon::now()->toISOString();
+            $course_stat->update();
+        }
+
+        $admin = User::where('role_name', 'admin')->first();
+
+        $teacher_message = 'Thank you for accepting to teach the course COURSE ID ' . $course->tcourse_code . ', booking number' . $course->course_order->booking_id ?? null;
+        $student_message = 'Congratulations, ' . $course->teacher->first_name . ' has accepted to teach your new course COURSE ID ' . $course->course_code;
+        $admin_message = 'Teacher' . $course->teacher->first_name . '  TIN' . $course->teacher->id_number . ' has accepted to teach COURSE ID' . $course->course_code . '  with ' . $course->student->first_name . ' SIN' . $course->student->id_number;
 
         event(new AcceptCourse($course, $course->teacher_id, $teacher_message, $teacher));
         event(new AcceptCourse($course, $course->student_id, $student_message, $user));
+        event(new AcceptCourse($course, $course->student_id, $admin_message, $admin));
         dispatch(new AcceptCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
         dispatch(new AcceptCourseJob($course, $course->student_id, $student_message, $user));
+        dispatch(new AcceptCourseJob($course, $course->student_id, $admin_message, $admin));
 
         return response()->json([
             'success' => true,
-            'message' => 'Course Accepted!',
+            'message' => trans('api_messages.COURSE_ACCEPTED'),
             'course' => $course,
         ]);
     }
@@ -373,7 +385,7 @@ class TeacherController extends Controller
         if ($course->teacher_id == null) {
             return response()->json([
                 'success' => false,
-                'message' => 'Currently no teacher assigned to this course!',
+                'message' => trans('api_messages.CURRENTLY_NO_TEACHER_ASSIGNED_COURSE'),
             ], 400);
         }
         $user = User::find($course->student_id);
@@ -401,13 +413,19 @@ class TeacherController extends Controller
             $room->status = 'declined_by_teacher';
             $room->update();
         }
-        $teacher_message = "Course Rejected Successfully";
-        $student_message = "Teacher Rejected your Course";
+        $admin = User::where('role_name', 'admin')->first();
+
+        $teacher_message = 'You have declined to teach the course COURSE ID ' . $course->course_code . ', booking number' . ($course->course_order->booking_id) ?? null;
+        $student_message = $course->teacher->first_name . ' has declined to teach your new course COURSE ID ' . $course->course_code . 'Please check your email for futher instructions.';
+        $admin_message = 'Teacher' . $course->teacher->first_name . '  TIN' . $course->teacher->id_number . ' has declied to teach COURSE ID' . $course->course_code . '  with ' . $course->student->first_name . ' SIN' . $course->student->id_number;
+
 
         event(new RejectCourseEvent($course, $course->teacher_id, $teacher_message, $teacher));
         event(new RejectCourseEvent($course, $course->student_id, $student_message, $user));
+        event(new RejectCourseEvent($course, $course->student_id, $admin_message, $admin));
         dispatch(new RejectCourseJob($course, $course->teacher_id, $teacher_message, $teacher));
         dispatch(new RejectCourseJob($course, $course->student_id, $student_message, $user));
+        dispatch(new RejectCourseJob($course, $course->student_id, $admin_message, $admin));
 
         $course->status = "declined_by_teacher";
         // $course->teacher_id = null;
@@ -417,7 +435,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Course Rejected!',
+            'message' => trans('api_messages.COURSE_REJECTED'),
             'course' => $course,
         ]);
     }
@@ -459,7 +477,7 @@ class TeacherController extends Controller
         if ($classes > $academic_classes_count) {
             return response()->json([
                 'success' => false,
-                'message' => 'Entered number of classes is greater than actual classes!',
+                'message' => trans('api_messages.ENTERED_CLASS_GREATER_THAN_ACTUAL'),
             ], 400);
         } else {
 
@@ -514,7 +532,7 @@ class TeacherController extends Controller
 
                     return response()->json([
                         'success' => true,
-                        'message' => 'Topic Added Successfully!',
+                        'message' => trans('api_messages.TOPIC_ADDED_SUCCESSFULLY'),
 
                         'unclassified_classes' => $academic_classes_count,
 
@@ -562,7 +580,7 @@ class TeacherController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Topic Added Successfully!',
+                'message' => trans('api_messages.TOPIC_ADDED_SUCCESSFULLY'),
 
                 'unclassified_classes' => $academic_classes_count,
                 'topic_detail' => [
@@ -590,7 +608,7 @@ class TeacherController extends Controller
 
         $teacher = User::find($token_user->id);
         $course = Course::with('subject', 'language', 'program', 'student', 'student')->find($course_id);
-        $highlighted_topics = HighlightedTopic::where('course_id',$course_id)->get();
+        $highlighted_topics = HighlightedTopic::where('course_id', $course_id)->get();
 
         $totalClases = AcademicClass::where('course_id', $course_id)->where($userrole, $token_user->id)->count();
         $completedClases = AcademicClass::where('course_id', $course_id)->where('status', 'completed')->where($userrole, $token_user->id)->count();
@@ -616,7 +634,7 @@ class TeacherController extends Controller
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
                 'course_progress' => $courseProgress,
-                'highlighted_topics'=>$highlighted_topics,
+                'highlighted_topics' => $highlighted_topics,
                 'topics' => $class_topics,
                 'unclassified_classes' => $remaining_classes,
             ]);
@@ -653,7 +671,7 @@ class TeacherController extends Controller
                 'message' => 'Syllabus dashboard',
                 'course' => $course,
                 'course_progress' => $courseProgress,
-                'highlighted_topics'=>$highlighted_topics,
+                'highlighted_topics' => $highlighted_topics,
                 'topics' => $topics_array,
                 'unclassified_classes' => $remaining_classes,
             ]);
@@ -711,7 +729,7 @@ class TeacherController extends Controller
         $resource1 = Resource::with('class')->find($resource->id);
         return response()->json([
             'status' => true,
-            'message' => 'Resource Added Successfully!',
+            'message' => trans('api_messages.RESOURCE_ADDED_SUCCESSFULLY'),
             'resource' => $resource1
         ]);
     }
@@ -727,7 +745,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resources Dasboard!',
+            'message' => 'Resources dasboard!',
             'course' => $course,
         ]);
     }
@@ -761,7 +779,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource updated successfully!',
+            'message' => trans('api_messages.RESOURCE_UPDATED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }
@@ -782,7 +800,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Deleted successfully!',
+            'message' => trans('api_messages.RESOURCE_DELETED_SUCCESSFULLY'),
             'resource' => $resource,
         ]);
     }
@@ -798,7 +816,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Resource Details!',
+            'message' => 'Resource details!',
             'resource' => $resource,
         ]);
     }
@@ -883,7 +901,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment added Successfully!',
+            'message' => trans("api_messages.ASSIGNMENT_ADDED_SUCCESSFULLY"),
         ]);
     }
 
@@ -936,7 +954,7 @@ class TeacherController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Course Assignment Dashboard!',
+                'message' => 'Course assignment dashboard!',
                 'total_assignments' => $total_assinments,
                 'active_assignments' => $active_assignments,
                 'completed_assignments' => $completed_assignments,
@@ -949,7 +967,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment Dashboard!',
+            'message' => 'Course assignment dashboard!',
             'total_assignments' => $total_assinments,
             'active_assignments' => $active_assignments,
             'completed_assignments' => $completed_assignments,
@@ -988,7 +1006,7 @@ class TeacherController extends Controller
         if ($course->status == 'canceled_by_teacher' || $course->status == 'canceled_by_student' || $course->status == 'canceled_by_admin') {
             return response()->json([
                 'status' => true,
-                'message' => 'Course Already cancelled!',
+                'message' => 'Course already cancelled!',
             ], 400);
         }
 
@@ -1040,7 +1058,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course cancelled successfully!',
+            'message' => trans('api_messages.COURSE_CANCELLED_SUCCESSFULLY'),
             'course' => $course,
         ]);
     }
@@ -1087,7 +1105,7 @@ class TeacherController extends Controller
                 if ($required_classes > count($academic_clsses)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Entered number of classes is greater than actual classes!',
+                        'message' => trans('api_messages.ENTERED_CLASS_GREATER_THAN_ACTUAL'),
                     ], 400);
                 } else {
 
@@ -1148,7 +1166,7 @@ class TeacherController extends Controller
 
                             return response()->json([
                                 'success' => true,
-                                'message' => 'Topic Added Successfully!',
+                                'message' => trans('api_messages.TOPIC_UPDATED_SUCCESSFULLY'),
 
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
@@ -1225,7 +1243,7 @@ class TeacherController extends Controller
 
                             return response()->json([
                                 'success' => true,
-                                'message' => 'Topic Added Successfully!',
+                                'message' => 'Topic added successfully!',
                                 'unclassified_classes' =>  $academic_classes_count,
                                 'topic_detail' => [
 
@@ -1382,7 +1400,7 @@ class TeacherController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "Class updated Successfully!",
+                    'message' => "Class updated successfully!",
                 ]);
             } else {
                 return response()->json([
@@ -1397,7 +1415,7 @@ class TeacherController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Class updated Successfully!",
+                'message' => "Class updated successfully!",
             ]);
         }
     }
@@ -1555,7 +1573,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => trans('api_messages.COURSE_ASSIGNMENT_UPDATED_SUCCESSFULLY'),
             'assignment' => $assignment,
         ]);
     }
@@ -1586,7 +1604,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => trans('api_messages.TOPIC_DELETED_SUCCESSFULLY'),
             'deleted_topic' => $topic,
             'unclassified_classes' => $unclassified_classes,
         ]);
@@ -1603,7 +1621,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => 'Course assignment updated successfully!',
             'deleted_assignment' => $assignment,
 
         ]);
@@ -1687,7 +1705,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Preferences Updated Successfully!",
+            'message' => trans('api_messages.TEACHER_PREFERENCES_UPDATED_SUCCESSFULLY'),
             'preferences' => $final_prefrences
         ]);
     }
@@ -1718,7 +1736,7 @@ class TeacherController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Preferences!",
+            'message' => "Teacher preferences!",
             'prefrences' => $final_prefrences
         ]);
     }

@@ -45,10 +45,18 @@ class NoTeacherJob implements ShouldQueue
 
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'course' => $this->course);
 
-        Mail::send('email.cancelled_course', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Booked! Wait for admin to assign teacher');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.no_teacher_course', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Course booked without a teacher - action needed');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.no_teacher_course', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course booking on MEtutors - order number XXX');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
         // //******** Email ends **********//
 
         //Notification

@@ -50,6 +50,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -87,7 +88,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' =>  "Teacher Assigned to course Successfully",
+            'message' =>  "Teacher assigned to course successfully",
         ]);
     }
 
@@ -123,7 +124,7 @@ class AdminController extends Controller
             $teacher->status = "disabled";
             return response()->json([
                 'status' => false,
-                'message' => "Warning Limit Exceeded! Account has been banned",
+                'message' => "Warning limit exceeded! Account has been banned",
             ]);
         }
     }
@@ -145,8 +146,8 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Performance",
-            'average_rating' => $average_rating,
+            'message' => "Teacher performance",
+            'average_rating' => Str::limit($average_rating, 3, ''),
         ]);
     }
 
@@ -169,7 +170,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Blocked Successfully",
+            'message' => "User blocked successfully",
             'user' => $user,
         ]);
     }
@@ -193,7 +194,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User UnBlocked Successfully",
+            'message' => "User unblocked successfully",
             'user' => $user,
         ]);
     }
@@ -225,7 +226,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role added Successfully",
+            'message' => "Role added successfully",
             'role' => $role,
         ]);
     }
@@ -238,7 +239,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role Updated Successfully",
+            'message' => "Role updated successfully",
             'role' =>  $role,
         ]);
     }
@@ -250,7 +251,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role Deleted Successfully",
+            'message' => "Role deleted duccessfully",
             'role' =>  $role,
         ]);
     }
@@ -261,7 +262,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Role Deleted Successfully",
+            'message' => "All roles",
             'roles' => $roles,
         ]);
     }
@@ -319,11 +320,11 @@ class AdminController extends Controller
 
         $reassigned_classes = AcademicClass::where(['course_id' => $course->id, 'status' => 'reassigned'])->get();
         $course->course_progress = $progress;
-        $course['teacher']->teacher_rating = $average_rating;
+        $course['teacher']->teacher_rating = Str::limit($average_rating, 3, '');
 
         return response()->json([
             'status' => true,
-            'message' => "Course Detail!",
+            'message' => "Course detail!",
             // 'course_progress' => $progress,
             // 'teacher_rating' => $average_rating,
             'course' => $course,
@@ -374,11 +375,11 @@ class AdminController extends Controller
         }
 
         $course->course_progress = $progress;
-        $course['teacher']->teacher_rating = $average_rating;
+        $course['teacher']->teacher_rating = Str::limit($average_rating, 3, '');
 
         return response()->json([
             'status' => true,
-            'message' => "Course Detail!",
+            'message' => "Course detail!",
             // 'course_progress' => $progress,
             // 'teacher_rating' => $average_rating,
             'course' => $course,
@@ -440,7 +441,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Courses Canceled by teacher!",
+            'message' => "Courses canceled by teacher!",
             'canceled_courses' => $courses,
         ]);
     }
@@ -474,7 +475,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Courses Canceled by student!",
+            'message' => "Courses canceled by student!",
             'canceled_courses' => $courses,
         ]);
     }
@@ -637,7 +638,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teachers Classes Schedule",
+            'message' => "Teachers classes schedule",
             'weekdays' => $weekDays,
             'teachers' => $this->paginate($tutors, $request->per_page ?? 10),
         ]);
@@ -666,7 +667,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Student's Classes Schedule",
+            'message' => "Student's classes schedule",
             'total_students' => count($students),
             'result' => $object,
         ]);
@@ -678,7 +679,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Newsletters",
+            'message' => "All newsletters",
             'newsletters' => $newsletters,
         ]);
     }
@@ -690,7 +691,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Newsletter Deleted Successfully!",
+            'message' => "Newsletter deleted successfully!",
             'newsletter' => $newsletter,
         ]);
     }
@@ -707,7 +708,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Students Feedbacks",
+            'message' => "Students feedbacks",
             'user_feedbacks' => $feedbacks,
         ]);
     }
@@ -871,7 +872,7 @@ class AdminController extends Controller
                         ]);
                     }
                     // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                    $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
                         "testimonial_id" => $feedback->testimonial->id,
@@ -902,7 +903,7 @@ class AdminController extends Controller
             // return $feedbacksArray;
             return response()->json([
                 'status' => true,
-                'message' => "Student Testimonials",
+                'message' => "Student testimonials",
                 'reviews_count' => count($user_feedbacks),
                 'overall_stars' => $overall_stars,
                 'overall_feedback' => $overall_feedback,
@@ -1041,7 +1042,7 @@ class AdminController extends Controller
                         ]);
                     }
                     // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                    $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+                    $feedbacks[$flag]['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
                     $feedbacks[$flag]['feedbacks'][] = array(
                         "title" => $feedback->testimonial->name,
@@ -1052,7 +1053,7 @@ class AdminController extends Controller
             }
             return response()->json([
                 'status' => true,
-                'message' => "Teachers Testimonials!",
+                'message' => "Teachers testimonials!",
                 'reviews_count' => count($user_feedbacks),
                 'overall_stars' => $overall_stars,
                 'overall_feedback' => $overall_feedback,
@@ -1088,7 +1089,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Required Params for Platform Feedback!",
+            'message' => "Required params for platform feedback!",
             'review' => $testimonials[0]->review,
             'params' => $params,
         ]);
@@ -1130,7 +1131,7 @@ class AdminController extends Controller
                 $feedbacks['sender'] = $feedback->sender;
             }
             // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-            $feedbacks['average_rating'] = $average_rating; //feedback average rating
+            $feedbacks['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
             $feedbacks['feedbacks'][] = array(
                 "title" => $feedback->testimonial->name,
@@ -1142,7 +1143,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Your Feedback Updated Successfully!",
+            'message' => "Your feedback updated successfully!",
             'feedbacks' => $feedbacks,
         ]);
     }
@@ -1173,7 +1174,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Feedback deleted Successfully!",
+            'message' => "User feedback deleted successfully!",
         ]);
     }
 
@@ -1187,7 +1188,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Testimonial deleted Successfully!",
+            'message' => "User testimonial deleted successfully!",
         ]);
     }
 
@@ -1204,7 +1205,7 @@ class AdminController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
 
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
         }
 
         return response()->json([
@@ -1323,7 +1324,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Assigned Successfully!",
+            'message' => "Teacher assigned successfully!",
             'course' => $course,
         ]);
     }
@@ -1428,7 +1429,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Teacher Assigned Successfully!",
+            'message' => "Teacher assigned successfully!",
             'course' => $course,
         ]);
     }
@@ -1543,7 +1544,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Rejected Teachers!",
+            'message' => "Rejected teachers!",
             'teachers_count' => count($teachers),
             'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
@@ -1557,7 +1558,8 @@ class AdminController extends Controller
 
         $teachers = User::with('teacher_interview_request')
             ->where('role_name', 'teacher')
-            ->where('status', 'suspended')->orderBy('id', 'desc')
+            ->where('status', 'suspended')
+            ->orderBy('id', 'desc')
             ->get();
         // } else {
 
@@ -1567,7 +1569,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Suspended Teachers!",
+            'message' => "Suspended teachers!",
             'teachers_count' => count($teachers),
             'teachers' => $this->paginate($teachers, $request->per_page ?? 10),
 
@@ -1581,7 +1583,7 @@ class AdminController extends Controller
 
         if ($request->has('search')) {
 
-            $pending_teachers = User::with('country','teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)
                 ->where(function ($query) use ($request) {
                     $query->where('first_name', 'LIKE', "%$request->search%")
@@ -1593,7 +1595,7 @@ class AdminController extends Controller
                 })->orderBy('id', 'desc')
                 ->get();
 
-            $rejected_teachers = User::with('country','teacher_interview_request','teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
+            $rejected_teachers = User::with('country', 'teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')
                 ->where(function ($query) use ($request) {
@@ -1607,11 +1609,11 @@ class AdminController extends Controller
                 ->get();
         } else {
 
-            $pending_teachers = User::with('country','teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
+            $pending_teachers = User::with('country', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects', 'teacher_subjects.program', 'teacher_subjects.field', 'teacher_subjects.subject', 'teacher_interview_request')
                 ->whereIn('id', $interview)->orderBy('id', 'desc')
                 ->get();
 
-            $rejected_teachers = User::with( 'country','teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
+            $rejected_teachers = User::with('country', 'teacher_interview_request', 'teacherQualifications', 'teacherSpecifications', 'teacher_subjects')
                 ->where('role_name', 'teacher')
                 ->where('status', 'rejected')->orderBy('id', 'desc')
                 ->get();
@@ -1620,7 +1622,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Rejected Teachers!",
+            'message' => "Rejected teachers!",
             'pending_teachers_count' => count($pending_teachers),
             'pending_teachers' => $this->paginate($pending_teachers, $request->per_page ?? 10),
             'rejected_teachers_count' => count($rejected_teachers),
@@ -1784,7 +1786,7 @@ class AdminController extends Controller
         // return $available_teachers;
         return response()->json([
             'status' => true,
-            'message' => "Current Teachers",
+            'message' => "Current teachers",
             'total' => count($teachers),
             'available' => count($available_teachers),
             'engaged' => count($engaged_teachers),
@@ -1897,7 +1899,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Meeting Scheduled Successfully",
+                'message' => trans('api_messages.MEETING_SCHEDULED_SUCCESSFULLY'),
 
             ]);
         } else {
@@ -1925,7 +1927,7 @@ class AdminController extends Controller
         if ($int == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'meeting not found'
+                'message' => 'Meeting not found'
             ], 400);
         }
 
@@ -1976,7 +1978,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Active Teachers related to Subject!",
+            'message' => "Active teachers related to subject!",
             'teachers_count' => count($teachers),
             'teachers' => $teachers,
         ]);
@@ -1996,7 +1998,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Active Classes related to Subject!",
+            'message' => "Active classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2010,7 +2012,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Upcoming Classes related to Subject!",
+            'message' => "Upcoming classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2025,7 +2027,7 @@ class AdminController extends Controller
         $classes = CanceledCourse::whereIn('course_id', $subject_courses)->get();
         return response()->json([
             'status' => true,
-            'message' => "Canceled Classes related to Subject!",
+            'message' => "Canceled classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2039,7 +2041,7 @@ class AdminController extends Controller
         $classes = RescheduleClass::whereIn('course_id', $subject_courses)->get();
         return response()->json([
             'status' => true,
-            'message' => "Rescheduled Classes related to Subject!",
+            'message' => "Rescheduled classes related to subject!",
             'classes_count' => count($classes),
             'classes' => $classes,
         ]);
@@ -2048,8 +2050,97 @@ class AdminController extends Controller
     public function program_subjects(Request $request, $program_id)
     {
 
-        $subjects = Subject::with('program', 'country', 'field')->where('program_id', $program_id)->get();
+        $program = Program::find($program_id);
+        if ($program == '') {
+            return response()->json([
+                'status' => true,
+                'message' => 'Program not found.'
+            ], 400);
+        }
         $field_of_studies = FieldOfStudy::with('program', 'country')->where('program_id', $program_id)->get();
+
+        if ($program_id != 3) {
+            if ($request->has('price_start')) {
+                if ($request->has('field_ids')) {
+                    $field_ids = json_decode($request->field_ids);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
+                    }
+                } else {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->get();
+                    }
+                }
+            } else {
+                if ($request->has('field_ids')) {
+                    $field_ids = json_decode($request->field_ids);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->paginate($request->per_page ?? 10);
+                    }
+                } else {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->paginate($request->per_page ?? 10);
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->paginate($request->per_page ?? 10);
+                    }
+                }
+            }
+        }
+
+
+
+
+        /// IF program is national
 
         if ($program_id == 3) {
             $rules = [
@@ -2070,14 +2161,212 @@ class AdminController extends Controller
             }
 
             $country_id = $request->country_id;
-            $subjects = Subject::with('program', 'country', 'field')->where('program_id', $program_id)->where('country_id', $country_id)->get();
-            $field_of_studies = FieldOfStudy::with('program', 'country')->where('program_id', $program_id)->where('country_id', $country_id)->get();
+
+            if ($request->has('price_start')) {
+                if ($request->has('field_ids')) {
+                    $field_ids = json_decode($request->field_ids);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
+                    }
+                } else {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->get();
+                    }
+                }
+            } else {
+                if ($request->has('field_ids')) {
+                    $field_ids = json_decode($request->field_ids);
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
+                    }
+                } else {
+                    if ($request->has('search')) {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
+                    } else {
+                        $subjects = Subject::with('program', 'country', 'field')
+                            ->where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('country_id', $country_id)
+                            ->get();
+                    }
+                }
+            }
+
+
+
+
+
+            $field_of_studies = FieldOfStudy::with('program', 'country')
+                ->where('program_id', $program_id)
+                ->where('country_id', $country_id)
+                ->get();
         }
+
+
+        $min_price = $Subjects->min('price_per_hour');
+        $max_price = $Subjects->max('price_per_hour');
+
+
 
         return response()->json([
             'status' => true,
-            'program' => $subjects[0]->program,
+            'program' => $program,
             'subjects' => $subjects,
+            'min_price' => $min_price ?? 0,
+            'requested_min_price' => json_decode($request->price_start) ?? 0,
+            'max_price' => $max_price ?? 0,
+            'requested_max_price' => json_decode($request->price_end) ?? 0,
+            'field_of_studies' => $field_of_studies,
+        ]);
+    }
+
+    public function all_subjects(Request $request)
+    {
+        if ($request->has('price_start')) {
+            if ($request->has('field_ids')) {
+                $field_ids = json_decode($request->field_ids);
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->whereIn('field_id', $field_ids)
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->whereIn('field_id', $field_ids)
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                }
+            } else {
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->whereBetween('price_per_hour', [$request->price_start, $request->price_end])
+                        ->paginate($request->per_page ?? 10);
+                }
+            }
+        } else {
+            if ($request->has('field_ids')) {
+                $field_ids = json_decode($request->field_ids);
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->whereIn('field_id', $field_ids)
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->whereIn('field_id', $field_ids)
+                        ->paginate($request->per_page ?? 10);
+                }
+            } else {
+                if ($request->has('search')) {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->where('name', 'LIKE', "%$request->search%")
+                        ->paginate($request->per_page ?? 10);
+                } else {
+                    $subjects = Subject::with('program', 'country', 'field')
+                        ->paginate($request->per_page ?? 10);
+                }
+            }
+        }
+
+
+
+
+        $field_of_studies = FieldOfStudy::with('program', 'country')->get();
+
+        $min_price = $subjects->min('price_per_hour');
+        $max_price = $subjects->max('price_per_hour');
+
+        return response()->json([
+            'status' => true,
+            'subjects' => $subjects,
+            'min_price' => $min_price ?? 0,
+            'max_price' => $max_price ?? 0,
             'field_of_studies' => $field_of_studies,
         ]);
     }
@@ -2239,7 +2528,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Bookings of given Subject!",
+            'message' => "All bookings of given subject!",
             'subject' => $subject,
         ]);
     }
@@ -2370,7 +2659,7 @@ class AdminController extends Controller
                     ]);
                 }
                 // $feedbacks[$flag][$feedback->feedback->name] = $feedback->rating; //feedback rating
-                $feedbacks[$flag]['average_rating'] = $average_rating; //feedback average rating
+                $feedbacks[$flag]['average_rating'] = Str::limit($average_rating, 3, ''); //feedback average rating
 
                 $feedbacks[$flag]['feedbacks'][] = array(
 
@@ -2384,22 +2673,22 @@ class AdminController extends Controller
         $overall_feedback = array(
 
             array(
-                "title" => 'Expert in the subject',
+                "title" => 'EXPERT_IN_SUBJECT',
                 "value" => $feedback_id_1,
             ),
 
             array(
-                "title" => 'Present Complex Topics clearly and easily',
+                "title" => 'PRESENT_COMPLEX_TOPICS_CLEARLY',
                 "value" => $feedback_id_2,
             ),
 
             array(
-                "title" => 'Skillfull in engaging students',
+                "title" => 'SKILLFULL_ENGAGING_STUDENTS',
                 "value" => $feedback_id_3,
             ),
 
             array(
-                "title" => 'Always on time',
+                "title" => 'ALWAYS_ON_TIME',
                 "value" => $feedback_id_4,
             ),
 
@@ -2440,7 +2729,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Student feedback on Course!",
+            'message' => "Student feedback on course!",
             'feedbacks_count' => $feedbacks_count,
             'feedback_rating' => $feedback_rating,
             'overall_feedback' => $overall_feedback,
@@ -2517,13 +2806,13 @@ class AdminController extends Controller
         if ($request->has('cancelled_by')) {
             return response()->json([
                 'status' => true,
-                'message' => "Cancelled Courses!",
+                'message' => "Cancelled courses!",
                 'cancelled_courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
         } else {
             return response()->json([
                 'status' => true,
-                'message' => "Cancelled Courses!",
+                'message' => "Cancelled courses!",
                 'total' => count($courses),
                 'by_teachers' => $by_teachers,
                 'by_students' => $by_students,
@@ -2561,11 +2850,18 @@ class AdminController extends Controller
         if (count($courses) > 0) {
             return response()->json([
                 'status' => false,
-                'message' => 'Access Denied! Please assign these courses to someone else.',
+                'message' => 'Access denied! Please assign these courses to someone else.',
                 'courses' => $courses,
             ], 400);
         } else {
             $teacher = User::findOrFail($request->teacher_id);
+
+            if ($teacher->admin_approval != 'approved' && ($request->status == 'active' || $request->status == 'inactive')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Please approve this teacher first',
+                ], 400);
+            }
             $teacher->status = $request->status;
             $teacher->update();
             $admin_message = "Teacher Status Changed Successfully";
@@ -2632,7 +2928,7 @@ class AdminController extends Controller
             if ($total_reviews > 0) {
                 $average_rating = $rating_sum / $total_reviews;
             }
-            $student->average_rating =  $average_rating;
+            $student->average_rating =  Str::limit($average_rating, 3, '');
             //finding student courses
             $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
             if (count($student_courses) == 0) {
@@ -2689,7 +2985,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  $average_rating;
+                $student->average_rating =  Str::limit($average_rating, 3, '');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2708,7 +3004,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Active Students ',
+                'message' => 'Active students ',
                 'Total' => count($active_students),
                 'enrolled' => count($enrolled_students),
                 'unenrolled' => count($active_students) - count($enrolled_students),
@@ -2744,7 +3040,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  $average_rating;
+                $student->average_rating =  Str::limit($average_rating, 3, '');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2763,7 +3059,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Inactive Students ',
+                'message' => 'Inactive students ',
                 'students' => $this->paginate($inactive_students, $request->per_page ?? 10),
 
             ]);
@@ -2796,7 +3092,7 @@ class AdminController extends Controller
                 if ($total_reviews > 0) {
                     $average_rating = $rating_sum / $total_reviews;
                 }
-                $student->average_rating =  $average_rating;
+                $student->average_rating =  Str::limit($average_rating, 3, '');
 
                 //finding student courses
                 $student_courses = ClassRoom::with('course')->where('student_id', $student->id)->get();
@@ -2815,7 +3111,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'suspended Students ',
+                'message' => 'Suspended students ',
                 'students' => $this->paginate($suspended_students, $request->per_page ?? 10),
 
             ]);
@@ -2823,7 +3119,7 @@ class AdminController extends Controller
         //Response
         return response()->json([
             'status' => true,
-            'message' => 'All Students ',
+            'message' => 'All students ',
             'Total' => count($registered_students),
             'enrolled' => count($enrolled_students),
             'active' => count($active_students),
@@ -2875,10 +3171,10 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'All Bookings!',
+            'message' => 'All bookings!',
             'student' => $student,
             'total_bookings' => count($bookings),
-            'average_rating' => $average_rating,
+            'average_rating' => Str::limit($average_rating, 3, ''),
             // 'attendence_count' => $attendence_count,
             // 'completed_clasess' => $completed_clasess,
             'attendence_rate' => $attendence_rate,
@@ -2936,7 +3232,7 @@ class AdminController extends Controller
             'message' => 'Student profile!',
             'total_courses' => count($bookings),
             'completed_courses' => count($completed_courses),
-            'average_rating' => number_format($average_rating, 2),
+            'average_rating' => Str::limit($average_rating, 3, ''),
             'total_spendings' => $total_spendings,
             'attendence_rate' => $attendence_rate,
             'student' => $student_details,
@@ -2992,7 +3288,7 @@ class AdminController extends Controller
         if ($total_reviews > 0) {
             $average_rating = $rating_sum / $total_reviews;
         }
-        $student->average_rating = $average_rating;
+        $student->average_rating = Str::limit($average_rating, 3, '');
 
         //Calculating Assignment completion rate
         $assignment_completion_rate = 100;
@@ -3036,7 +3332,7 @@ class AdminController extends Controller
                 $average_rating = $rating_sum / $total_reviews;
             }
             $teacher = $class['teacher'];
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
 
             //Checking class Attendence
             $attendence = Attendance::where('academic_class_id', $class->id)->first();
@@ -3112,7 +3408,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Summary',
+            'message' => 'Assignment summary',
             'assignmnets_accuracy' => $assignmnets_accuracy,
             'assignment_completion_rate' => $assignment_completion_rate,
             'assignments_by_due_date' => $on_date,
@@ -3146,7 +3442,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Feedback to student!',
+            'message' => 'Teacher feedback to student!',
             'review' => $review,
             'teacher' => $teacher,
             'feedback' => $student_feedback,
@@ -3190,7 +3486,7 @@ class AdminController extends Controller
             // $pending_courses = Course::where('subject_id', 1)->where('status',  'pending')->get();
             return response()->json([
                 'status' => true,
-                'message' => 'Running Courses!',
+                'message' => 'Running courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3224,7 +3520,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Pending Courses!',
+                'message' => 'Pending courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3257,7 +3553,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Cancelled Courses!',
+                'message' => 'Cancelled courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3291,7 +3587,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Completed Courses!',
+                'message' => 'Completed courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3325,7 +3621,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Reassigned Courses!',
+                'message' => 'Reassigned courses!',
                 'running_courses_count' => $running_courses_count,
                 'pending_courses_count' => $pending_courses_count,
                 'completed_courses_count' => $completed_courses_count,
@@ -3406,11 +3702,11 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'All Bookings!',
+            'message' => 'All bookings!',
             'teacher' => $teacher,
             'total_bookings' => count($courses),
             'rating_count' => count($points_array),
-            'average_rating' => $average_rating,
+            'average_rating' => Str::limit($average_rating, 3, ''),
             'attendence_rate' => round($attendence_rate),
             'bookings' => $courses,
         ]);
@@ -3491,7 +3787,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Rejected Courses!',
+                'message' => 'Rejected courses!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -3551,7 +3847,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Courses With no Teacher!',
+                'message' => 'Courses with no teacher!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -3600,7 +3896,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Cancelled Courses!',
+                'message' => 'Cancelled courses!',
                 'newly_courses_count' => count($new_courses),
                 'completed_courses_count' => count($completed_courses),
                 'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -3628,7 +3924,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Running Courses!',
+                'message' => 'Running courses!',
                 'courses_count' => count($courses),
                 'courses' => $this->paginate($courses, $request->per_page ?? 10),
             ]);
@@ -3669,7 +3965,7 @@ class AdminController extends Controller
         //********* Sending Email ends **********//
         return response()->json([
             'status' => true,
-            'message' => "Email sent Successfully!",
+            'message' => "Email sent successfully!",
             'email' => $request->email,
             'message' => $request->message,
         ]);
@@ -3700,7 +3996,7 @@ class AdminController extends Controller
         $user_testimonials = UserTestimonial::where('sender_id', $user_id)->get();
         return response()->json([
             'status' => true,
-            'message' => "Status Updated Successfully",
+            'message' => "Status updated successfully",
             'user_testimonials' => $user_testimonials,
         ]);
     }
@@ -3713,7 +4009,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Requested Courses",
+            'message' => "All requested courses",
             'new_request_count' => count($requested_courses),
             'completed_count' => count($requested_courses),
             'requested_courses' => $this->paginate($requested_courses, $request->per_page ?? 10),
@@ -3740,7 +4036,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Orders",
+            'message' => "All orders",
             'orders' => $this->paginate($orders, $request->per_page ?? 10),
         ]);
     }
@@ -3772,7 +4068,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "All Orders to refund!",
+            'message' => "All orders to refund!",
             'orders' => $this->paginate($orders, $request->per_page ?? 10),
         ]);
     }
@@ -3820,7 +4116,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "status changed successfully",
+            'message' => "Status changed successfully",
         ]);
     }
 
@@ -3874,7 +4170,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Subject Orders",
+            'message' => "Subject orders",
             'orders' => $this->paginate($orders, $request->per_page),
         ]);
     }
@@ -3900,7 +4196,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Order Details!",
+            'message' => "Order details!",
             'order_detail' => $order,
         ]);
     }
@@ -3991,7 +4287,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Approval Requests!',
+            'message' => 'Approval requests!',
             'newly_courses_count' => count($new_courses),
             'completed_courses_count' => count($completed_courses),
             'newly_requested_courses' => $this->paginate($newly, $request->per_page ?? 10),
@@ -4031,7 +4327,7 @@ class AdminController extends Controller
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
             $teacher->reviews_count  = $reviews_count;
             array_push($featured_teachers, $teacher);
             $teacher->programs = $programs;
@@ -4041,12 +4337,13 @@ class AdminController extends Controller
         $featured_teachers = collect($featured_teachers)->sortByDesc('courses_count')->take(3);
         $teachers_list = [];
         foreach ($featured_teachers as $featured_teacher) {
+            $featured_teacher->teacher->last_name = Str::limit($featured_teacher->teacher->last_name, 1, '') . '.';
             array_push($teachers_list, $featured_teacher);
         }
 
         return response()->json([
             'status' => true,
-            'message' => 'Featured Teachers Related to Subject!',
+            'message' => 'Featured teachers related to subject!',
             'subject' => $subject,
             'featured_teachers' => $teachers_list,
         ]);
@@ -4088,7 +4385,7 @@ class AdminController extends Controller
             $reviews_count = $reviews->groupBy('sender_id')->count();
             //--------------------------
 
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
             $teacher->reviews_count  = $reviews_count;
             $teacher->teacher_students_count  = $students_count;
             array_push($featured_teachers, $teacher);
@@ -4105,12 +4402,13 @@ class AdminController extends Controller
                 ->unique();
 
             $featured_teacher->subjects = Subject::whereIn('id', $subjects)->get();
+            $featured_teacher->last_name = Str::limit($featured_teacher->last_name, 1, '') . '.';
             array_push($teachers_list, $featured_teacher);
         }
 
         return response()->json([
             'status' => true,
-            'message' => 'Featured Teachers!',
+            'message' => 'Featured teachers!',
             'featured_teachers' => $teachers_list,
         ]);
     }
@@ -4120,7 +4418,7 @@ class AdminController extends Controller
         $refunds = RefundCourse::with('order', 'course')->where('course_id', $course_id)->first();
         return response()->json([
             'status' => true,
-            'message' => 'Refund order Account Detail!',
+            'message' => 'Refund order account detail!',
             'refund' => $refunds,
         ]);
     }
@@ -4154,7 +4452,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Refunded Successfully!',
+            'message' => 'Refunded successfully!',
             'refund' => $refunds,
         ]);
     }
@@ -4192,7 +4490,7 @@ class AdminController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'All Courses!',
+            'message' => 'All courses!',
             'courses' =>  $courses,
             // 'courses' =>  $this->paginate($courses, $request->per_page ?? 10),
         ]);

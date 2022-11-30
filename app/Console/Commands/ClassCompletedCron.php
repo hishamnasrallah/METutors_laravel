@@ -39,25 +39,41 @@ class ClassCompletedCron extends Command
      */
     public function handle()
     {
-        $classes = AcademicClass::where('start_date', "<=", Carbon::today()->format('Y-m-d'))
+        $today = Carbon::now()->toISOString();
+        $today_date = Carbon::parse($today)->format('Y-m-d');
+
+        $classes = AcademicClass::whereDate('start_date', "<=", $today_date)
             ->where('status', '!=', 'completed')
+            ->where('teacher_id', '!=', null)
             ->get();
 
-        foreach ($classes as $class) {
-            //Class completion scnerio
-            if (Carbon::parse($class->end_time) >= Carbon::now() && count($class->teacher_attendence) > 0  && count($class->student_attendence) > 0) {
-                $class->status = "completed";
-                $class->update();
+        if (count($classes) > 0) {
+            foreach ($classes as $class) {
+                if ($class->teacher_attendence != null && $class->student_attendence != null) {
+                    //********************* Class completion scnerio *********************
+                    ### if current time is greater than class end time and teacher and student are present
+                    if ($class->end_time <= $today && $class->teacher_attendence->status == 'present' && $class->student_attendence->status == 'present') { // $class->teacher_attendence != null && $class->student_attendence != null
+                        $class->status = "completed";
+                        $class->update();
+                    }
+                    ### if current time is greater than class end time and teacher is present and student is absent
+                    if ($class->end_time <= $today && $class->teacher_attendence->status == 'present' && $class->student_attendence->status == 'absent') { // $class->student_attendence == null && $class->teacher_attendence != null
+                        $class->status = "student_absent";
+                        $class->update();
+                    }
+                    ### if current time is greater than class end time and teacher is absent and student is present
+                    if ($class->end_time <= $today && $class->teacher_attendence->status == 'absent' && $class->student_attendence->status == 'present') { // $class->student_attendence != null && $class->teacher_attendence == null
+                        $class->status = "teacher_absent";
+                        $class->update();
+                    }
+                    ### if current time is greater than class end time and teacher is absent and student is absent
+                    if ($class->end_time <= $today && $class->teacher_attendence->status == 'absent' && $class->student_attendence->status == 'absent') { //$class->student_attendence == null && $class->teacher_attendence == null
+                        $class->status = "student_absent";
+                        $class->update();
+                    }
+                    //********************* Class completion scnerio ends *********************
+                }
             }
-            if (Carbon::parse($class->end_time) >= Carbon::now() && count($class->student_attendence) == 0 && count($class->teacher_attendence) > 0) {
-                $class->status = "completed";
-                $class->update();
-            }
-            if (Carbon::parse($class->end_time) >= Carbon::now() && count($class->student_attendence) > 0 && count($class->teacher_attendence) == 0) {
-                $class->status = "teacher_absent";
-                $class->update();
-            }
-            //Class completion scnerio ends
         }
     }
 }

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Events\CloseTicketEvent;
+use App\Events\CreateSupportTicketEvent;
 use App\Events\OpenTicketEvent;
 use App\Jobs\CloseTicketJob;
+use App\Jobs\CreateSupportTicketJob;
 use App\Jobs\OpenTicketJob;
 use App\Models\TicketCategory;
 use App\Models\TicketPriorities;
@@ -229,17 +231,33 @@ class TicketsController extends Controller
         $ticket->category = $ticket->category;
         $ticket->priority = $ticket->priority;
 
-        $teacher_message = "Ticket opened Successfully!";
-        $admin_message = "New Ticket has been opened!";
+
+
+
+
+        $tickets = Ticket::with('category', 'priority', 'user')->find($ticket->id);
         $admin = User::where('role_name', 'admin')->first();
 
-        $tickets=Ticket::with('category', 'priority', 'user')->find($ticket->id);
+        if ($user->role_name == 'student') {
+            $student_message = "Ticket opened Successfully!";
+            $admin_message = "New Ticket has been opened!";
 
+            event(new CreateSupportTicketEvent($user, $ticket, $student_message, 'student'));
+            event(new CreateSupportTicketEvent($admin, $ticket, $admin_message, 'student'));
+            dispatch(new CreateSupportTicketJob($user, $ticket, $student_message, 'student'));
+            dispatch(new CreateSupportTicketJob($admin, $ticket, $admin_message, 'student'));
+        }
+        
+        if ($user->role_name == 'teacher') {
+            $teacher_message = "Ticket opened Successfully!";
+            $admin_message = "New Ticket has been opened!";
 
-        // event(new OpenTicketEvent($user->id, $user, $teacher_message, $ticket));
-        // event(new OpenTicketEvent($admin->id, $admin, $admin_message, $ticket));
-        // dispatch(new OpenTicketJob($user->id, $user, $teacher_message, $ticket));
-        // dispatch(new OpenTicketJob($admin->id, $admin, $admin_message, $ticket));
+            event(new CreateSupportTicketEvent($user,  $ticket, $teacher_message, 'teacher'));
+            event(new CreateSupportTicketEvent($admin, $ticket, $admin_message, 'teacher'));
+            dispatch(new CreateSupportTicketJob($user, $ticket, $teacher_message, 'teacher'));
+            dispatch(new CreateSupportTicketJob($admin,  $ticket, $admin_message, 'teacher'));
+        }
+
 
         return response()->json([
             'message' => 'success',
@@ -276,7 +294,10 @@ class TicketsController extends Controller
 
         $user = $token_user;
         // return $user->id;
-        $tickets = Ticket::with('category', 'priority', 'user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+        $tickets = Ticket::with('category', 'priority', 'user')
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         foreach ($tickets as $ticket) {
             $latest_comment = $ticket->ticket_comments->first();
@@ -404,7 +425,7 @@ class TicketsController extends Controller
         if ($user->role_name != 'admin') {
             return response()->json([
                 'success' => false,
-                'message' => 'access denied',
+                'message' => 'Access denied',
             ], 401);
         }
 
@@ -412,7 +433,7 @@ class TicketsController extends Controller
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'status can only be changed to closed or inprogress',
+                'message' => trans('api_messages.STATUS_CHANGED_CLOSED_INPROGRESS'),
             ], 401);
         }
         $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();
@@ -431,7 +452,7 @@ class TicketsController extends Controller
 
         return response()->json([
             'message' => 'success',
-            'status' => 'Status changed successfully',
+            'status' => trans('api_messages.STATUS_CHANGED_SUCCESSFULLY'),
         ]);
         return redirect()->back()->with("status", "The ticket has been closed.");
     }

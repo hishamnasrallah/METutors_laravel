@@ -43,12 +43,40 @@ class CourseFeedbackJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'feedback' => $this->feedback);
+        $mail_subject = $this->feedback->sender->first_name . ' has left you feedback on MEtutors';
+        $data = array('email' =>  $user_email, 'user' =>  $this->user, 'feedback' => $this->feedback);
+        //If student submits a feedback for teacher
+        if ($this->feedback->sender->role_name == 'student') {
+            if ($this->user->role_name == 'student') {
+                Mail::send('email.new_student_feedback', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Your feedback has been submitted successfully');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+            }
+            if ($this->user->role_name == 'teacher') {
+                Mail::send('email.new_student_feedback', $data, function ($message) use ($to_email, $mail_subject) {
+                    $message->to($to_email)->subject($mail_subject);
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+            }
+        }
+        //If teacher submits a feedback for student
+        else {
+            $mail_subject = $this->feedback->sender->first_name.' has left you feedback on MEtutors';
+            if ($this->user->role_name == 'student') {
+                Mail::send('email.new_teacher_feedback', $data, function ($message) use ($to_email, $mail_subject) {
+                    $message->to($to_email)->subject($mail_subject);
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+            }
+            if ($this->user->role_name == 'teacher') {
+                Mail::send('email.new_teacher_feedback', $data, function ($message) use ($to_email) {
+                    $message->to($to_email)->subject('Your feedback has been submitted successfully');
+                    $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+                });
+            }
+        }
 
-        Mail::send('email.refundcourse', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Feedback');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
         //********* Sending refund Email ends **********//
 
         $notification = new Notification();

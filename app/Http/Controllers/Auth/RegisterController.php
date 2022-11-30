@@ -196,7 +196,7 @@ class RegisterController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' => "invalid role",
+                'message' => "Invalid role",
             ], 400);
             // return $this->respondWithError($errors,500);
         }
@@ -246,7 +246,7 @@ class RegisterController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User Registered Successfully And Verification Code Has Been Sent !!',
+                'message' => trans('api_messages.USER_REGISTERED_VERIFICATION_SENT'),
                 'return_url' => $request->return_url ?? false,
             ]);
 

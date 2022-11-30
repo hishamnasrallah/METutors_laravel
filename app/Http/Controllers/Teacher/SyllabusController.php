@@ -65,7 +65,7 @@ class SyllabusController extends Controller
         if ($classes > $academic_classes_count) {
             return response()->json([
                 'success' => false,
-                'message' => 'Entered number of classes is greater than actual classes!',
+                'message' => trans('api_messages.ENTERED_CLASS_GREATER_THAN_ACTUAL'),
             ], 400);
         } else {
 
@@ -120,7 +120,7 @@ class SyllabusController extends Controller
 
                     return response()->json([
                         'success' => true,
-                        'message' => 'Topic Added Successfully!',
+                        'message' => 'Topic added successfully!',
                         'unclassified_classes' => $academic_classes_count,
                         'topic_detail' => [
                             'total_classes' => $totalTopicClases,
@@ -164,7 +164,7 @@ class SyllabusController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Topic Added Successfully!',
+                'message' => trans('api_messages.TOPIC_ADDED_SUCCESSFULLY'),
 
                 'unclassified_classes' => $academic_classes_count,
                 'topic_detail' => [
@@ -303,7 +303,7 @@ class SyllabusController extends Controller
                 if ($required_classes > count($academic_clsses)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Entered number of classes is greater than actual classes!',
+                        'message' => trans('api_messages.ENTERED_CLASS_GREATER_THAN_ACTUAL'),
                     ], 400);
                 } else {
 
@@ -352,7 +352,7 @@ class SyllabusController extends Controller
 
                             return response()->json([
                                 'success' => true,
-                                'message' => 'Topic Added Successfully!',
+                                'message' => trans('api_messages.TOPIC_UPDATED_SUCCESSFULLY'),
 
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
@@ -418,7 +418,7 @@ class SyllabusController extends Controller
                             }
                             return response()->json([
                                 'success' => true,
-                                'message' => 'Topic Added Successfully!',
+                                'message' => trans('api_messages.TOPIC_UPDATED_SUCCESSFULLY'),
 
                                 // 'classified_classes' => $classified_classes,
                                 'unclassified_classes' =>  $academic_classes_count,
@@ -467,7 +467,7 @@ class SyllabusController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Topic updated successfully',
+                    'message' => trans('api_messages.TOPIC_UPDATED_SUCCESSFULLY'),
 
                     // 'classified_classes' => $classified_classes,
                     'unclassified_classes' => $academic_classes_count,
@@ -513,7 +513,7 @@ class SyllabusController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Topic updated successfully',
+            'message' => trans('api_messages.TOPIC_UPDATED_SUCCESSFULLY'),
 
             'unclassified_classes' => $academic_classes_count,
             'topic_detail' => [
@@ -578,7 +578,7 @@ class SyllabusController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "Class updated Successfully!",
+                    'message' => trans('api_messages.CLASS_UPDATED_SUCCESSFULLY'),
                 ]);
             } else {
                 return response()->json([
@@ -593,7 +593,7 @@ class SyllabusController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Class updated Successfully!",
+                'message' => trans('api_messages.CLASS_UPDATED_SUCCESSFULLY'),
             ]);
         }
     }
@@ -660,7 +660,7 @@ class SyllabusController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => trans('api_messages.COURSE_ASSIGNMENT_UPDATED_SUCCESSFULLY'),
             'deleted_topic' => $topic,
             'unclassified_classes' => $unclassified_classes,
         ]);

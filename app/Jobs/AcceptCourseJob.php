@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Notification;
+use App\TeacherSubject;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,18 +41,67 @@ class AcceptCourseJob implements ShouldQueue
      */
     public function handle()
     {
-       
+
         //********* Sending Email **********
         $user_email = $this->user->email;
         $courseMessage = $this->message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'courseMessage' =>  $courseMessage, 'course' => $this->course);
+        $teacher_grade = '';
+        if ($this->user->role_name == 'teacher' || $this->user->role_name == 'admin') {
+            $teacher = TeacherSubject::where('user_id', $this->user->id)
+                ->whereNotNull('grade')
+                ->max('grade');
 
-        Mail::send('email.course', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Course Accepted');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+            if ($teacher) {
+                $teacher_grade = $teacher->grade;
+            }
+        }
+
+        $course_days = [];
+        $course_weekdays = [$this->course->weekdays];
+        foreach ($course_weekdays as $course_weekday) {
+            if ($course_weekday == 0) {
+                $course_days[] = 'Sun';
+            } elseif ($course_weekday == 1) {
+                $course_days[] = 'Mon';
+            } elseif ($course_weekday == 2) {
+                $course_days[] = 'Tue';
+            } elseif ($course_weekday == 3) {
+                $course_days[] = 'Wed';
+            } elseif ($course_weekday == 4) {
+                $course_days[] = 'Thu';
+            } elseif ($course_weekday == 5) {
+                $course_days[] = 'Fri';
+            } else {
+                $course_days[] = 'Sat';
+            }
+        }
+
+        $data = array('user' =>  $this->user, 'courseMessage' =>  $courseMessage, 'course' => $this->course, 'teacher_grade' => $teacher_grade, 'course_days' => $course_days);
+
+
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.course_accepted', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course accepted');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'teacher') {
+            Mail::send('email.course_accepted', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Teaching a new course on MEtutors');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.course_accepted', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New course booking is approved');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
         //********* Sending Email ends **********
 
         //********* Realtime Notification **********

@@ -42,13 +42,24 @@ class TicketResponseJob implements ShouldQueue
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
+        $email_subject = 'Update on support ticket no.' . $this->comment->ticket->ticket_id ;
 
         $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'comment' => $this->comment);
 
-        Mail::send('email.ticket_response', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Ticket Response');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'admin') {
+            Mail::send('email.ticket_reply', $data, function ($message) use ($to_email,$email_subject) {
+                $message->to($to_email)->subject($email_subject);
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'teacher' || $this->user->role_name == 'student') {
+            Mail::send('email.ticket_reply', $data, function ($message) use ($to_email,$email_subject) {
+                $message->to($to_email)->subject($email_subject);
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
         //********* Sending  Email ends **********//
 
         //********* Sending  Notifications **********//

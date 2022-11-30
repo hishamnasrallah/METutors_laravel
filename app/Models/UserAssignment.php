@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,6 +14,16 @@ class UserAssignment extends Model
 
         'file' => 'array',
     ];
+
+    // public function setCreatedAtAttribute($date)
+    // {
+    //     $this->attributes['created_at'] = Carbon::parse($date)->toISOString();
+    // }
+
+    // public function setUpdatedAtAttribute($date)
+    // {
+    //     $this->attributes['updated_at'] = Carbon::parse($date)->toISOString();
+    // }
 
     public function assignment()
     {
@@ -31,7 +42,7 @@ class UserAssignment extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id')->select('id','id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
+        return $this->belongsTo(User::class, 'user_id', 'id')->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar');
     }
 
     public function feedback()

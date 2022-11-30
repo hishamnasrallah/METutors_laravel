@@ -26,7 +26,7 @@ use App\Models\Notification;
 use App\Models\RejectedCourse;
 use App\Models\Resource;
 use App\Models\Topic;
-
+use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\UserAssignment;
 use App\Models\UserFeedback;
@@ -36,6 +36,7 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Stevebauman\Location\Facades\Location;
+
 
 
 use Illuminate\Http\Request;
@@ -270,7 +271,7 @@ class TestController extends Controller
                 $average_rating = $rating_total / count($reviews);
             }
             
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating,3,'');
             $teacher->reviews_count = count($reviews);
         }
 

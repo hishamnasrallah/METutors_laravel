@@ -20,12 +20,13 @@ class ClassRescheduleEvent
      *
      * @return void
      */
-    public function __construct($userid, $user, $custom_message, $class)
+    public function __construct($userid, $user, $class, $custom_message)
     {
         $this->userid = $userid;
         $this->user = $user;
-        $this->custom_message = $custom_message;
         $this->class = $class;
+        $this->custom_message = $custom_message;
+       
     }
 
     /**

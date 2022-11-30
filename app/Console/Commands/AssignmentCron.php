@@ -39,7 +39,10 @@ class AssignmentCron extends Command
      */
     public function handle()
     {
-        $assignments = Assignment::where('deadline', '<=', Carbon::today()->format('Y-m-d'))
+        $today = Carbon::today()->toISOString();
+        $today_date = Carbon::parse($today)->format('Y-m-d');
+
+        $assignments = Assignment::whereDate('deadline', '<', $today_date)
             ->where('status', "!=", 'completed')
             ->get();
 

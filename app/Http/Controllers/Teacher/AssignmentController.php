@@ -112,7 +112,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment added Successfully!',
+            'message' => trans('api_messages.ASSIGNMENT_ADDED_SUCCESSFULLY'),
             'assignment' => $assignment,
         ]);
     }
@@ -190,7 +190,7 @@ class AssignmentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Course Assignment Dashboard!',
+                'message' => 'Course assignment dashboard!',
                 'total_assignments' => $total_assinments,
                 'active_assignments' => $active_assignments,
                 'completed_assignments' => $completed_assignments,
@@ -201,7 +201,7 @@ class AssignmentController extends Controller
         }
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment Dashboard!',
+            'message' => 'Course assignment dashboard!',
             'total_assignments' => $total_assinments,
             'active_assignments' => $active_assignments,
             'completed_assignments' => $completed_assignments,
@@ -297,7 +297,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => trans('api_messages.COURSE_ASSIGNMENT_UPDATED_SUCCESSFULLY'),
             'assignment' => $assignment,
         ]);
     }
@@ -314,7 +314,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Assignment updated Successfully!',
+            'message' => trans('api_messages.COURSE_ASSIGNMENT_DELETED_SUCCESSFULLY'),
             'deleted_assignment' => $assignment,
 
         ]);
@@ -326,7 +326,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Participants!',
+            'message' => 'Course participants!',
             'participants' => $course->participants ?? '',
 
         ]);
@@ -401,7 +401,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Accepted!',
+            'message' => trans('api_messages.ASSIGNMENT_ACCEPTED'),
             'feedback' => $feedback,
         ]);
     }
@@ -476,7 +476,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Rejected!',
+            'message' => trans('api_messages.ASSIGNMENT_REJECTED'),
             'feedback' => $feedback,
         ]);
     }
@@ -492,7 +492,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Student Assignment Detail!',
+            'message' => 'Student assignment detail!',
             'assignment' => $assignmnet,
         ]);
     }
@@ -519,7 +519,7 @@ class AssignmentController extends Controller
         if ($assignment->status == 'completed') {
             return response()->json([
                 'status' => false,
-                'message' => 'Assignment has been expired!',
+                'message' => trans('api_messages.ASSIGNMENT_EXPIRED'),
             ], 400);
         }
         $assignment->deadline = $request->deadline;
@@ -527,7 +527,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Date Exteneded Successfully!',
+            'message' => trans('api_messages.ASSIGNMENT_EXTENDED_SUCCESSFULLY'),
             'assignment' => $assignment,
         ]);
     }

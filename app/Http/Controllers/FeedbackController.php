@@ -104,7 +104,7 @@ class FeedbackController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Your Feedback has Successfully Submitted",
+                'message' => "Your feedback has successfully submitted",
                 'feedback' => $feedback_obj,
             ]);
         }
@@ -142,7 +142,7 @@ class FeedbackController extends Controller
             $feedbacks = UserFeedback::where('course_id', $request->course_id)->where('sender_id', $token_user->id)->get();
             return response()->json([
                 'status' => true,
-                'message' => "Your Feedback has Successfully Updated!",
+                'message' => "Your feedback has successfully updated!",
                 'feedback' => $feedbacks,
             ]);
         }
@@ -190,7 +190,7 @@ class FeedbackController extends Controller
             $feedbacks = UserTestimonial::where('sender_id', $token_user->id)->get();
             return response()->json([
                 'status' => true,
-                'message' => "You Feedback Submitted Successfully!",
+                'message' => trans('api_messages.FEEDBACK_SUBMITTED_SUCCESSFULLY'),
                 'feedbacks' => $feedbacks,
             ]);
         } else {
@@ -202,7 +202,7 @@ class FeedbackController extends Controller
             }
             return response()->json([
                 'status' => true,
-                'message' => "You Feedback Updated Successfully!",
+                'message' => trans('api_messages.FEEDBACK_UPDATED_SUCCESSFULLY'),
                 'feedbacks' => $testimonials,
             ]);
         }
@@ -223,7 +223,7 @@ class FeedbackController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Required Params for Platform Feedback!",
+            'message' => "Required params for platform feedback!",
             'params' => $params,
         ]);
     }
@@ -234,7 +234,7 @@ class FeedbackController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "Required Params for Classroom Feedback!",
+            'message' => "Required params for classroom feedback!",
             'params' => $params,
         ]);
     }
@@ -282,13 +282,13 @@ class FeedbackController extends Controller
             $feedbacks = ClassroomFeedback::where('course_id', $request->course_id)->where('user_id', $token_user->id)->get();
             return response()->json([
                 'status' => true,
-                'message' => "Your Feedback has Successfully Submitted",
+                'message' => trans('api_messages.FEEDBACK_SUBMITTED_SUCCESSFULLY'),
                 'feedback' => $feedbacks,
             ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Your have already submitted Feedback on this Classroom!",
+                'message' => trans('api_messages.SUBMITTED_FEEDBACK_CLASSROOM'),
             ], 400);
         }
     }

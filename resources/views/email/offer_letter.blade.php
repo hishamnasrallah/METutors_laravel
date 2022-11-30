@@ -17,8 +17,15 @@
                                         <hr>
                                     @endif
                                     <p>Program: {{ $teacher_subject->program->name }}</p>
+                                    @if($teacher_subject->program->id == 3)
+                                        <p>Country: {{ $teacher_subject->country->name }}</p>
+                                    @endif
                                     <p>Study Field: {{ $teacher_subject->field->name }}</p>
                                     <p>Subject: {{ $teacher_subject->subject->name }}</p>
+                                   
+                                    @if($teacher_subject->program->id == 3)
+                                        <p>Grade: {{ $teacher_subject->grade }} </p>
+                                    @endif
                                     <p>Hourly Rate: {{ $teacher_subject->hourly_price }} USD</p>
                                     <hr>
                                 @endforeach

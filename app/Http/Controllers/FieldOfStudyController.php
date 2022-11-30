@@ -42,7 +42,7 @@ class FieldOfStudyController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $FieldOfStudys = FieldOfStudy::with('program', 'country')->get();
 
@@ -84,6 +84,7 @@ class FieldOfStudyController extends Controller
 
             'program_id' => 'required',
             'name' => 'required', //|unique:field_of_studies
+            'name_ar' => 'required', //|unique:field_of_studies
             'image' => 'required',
         ];
 
@@ -115,6 +116,7 @@ class FieldOfStudyController extends Controller
             // $FieldOfStudy->grade = $request->grade;
         }
         $FieldOfStudy->name = $request->name;
+        $FieldOfStudy->name_ar = $request->name_ar;
 
         if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
@@ -211,6 +213,7 @@ class FieldOfStudyController extends Controller
             // $FieldOfStudy->grade = $request->grade;
         }
         $FieldOfStudy->name = $request->name;
+        $FieldOfStudy->name_ar = $request->name_ar;
 
         if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();

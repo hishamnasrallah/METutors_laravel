@@ -71,14 +71,14 @@ class LoginController extends Controller
             JWTAuth::invalidate(JWTAuth::getToken());
             return response()->json([
                 'status' => 'success',
-                'msg' => 'You have successfully logged out.'
+                'msg' => trans('api_messages.SUCCESSFULLY_LOGOUT')
             ]);
         } catch (JWTException $e) {
             JWTAuth::unsetToken();
             // something went wrong tries to validate a invalid token
             return response()->json([
                 'status' => 'error',
-                'msg' => 'Failed to logout, please try again.'
+                'msg' => trans('api_messages.FAILED_LOGOUT_TRY_AGAIN')
             ], 400);
         }
     }
@@ -144,12 +144,12 @@ class LoginController extends Controller
 
                 return response()->json([
                     'status' => true,
-                    'message' => "OTP Verified",
+                    'message' => trans('api_messages.OTP_VERIFIED'),
                 ]);
             } else {
                 return response()->json([
                     'status' => 'false',
-                    'message' => "OTP Expired",
+                    'message' => trans('api_messages.OTP_EXPIRED'),
                 ], 400);
             }
         } else {
@@ -177,7 +177,7 @@ class LoginController extends Controller
 
                     return response()->json([
                         'status' => false,
-                        'message' => "OTP Expired",
+                        'message' => trans('api_messages.OTP_EXPIRED'),
                     ], 400);
                 } else {
                     $find->otp_attempts = $find->otp_attempts + 1;
@@ -188,7 +188,7 @@ class LoginController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "Invalid OTP",
+                'message' => trans('api_messages.INVALID_OTP'),
             ], 400);
         }
 
@@ -226,7 +226,7 @@ class LoginController extends Controller
 
         if ($this->attemptLogin($request)) {
 
-            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar', 'redirect_url')->where('email', $request->username)->first();
+            $user = User::select('id', 'first_name', 'last_name', 'role_id', 'role_name', 'mobile', 'email',  'verified', 'avatar','is_demo', 'redirect_url')->where('email', $request->username)->first();
 
             $credentials = array();
             $credentials['email'] = $request->username;
@@ -286,7 +286,7 @@ class LoginController extends Controller
 
                 return response()->json([
                     'status' => false,
-                    'message' => 'Verification Code Has Been Sent. Please verify your email first!!',
+                    'message' => 'Verification code has been sent. Please verify your email first!',
                     'role' => $user->role->id,
                     'verified' => $user->verified,
                 ], 400);
@@ -313,7 +313,7 @@ class LoginController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User Logged in Successfully!!',
+                'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                 'user' => $user,
                 'token' => $token,
                 'return_url' => $redirect_url ?? false,
@@ -323,7 +323,7 @@ class LoginController extends Controller
 
 
 
-        return response()->json(['status' => false, 'message' => 'Invalid credentials'], 401);
+        return response()->json(['status' => false, 'message' => trans('api_messages.INVALID_CREDENTIALS')], 401);
 
         // return $this->sendFailedLoginResponse($request);
     }

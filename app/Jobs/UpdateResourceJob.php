@@ -44,12 +44,22 @@ class UpdateResourceJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'resource' => $this->resource);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'resource' => $this->resource);
 
-        Mail::send('email.resource', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Resource Updated');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'teacher') {
+            Mail::send('email.update_resource', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('A resource updated on your course successfully ');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.update_resource', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('A resource on your course has been updated ');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
         //********* Sending Email ends **********
 
         //********* Realtime Notification **********

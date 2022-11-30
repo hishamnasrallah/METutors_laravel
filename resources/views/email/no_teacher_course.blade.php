@@ -1,0 +1,77 @@
+@extends('web.default.layouts.email')
+
+@section('body')
+    <td valign="top" class="bodyContent" mc:edit="body_content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+
+                            @if ($user->role_name == 'admin')
+                                <p>Hi <b>Teacher Sucess Team,</b></p>
+                                <p><b>{{ $course->student->first_name }}</b> SIN <b>{{ $course->student->id_number }}</b>
+                                    has booked course <b>{{ $course->course_name }}</b> ID <b>{{ $course->course_code }}</b>
+                                    without selecting a teacher.
+                                    The invoice number for this booking order is <b>{{$course->order->booking_id}}</b>. </p>
+                                <p>MEtutors needs to assign a teacher within 72 hours.</p>
+
+                                <p>Details for this course booking are listed below:</p>
+
+                                <p>Booking ID: <b>{{ $course->order->booking_id ?? null }}</b></p>
+                                <p>Program Name: <b>{{ $course->program->name }}</b></p>
+                                <p>Field Study: <b>{{ $course->field->name }}</b></p>
+                                <p>Grade Level: <b>{{ $course->field->name }}</b></p>
+                                <p>Course Name: <b>{{ $course->course_name }}</b></p>
+                                <p>Course ID: <b>{{ $course->course_code }}</b></p>
+                                <p>Total hours: <b>{{ $course->total_hours }}</b></p>
+                                <p>Total classes: <b>{{ $course->total_classes }}</b></p>
+                                <p>Days: <b>{{ $course->weekdays }}</b></p>
+                                <p>Start / End Date: <b>{{ $course->start_date }}/{{ $course->end_date }}</b></p>
+                                <p>Start / End Time: <b>{{ $course->start_time }}/{{ $course->end_time }}</b></p>
+                                <p>Tutor name: <b>{{ $course->teacher->first_name }}</b></p>
+                                <p>TIN: <b>{{ $course->teacher->id_number }}</b></p>
+
+                                <p>Feel free to contact us at studentsucess@metutors.com if you need any help with this
+                                    booking.</p>
+                                <p>Regards,</p>
+                                <p>MEtutors Registrar</p>
+                            @elseif ($user->role_name == 'student')
+                                <p>Hi <b>{{ $user->first_name }},</b></p>
+                                <p>Congratulations, we have received your new course booking for
+                                    <b>{{ $course->course_name }}</b> COURSE ID <b>{{ $course->course_code }}</b>
+                                    on MEtutors. We are excited to help you acheive your learning goals!</b>.
+                                </p>
+                                <p>We are working diligently to assing a teacher for your course. A class schedule
+                                    confirmation will be sent to you once a teacher is assigned</p>
+
+                                <p>Details for this course booking are listed below:</p>
+
+                                <p>Invoice ID: <b>{{ $course->order->invoice_id ?? null }}</b></p>
+                                <p>Booking ID: <b>{{ $course->order->booking_id ?? null }}</b></p>
+                                <p>Program Name: <b>{{ $course->program->name }}</b></p>
+                                <p>Field Study: <b>{{ $course->field->name }}</b></p>
+                                <p>Grade Level: <b>{{ $course->field->name }}</b></p>
+                                <p>Course Name: <b>{{ $course->course_name }}</b></p>
+                                <p>Course ID: <b>{{ $course->course_code }}</b></p>
+                                <p>Total hours: <b>{{ $course->total_hours }}</b></p>
+                                <p>Total classes: <b>{{ $course->total_classes }}</b></p>
+                                <p>Days: <b>{{ $course->weekdays }}</b></p>
+                                <p>Start / End Date: <b>{{ $course->start_date }}/{{ $course->end_date }}</b></p>
+                                <p>Start / End Time: <b>{{ $course->start_time }}/{{ $course->end_time }}</b></p>
+                                <p>Tutor name: <b>{{ $course->teacher->first_name }}</b></p>
+                                <p>TIN: <b>{{ $course->teacher->id_number }}</b></p>
+
+                                <p>Feel free to contact us at studentsucess@metutors.com if you need any help with this
+                                    booking.</p>
+                                <p>Regards,</p>
+                                <p>Student Success Team</p>
+                            @endif
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </td>
+@endsection

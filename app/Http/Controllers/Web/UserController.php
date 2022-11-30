@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Web;
 use App\Events\PrefrenceSettingEvent;
 use App\Events\ProfileSettingEvent;
 use App\Events\SecuritySettingEvent;
+use App\Events\UpdateResourceEvent;
+use App\Events\UploadResourceDocumentEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\PrefrenceSettingJob;
 use App\Jobs\ProfileSettingJob;
 use App\Jobs\SecuritySettingJob;
+use App\Jobs\UpdateResourceJob;
+use App\Jobs\UploadResourceDocumentJob;
 use App\Models\AcademicClass;
 use App\Models\Badge;
 use App\Models\BecomeInstructor;
@@ -36,6 +40,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use Illuminate\Support\Str;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -66,76 +71,76 @@ class UserController extends Controller
         // ]);
 
 
-        $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'country', 'status', 'created_at', 'updated_at')
-            ->with('teacher_qualification', 'country')
-            ->where('role_name', 'teacher')
-            ->where('verified', 1)
-            ->where('status', 'active')->where('id', '!=', 1212)
-            ->get();
+        // $filtered_teacher = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'country', 'status', 'created_at', 'updated_at')
+        //     ->with('teacher_qualification', 'country')
+        //     ->where('role_name', 'teacher')
+        //     ->where('verified', 1)
+        //     ->where('status', 'active')->where('id', '!=', 1212)
+        //     ->get();
 
 
-        $rating_total = 0;
-        foreach ($filtered_teacher as $teacher) {
-            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
-            $teacher->students_taught = count($students);
+        // $rating_total = 0;
+        // foreach ($filtered_teacher as $teacher) {
+        //     $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+        //     $teacher->students_taught = count($students);
 
-            $average_rating = 5.0;
-            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
-            $reviews = $reviews->groupBy('sender_id');
-            // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+        //     $average_rating = 5.0;
+        //     $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+        //     $reviews = $reviews->groupBy('sender_id');
+        //     // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
 
-            foreach ($reviews as $review) {
-                $rating_sum = $review->sum('rating');
-                $review_count = count($review);
-                $sub_average_rating = $rating_sum / $review_count;
-                $rating_total =  $rating_total + $sub_average_rating;
-            }
+        //     foreach ($reviews as $review) {
+        //         $rating_sum = $review->sum('rating');
+        //         $review_count = count($review);
+        //         $sub_average_rating = $rating_sum / $review_count;
+        //         $rating_total =  $rating_total + $sub_average_rating;
+        //     }
 
-            if (count($reviews) > 0) {
-                $average_rating = $rating_total / count($reviews);
-            }
+        //     if (count($reviews) > 0) {
+        //         $average_rating = $rating_total / count($reviews);
+        //     }
 
-            $teacher->average_rating = $average_rating;
-            $teacher->reviews_count = count($reviews);
-        }
+        //     $teacher->average_rating = $average_rating;
+        //     $teacher->reviews_count = count($reviews);
+        // }
 
-        $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'country', 'status', 'created_at', 'updated_at')
-            ->with('teacher_qualification', 'country')
-            ->where('role_name', 'teacher')
-            ->where('verified', 1)
-            ->where('status', 'active')->where('id', 1212)
-            ->get();
+        // $suggestedTeachers = User::select('id', 'first_name', 'last_name', 'role_name', 'date_of_birth', 'mobile', 'email',  'verified', 'avatar', 'bio', 'country', 'status', 'created_at', 'updated_at')
+        //     ->with('teacher_qualification', 'country')
+        //     ->where('role_name', 'teacher')
+        //     ->where('verified', 1)
+        //     ->where('status', 'active')->where('id', 1212)
+        //     ->get();
 
-        $rating_total = 0;
-        foreach ($suggestedTeachers as $teacher) {
-            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
-            $teacher->students_taught = count($students);
+        // $rating_total = 0;
+        // foreach ($suggestedTeachers as $teacher) {
+        //     $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+        //     $teacher->students_taught = count($students);
 
-            $average_rating = 5.0;
-            $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
-            $reviews = $reviews->groupBy('sender_id');
-            // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+        //     $average_rating = 5.0;
+        //     $reviews = UserFeedback::where('receiver_id', $teacher->id)->get();
+        //     $reviews = $reviews->groupBy('sender_id');
+        //     // $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
 
-            foreach ($reviews as $review) {
-                $rating_sum = $review->sum('rating');
-                $review_count = count($review);
-                $sub_average_rating = $rating_sum / $review_count;
-                $rating_total =  $rating_total + $sub_average_rating;
-            }
+        //     foreach ($reviews as $review) {
+        //         $rating_sum = $review->sum('rating');
+        //         $review_count = count($review);
+        //         $sub_average_rating = $rating_sum / $review_count;
+        //         $rating_total =  $rating_total + $sub_average_rating;
+        //     }
 
-            if (count($reviews) > 0) {
-                $average_rating = $rating_total / count($reviews);
-            }
+        //     if (count($reviews) > 0) {
+        //         $average_rating = $rating_total / count($reviews);
+        //     }
 
-            $teacher->average_rating = $average_rating;
-            $teacher->reviews_count = count($reviews);
-        }
+        //     $teacher->average_rating = $average_rating;
+        //     $teacher->reviews_count = count($reviews);
+        // }
 
-        return response()->json([
-            'success' => true,
-            'available_teachers' => $filtered_teacher,
-            'suggested_teachers' => $suggestedTeachers,
-        ]);
+        // return response()->json([
+        //     'success' => true,
+        //     'available_teachers' => $filtered_teacher,
+        //     'suggested_teachers' => $suggestedTeachers,
+        // ]);
 
 
         $rules = [
@@ -143,6 +148,7 @@ class UserController extends Controller
             'language_id' => 'required',
             'program_id' => 'required',
             'subject_id' => 'required',
+            'field_of_study_id' => 'required',
 
         ];
 
@@ -160,33 +166,35 @@ class UserController extends Controller
         }
 
 
-        $token_1 = JWTAuth::getToken();
-        $token_user = JWTAuth::toUser($token_1);
+        // $token_1 = JWTAuth::getToken();
+        // $token_user = JWTAuth::toUser($token_1);
 
         // (function ($qe) use ($start_date, $end_date) {
         //     $qe->whereBetween('availability_start_date', [$start_date, $end_date])->orWhereBetween('availability_end_date', [$start_date, $end_date]);
         // });
 
         // return $request->classes;
-        $start_date = Carbon::parse($request->start_date);
-        $end_date = Carbon::parse('2022-09-29T12:30:00.000Z'); //$request->end_date
+        $start_date = Carbon::parse($request->start_date)->format('Y-m-d');
+        $end_date = Carbon::parse($request->end_date)->format('Y-m-d'); //$request->end_date
+
+
         $filtered_teacher = User::whereHas('spokenLanguages', function ($q) use ($request) {
-            $q->where('language', 1); // $request->language_id
+            $q->where('language', $request->language_id); // $request->language_id
         })
             // ->whereHas('teacherProgram', function ($q) use ($request) {
             //     $q->where('program_id', 2); //$request->program_id
             // })
             ->whereHas('teacherSubject', function ($q) use ($request) {
-                $q->where(['subject_id' => 25, 'field_id' => 8, 'program_id' => 2,]); //25,8,2 $request->subject_id      $request->field_id
+                $q->where(['subject_id' => $request->subject_id, 'field_id' => $request->field_of_study_id, 'program_id' => $request->program_id,]); //25,8,2 $request->subject_id  $request->field_id  $request->program_id
             })
-            ->whereHas('teacher_specification', function ($q) use ($request, $start_date, $end_date) {
-                $q->where('availability_end_date', '>=',  $end_date);
+            ->whereHas('teacher_specification', function ($q) use ($end_date) {
+                $q->whereDate('availability_end_date', '>=',  $end_date);
             })
             ->where('role_name', 'teacher')
             ->get();
 
 
-
+        // return $filtered_teacher;
         $requestedClasses = json_decode($request->class_rooms);
         $weekdays = [];
         foreach ($requestedClasses as $requestedClass) {
@@ -215,96 +223,194 @@ class UserController extends Controller
 
         //************ Checking Teacher Availabilites ************
         $available_teachers = [];
-        $classCounter = 0;
-        foreach ($requestedClasses as $requestedClass) {
-            // return $requestedClass;
-            $classCounter++;
-            foreach ($filtered_teacher as $teacher) {
-                $availabilities = TeacherAvailability::whereIn('day', $uniqueWeekdays)->where('user_id', $teacher->id)->get();
 
-                $counter = 0;
-                foreach ($availabilities as $availability) {
-                    // echo 'availability';
-                    $request_from = Carbon::parse($requestedClass->start)->format('G:i');
-                    $db_from = Carbon::parse($availability->time_from)->format('G:i');
+        foreach ($filtered_teacher as $teacher) {
+            $classCounter = 0;
 
-                    $request_to = Carbon::parse($requestedClass->end)->format('G:i');
-                    $db_to = Carbon::parse($availability->time_to)->format('G:i');
+            foreach ($requestedClasses as $requestedClass) {
 
-                    //if availability date matches with class date
-                    if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
-                        $counter++;
-                        //if teacher is available at every class and requested classes is equal to classCount
-                        if (($counter == count($uniqueWeekdays)) &&  ($classCounter == count($requestedClasses))) {
-                            array_push($available_teachers, $availability->user_id);
-                            break;
-                        }
+                $request_from =  Carbon::parse($requestedClass->start)->format('G:i');
+                $request_to =  Carbon::parse($requestedClass->end)->format('G:i');
+                $day = $requestedClass->day;
+
+                 //converting days to integers
+                 if ($day == 'Sunday') {
+                    $day =  1;
+                } elseif ($day == 'Monday') {
+                    $day =  2;
+                } elseif ($day == 'Tuesday') {
+                    $day = 3;
+                } elseif ($day == 'Wednesday') {
+                    $day = 4;
+                } elseif ($day == 'Thursday') {
+                    $day = 5;
+                } elseif ($day == 'Friday') {
+                    $day = 6;
+                } else {
+                    $day = 7;
+                }
+
+                $availabilities = TeacherAvailability::where('day', $day)
+                    ->where('user_id', $teacher->id)
+                    ->whereTime('time_from', '>=', $request_from)
+                    ->whereTime('time_from', '<=', $request_to)
+                    ->whereTime('time_to', '>=', $request_from)
+                    ->whereTime('time_to', '<=', $request_to)
+                    ->get();
+
+                if (count($availabilities) > 0) {
+                    $classCounter++;
+                    if ($classCounter == count($requestedClasses)) {
+                        array_push($available_teachers, $teacher->id);
                     }
                 }
+
+
+
+                // $counter = 0;
+                // if (count($availabilities) > 0) {
+                //     foreach ($availabilities as $availability) {
+                //         // echo 'availability';
+
+
+                //         $db_from = $availability->time_from;
+                //         $db_to = $availability->time_to;
+
+                //         //if availability date matches with class date
+                //         if (($request_from >= $db_from) && ($request_from <= $db_to) && ($request_to >= $db_from) && ($request_to <= $db_to)) {
+                //             $counter++;
+                //             //if teacher is available at every class and requested classes is equal to classCount
+                //             if ($classCounter == count($requestedClasses)) {
+                //                 array_push($available_teachers, $availability->user_id);
+                //                 break;
+                //             }
+                //         }
+                //     }
+                // }
             }
         }
-
-        $available_teachers = array_unique($available_teachers);
+        // return $counter;
+         $available_teachers = array_unique($available_teachers);
 
         //************ Checking If Teacher is ALREADY Booked ***********
         $final_teachers = [];
+        $sugested_teachers = [];
+
         foreach ($available_teachers as $available_teacher) {
             $flag = 0;
             $nullCounter = 0;
-            foreach ($requestedClasses as $requestedClass) {
+            $classCounter = 0;
 
+            foreach ($requestedClasses as $requestedClass) {
+                $classCounter++;
                 $start_time = Carbon::parse($requestedClass->start)->format('G:i');
                 $end_time = Carbon::parse($requestedClass->end)->format('G:i');
-                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)->where('day', $requestedClass->day)->where('start_date', $requestedClass->start)->get();
-                //************ If teacher has no Classes In classes Table ***********
+
+                $start_date = Carbon::parse($requestedClass->start)->format('Y-m-d');
+                $end_date = Carbon::parse($requestedClass->end)->format('Y-m-d');
+
+                $day = Carbon::parse($requestedClass->day)->format('l');
+
+                //converting days to integers
+                if ($day == 'Sunday') {
+                    $day =  1;
+                } elseif ($day == 'Monday') {
+                    $day =  2;
+                } elseif ($day == 'Tuesday') {
+                    $day = 3;
+                } elseif ($day == 'Wednesday') {
+                    $day = 4;
+                } elseif ($day == 'Thursday') {
+                    $day = 5;
+                } elseif ($day == 'Friday') {
+                    $day = 6;
+                } else {
+                    $day = 7;
+                }
+
+                // return  $day;
+                $teacherClasses = AcademicClass::where('teacher_id', $available_teacher)
+                    ->where('day', $day)
+                    ->whereDate('start_date', $start_date)
+                    ->whereTime('start_time', '>=', $start_time)
+                    ->whereTime('start_time', '<=', $end_time)
+                    ->whereTime('end_time', '>=', $start_time)
+                    ->whereTime('end_time', '<=', $end_time)
+                    ->where('status', '!=', 'completed')
+                    ->get();
+
                 if (count($teacherClasses) == 0) {
                     $nullCounter++;
                     if ($nullCounter == count($requestedClasses)) {
                         array_push($final_teachers, $available_teacher);
                     }
-                } else {
-                    //************ If teacher has Classes In classes Table ***********
-                    $counter1 = 0;
-                    foreach ($teacherClasses as $class) {
-
-                        $classStartTime = Carbon::parse($class->start_time)->format('G:i');
-                        $classEndTime = Carbon::parse($class->end_time)->format('G:i');
-
-                        if (($start_time >= $classStartTime) && ($start_time <= $classEndTime) || ($end_time >= $classStartTime) && ($end_time <= $classEndTime)) {
-                            //    echo 'condition';
-                        } else {
-                            $counter1++;
-
-                            if ($counter1 >= count($teacherClasses)) {
-                                $flag++;
-                                // echo $flag;
-                                if ($flag == count($requestedClasses)) {
-                                    array_push($final_teachers, $class->teacher_id);
-                                }
-                            }
-                        }
-                    }
                 }
+
+
+                if ($nullCounter != count($requestedClasses) && $classCounter == count($requestedClasses)) {
+                    array_push($sugested_teachers, $available_teacher);
+                }
+
+
+
+                //************ If teacher has no Classes In classes Table ***********
+                // if (count($teacherClasses) == 0) {
+                //     $nullCounter++;
+                //     if ($nullCounter == count($requestedClasses)) {
+                //         array_push($final_teachers, $available_teacher);
+                //     }
+                // } else {
+                //     //************ If teacher has Classes In classes Table ***********
+                //     $counter1 = 0;
+                //     foreach ($teacherClasses as $class) {
+
+                //         $classStartTime = Carbon::parse($class->start_time)->format('G:i');
+                //         $classEndTime = Carbon::parse($class->end_time)->format('G:i');
+
+                //         if (($start_time >= $classStartTime) && ($start_time <= $classEndTime) || ($end_time >= $classStartTime) && ($end_time <= $classEndTime)) {
+                //             //    echo 'condition';
+                //         } else {
+                //             $counter1++;
+
+                //             if ($counter1 >= count($teacherClasses)) {
+                //                 $flag++;
+                //                 // echo $flag;
+                //                 if ($flag == count($requestedClasses)) {
+                //                     array_push($final_teachers, $class->teacher_id);
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+            }
+        }
+
+        // return $final_teachers;
+        // return $final_teachers;
+        $selectedTeachers = [];
+        if (count($final_teachers) > 0) {
+            $selectedTeachers = User::with('teacher_qualification', 'country')->whereIn('id', $final_teachers)->get();
+
+            foreach ($selectedTeachers as $teacher) {
+                $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
+                $teacher->students_taught = count($students);
+
+                $average_rating = 5.0;
+                $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
+                $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
+                if ($total_reviews > 0) {
+                    $average_rating = $rating_sum / $total_reviews;
+                }
+                $teacher->average_rating = Str::limit($average_rating, 3, '');
+                $teacher->reviews_count = $total_reviews;
             }
         }
 
 
-        $selectedTeachers = User::with('teacher_qualification', 'country')->whereIn('id', $final_teachers)->get();
-        foreach ($selectedTeachers as $teacher) {
-            $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
-            $teacher->students_taught = count($students);
-
-            $average_rating = 5.0;
-            $rating_sum = UserFeedback::where('receiver_id', $teacher->id)->sum('rating');
-            $total_reviews = UserFeedback::where('receiver_id', $teacher->id)->count();
-            if ($total_reviews > 0) {
-                $average_rating = $rating_sum / $total_reviews;
-            }
-            $teacher->average_rating = $average_rating;
-            $teacher->reviews_count = $total_reviews;
-        }
-
-        $suggestedTeachers = User::with('teacher_qualification', 'country')->whereNotIn('id', $final_teachers)->where('role_name', 'teacher')->get();
+        $suggestedTeachers = User::with('teacher_qualification', 'country')
+            ->whereIn('id', $sugested_teachers)
+            ->where('role_name', 'teacher')
+            ->get();
 
         foreach ($suggestedTeachers as $teacher) {
             $students = AcademicClass::where('teacher_id', $teacher->id)->where('status', 'completed')->pluck('student_id')->unique();
@@ -316,7 +422,7 @@ class UserController extends Controller
             if ($total_reviews > 0) {
                 $average_rating = $rating_sum / $total_reviews;
             }
-            $teacher->average_rating = $average_rating;
+            $teacher->average_rating = Str::limit($average_rating, 3, '');
             $teacher->reviews_count = $total_reviews;
         }
 
@@ -344,7 +450,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "User Not found",
+                'message' => "User not found",
             ], 204);
         }
 
@@ -374,7 +480,7 @@ class UserController extends Controller
             $average_rating = $rating_sum / $total_reviews;
         }
 
-        $user->average_rating = $average_rating;
+        $user->average_rating = Str::limit($average_rating, 3, '');
 
         // students rating
         foreach ($user['teacher_feedbacks'] as $feedback) {
@@ -385,7 +491,7 @@ class UserController extends Controller
             if ($total_reviews > 0) {
                 $student_rating = $rating_sum / $total_reviews;
             }
-            $feedback->average_rating = $student_rating;
+            $feedback->average_rating = Str::limit($student_rating, 3, '');
         }
 
 
@@ -422,10 +528,10 @@ class UserController extends Controller
         }
 
         $user->feedback_rating = [
-            'Expert in the subject' => $feedback_id_1,
-            'Present Complex Topics clearly and easily' => $feedback_id_2,
-            'Skillfull in engaging students' => $feedback_id_3,
-            'Always on time' => $feedback_id_4,
+            'EXPERT_IN_SUBJECT' => $feedback_id_1,
+            'PRESENT_COMPLEX_TOPICS_CLEARLY' => $feedback_id_2,
+            'SKILLFULL_ENGAGING_STUDENTS' => $feedback_id_3,
+            'ALWAYS_ON_TIME' => $feedback_id_4,
         ];
 
 
@@ -467,7 +573,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "User Not found",
+                'message' => "User not found",
             ], 204);
         }
 
@@ -490,7 +596,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => "User Not found",
+                'message' => "User not found",
             ], 204);
         }
 
@@ -1027,13 +1133,13 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => "Security Settings updated",
+                'message' => trans('api_messages.SECURITY_SETTINGS_UPDATED'),
                 'user' => $user,
             ]);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => "Current Password did't matched!",
+                'message' => trans('api_messages.CURRENT_PASSWORD_NOT_MATCH'),
             ]);
         }
     }
@@ -1091,7 +1197,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Prefrences Added Successfully",
+            'message' => trans('api_messages.USER_PREFRENCES_ADDED_SUCCESSFULLY'),
             'prefrences' => $prefrences,
         ]);
     }
@@ -1107,7 +1213,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => "User Prefrences",
+            'message' => "User prefrences",
             'preference' => $pref,
         ]);
     }
@@ -1153,7 +1259,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Progress of all courses of Student',
+            'message' => 'Progress of all courses of student',
             'courses_progress' => $lastarray
         ]);
     }
@@ -1190,7 +1296,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Course Progress',
+            'message' => 'Course progress',
             'course' => $course,
             'percentage' => $percentage
         ]);
@@ -1522,7 +1628,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Account setting updated Successfully!',
+            'message' => trans('api_messages.ACCOUNT_SETTING_UPDATED_SUCCESSFULLY'),
             'user' => $user,
         ]);
     }
@@ -1586,7 +1692,7 @@ class UserController extends Controller
 
 
         // }
-        
+
         $document = new ResourceDocument();
         $document->title = $request->title;
         $document->file = $request->document;
@@ -1595,14 +1701,83 @@ class UserController extends Controller
         $document->user_role = $token_user->role_name;
         $document->save();
 
-        $new_doc=ResourceDocument::with('user')->find($document->id);
+        $new_doc = ResourceDocument::with('user','course')->find($document->id);
+        $course = Course::findOrFail($request->course_id);
+
+        if($token_user->role_name == 'teacher'){
+            $teacher = User::findOrFail($token_user->id);
+            $student = User::findOrFail($course->student_id); 
+            $student_message = "Resource document has been updated!";    
+            $teacher_message = "Resource document has been updated!";
+            //Emails and notifications
+            event(new UploadResourceDocumentEvent($teacher->id, $teacher_message, $new_doc, $teacher,'teacher'));
+            event(new UploadResourceDocumentEvent($student->id, $student_message, $new_doc, $student,'teacher'));
+            dispatch(new UploadResourceDocumentJob($teacher->id, $teacher_message, $new_doc, $teacher,'teacher'));
+            dispatch(new UploadResourceDocumentJob($student->id, $student_message, $new_doc, $student,'teacher'));
+        }
+
+        if($token_user->role_name == 'student'){
+            $student = User::findOrFail($token_user->id);
+            $teacher = User::findOrFail($course->teacher_id); 
+            $student_message = "Resource document has been updated!";    
+            $teacher_message = "Resource document has been updated!";
+            //Emails and notifications
+            event(new UploadResourceDocumentEvent($teacher->id, $teacher_message, $new_doc, $teacher,'student'));
+            event(new UploadResourceDocumentEvent($student->id, $student_message, $new_doc, $student,'student'));
+            dispatch(new UploadResourceDocumentJob($teacher->id, $teacher_message, $new_doc, $teacher,'student'));
+            dispatch(new UploadResourceDocumentJob($student->id, $student_message, $new_doc, $student,'student'));
+        }
+        
+       
 
 
         return response()->json([
             'status' => 'true',
-            'message' =>  'Documents uploaded successfully',
+            'message' =>  trans('api_messages.DOCUMENTS_UPLOADED_SUCCESSFULLY'),
             'document' =>  $new_doc,
 
+        ]);
+    }
+
+    public function change_language(Request $request)
+    {
+
+
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $rules = [
+            'language' => 'required|string',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+
+                'status' => false,
+                'errors' => $errors,
+            ], 400);
+        }
+
+        $user = User::find($token_user->id);
+
+        if ($user) {
+            $user->lang = $request->language;
+            $user->update();
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' =>  trans('api_messages.USER_NOT_FOUND'),
+            ], 400);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' =>  trans('api_messages.LANGUAGE_SET_SUCCESSFULLY'),
         ]);
     }
 }

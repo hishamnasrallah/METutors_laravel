@@ -43,10 +43,10 @@ class ClassStartedJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'class' => $this->class);
+        $data = array('email' =>  $user_email, 'user' =>  $this->user, 'class' => $this->class);
 
-        Mail::send('email.class', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Class Started');
+        Mail::send('email.class_started', $data, function ($message) use ($to_email) {
+        $message->to($to_email)->subject('Today,s class just started');
            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         // //********* Sending Cancalation Email ends **********//

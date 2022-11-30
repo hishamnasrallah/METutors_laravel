@@ -42,10 +42,10 @@ class AddResourceJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'resource' => $this->resource);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'resource' => $this->resource);
 
-        Mail::send('email.resource', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Resource Added');
+        Mail::send('email.add_resource', $data, function ($message) use ($to_email) {
+            $message->to($to_email)->subject('New resource added to your course successfully');
             $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
         });
         //********* Sending Email ends **********

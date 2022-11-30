@@ -37,9 +37,9 @@ class AssignmentController extends Controller
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
 
-        $corse = Course::find($course_id);
+        // $corse = Course::find($course_id);
 
-        $course = Course::with('participants', 'participants.user',  'assignments')
+        $course = Course::with('participants', 'participants.user','assignments')
             ->with(['assignments.assignees.user' => function ($q) {
                 $q->latest();
             }])
@@ -61,7 +61,7 @@ class AssignmentController extends Controller
             $users = [];
             $assignees = $assignment->assignees;
             foreach ($assignees as $assignee) {
-                $assignment->status =  $assignee->status;
+                // $assignment->status =  $assignee->status;
                 $user = $assignees->whereIn('user_id', $users)->first();
                 if ($user == null) {
                     $assignment->assignees = $user;
@@ -85,7 +85,7 @@ class AssignmentController extends Controller
                 foreach ($course->assignments as $assignment) {
                     $users = [];
                     $assignees = $assignment->assignees;
-                    $assignment->status =  $assignees[0]->status;
+                    // $assignment->status =  $assignees[0]->status;
                 }
             }
             if ($request->status == 'completed') {
@@ -102,7 +102,7 @@ class AssignmentController extends Controller
                 foreach ($course->assignments as $assignment) {
                     $users = [];
                     $assignees = $assignment->assignees;
-                    $assignment->status =  $assignees[0]->status;
+                    // $assignment->status =  $assignees[0]->status;
                 }
             }
 
@@ -110,7 +110,7 @@ class AssignmentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Course Assignment Dashboard!',
+                'message' => 'Course assignment dashboard!',
                 'course' => $course,
                 'total_assignments' => $total_assinments,
                 'active_assignments' => $active_assignments,
@@ -184,6 +184,7 @@ class AssignmentController extends Controller
                 $user_assignment->file = $request->file;
             }
             $user_assignment->status = 'resubmitted';
+            $user_assignment->updated_at = Carbon::now();
             $user_assignment->save();
 
             // Event notification
@@ -200,7 +201,7 @@ class AssignmentController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Assignment ReSubmitted SuccessFully',
+                'message' => trans('api_messages.ASSIGNMENT_RESUBMITTED_SUCCESSFULLY'),
                 'assignment' =>  $user_assignment,
             ]);
         } else {
@@ -212,6 +213,7 @@ class AssignmentController extends Controller
             $userAssignment->file = $request->file;
         }
         $userAssignment->status = 'submitted';
+        $userAssignment->updated_at = Carbon::now();
         $userAssignment->update();
 
         $userAssignment->user_assignment_status = 'submitted';
@@ -231,7 +233,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Assignment Submitted SuccessFully',
+            'message' => 'Assignment submitted successfully',
             'assignment' =>  $userAssignment,
         ]);
     }
@@ -251,7 +253,7 @@ class AssignmentController extends Controller
 
         return response()->json([
             'status' => true,
-            'message' => 'Student Assignment Detail!',
+            'message' => 'Student assignment detail!',
             'assignment' => $assignmnet,
         ]);
     }

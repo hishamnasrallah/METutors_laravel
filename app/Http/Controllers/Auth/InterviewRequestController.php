@@ -127,7 +127,7 @@ class InterviewRequestController extends Controller
       if ($user->profile_completed_step != 5) {
         return response()->json([
           'status' => false,
-          'message' => 'Please complete your account details first'
+          'message' => trans('api_messages.COMPLETE_ACCOUNT_DETAILS_FIRST')
         ], 400);
       }
 
@@ -137,7 +137,7 @@ class InterviewRequestController extends Controller
 
         return response()->json([
           'status' => false,
-          'message' => 'Your have already submitted the interview request'
+          'message' => trans('api_messages.SUBMITTED_INTERVIEW_REQUEST')
         ], 400);
       }
 
@@ -166,7 +166,7 @@ class InterviewRequestController extends Controller
 
       Mail::send('email.interview', $data, function ($message) use ($to_email) {
 
-        $message->to($to_email)->subject('MEtutors Interview request');
+        $message->to($to_email)->subject('MEtutors interview request');
         $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
       });
 
@@ -194,14 +194,14 @@ class InterviewRequestController extends Controller
 
       return response()->json([
         'status' => true,
-        'message' => 'Your interview request has submitted successfully',
+        'message' => trans('api_messages.INTERVIEW_REQUEST_SUBMITTED_SUCCESSFULLY'),
         'interview_request' => $interviewRequest
       ]);
     } else {
 
       return response()->json([
         'status' => false,
-        'message' => 'Only Teachers can submit request to HR for interview'
+        'message' => 'Only teachers can submit request to HR for interview'
       ], 401);
     }
   }
@@ -272,7 +272,7 @@ class InterviewRequestController extends Controller
       // $class->save();
       return response()->json([
         'success' => true,
-        'message' => "Class Scheduled SuccessFully",
+        'message' => "Class scheduled successFully",
         'class' => $class,
       ]);
     } else {

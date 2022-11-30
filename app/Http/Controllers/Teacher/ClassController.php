@@ -170,7 +170,7 @@ class ClassController extends Controller
         $course->update();
 
         return response()->json([
-            'message' => "Course data added Successfully!",
+            'message' => "Course data added successfully!",
             'success' => true,
             'course' => $course,
         ]);
@@ -235,7 +235,7 @@ class ClassController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Session Updated Succesfully!",
+            'message' => "Session updated succesfully!",
             'session' => $session,
         ]);
     }
@@ -406,7 +406,7 @@ class ClassController extends Controller
             $class->save();
             return response()->json([
                 'success' => true,
-                'message' => "Class Scheduled SuccessFully",
+                'message' => "Class scheduled successfully",
                 'class' => $class,
             ]);
         } else {
@@ -603,7 +603,7 @@ class ClassController extends Controller
                 $fieldOfStudies = FieldOfStudy::where('program_id', $program->id)->get();
 
                 $newly_assigned_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')
-                ->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
+                    ->whereIn('id', $classroom)->where('status', 'pending')->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $active_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['active', 'inprogress'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $cancelled_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->whereIn('status', ['cancelled_by_teacher', 'cancelled_by_student', 'cancelled_by_admin'])->where('program_id', $program->id)->orderBy('id', 'desc')->get();
                 $completed_courses = Course::with('subject', 'language', 'program', 'student', 'student', 'classes')->whereIn('id', $classroom)->where('status', 'completed')->where('program_id', $program->id)->get();
@@ -976,50 +976,69 @@ class ClassController extends Controller
         $academic_id = $request->academic_class_id;
         $class = AcademicClass::where('id', $academic_id)->first();
         //checking date
-        $currentdate = Carbon::now()->format('Y-m-d');
-        $currentdate = Carbon::parse($currentdate);
-        $db_date = Carbon::parse($class->start_date);
-        if ($db_date >= $currentdate) {
-            $dayOrNight = substr($class->start_time, 6, 9);
-            $trimed_time = Str::limit($class->start_time, 5, '');
-            $final_time = $trimed_time;
-            // converting pm to 24 hour format
-            if ($dayOrNight == "PM") {
+        $currentISO = Carbon::now()->toISOString();
+        $currentdate = Carbon::parse($currentISO)->format('Y-m-d');
+        $db_date = Carbon::parse($class->start_date)->format('Y-m-d');
 
-                $time = $trimed_time;
-                $time2 = "12:00:00";
-                $secs = strtotime($time2) - strtotime("00:00:00");
-                $final_time = date("H:i", strtotime($time) + $secs);
-            }
-            // converting pm to 24 hour format ends
+        if ($currentdate >= $db_date) {
+            // $dayOrNight = substr($class->start_time, 6, 9);
+            // $trimed_time = Str::limit($class->start_time, 5, '');
+            // $final_time = $trimed_time;
+            // // converting pm to 24 hour format
+            // if ($dayOrNight == "PM") {
+
+            //     $time = $trimed_time;
+            //     $time2 = "12:00:00";
+            //     $secs = strtotime($time2) - strtotime("00:00:00");
+            //     $final_time = date("H:i", strtotime($time) + $secs);
+            // }
+            // // converting pm to 24 hour format ends
 
             // calculating difference
-            $crrentTime = Carbon::now()->format('Y-m-d H:i');
-            $startTime = Carbon::parse($crrentTime);
-            $endTime = Carbon::parse($class->start_date . ' ' . $final_time);
-            $totalDuration = $endTime->diffInHours($crrentTime);
+            // $crrentTime = Carbon::now()->format('Y-m-d H:i');
+            // $startTime = Carbon::parse($crrentTime);
+            // $endTime = Carbon::parse($class->start_date . ' ' . $final_time);
+            // $totalDuration = $endTime->diffInHours($crrentTime);
+            $startTime = Carbon::parse($currentISO);
+            $endTime = Carbon::parse($class->start_date);
+            $totalDuration = $endTime->diffInHours($startTime);
             // calculating difference ends
 
-            $EndTime = substr($request->end_time, 0, 5);
-            $StartTime = substr($request->start_time, 0, 5);
+            // $EndTime = substr($request->end_time, 0, 5);
+            // $StartTime = substr($request->start_time, 0, 5);
 
-            $start_date = Carbon::parse($class->start_date);
+            $start_date = Carbon::parse($request->start_date)->format('Y-m-d');
 
-            $start_time = date("G:i", strtotime($request->start_time));
-            $end_time = date("G:i", strtotime($request->end_time));
+            $start_time = Carbon::parse($request->start_time)->format('H:i:s');
+            $end_time = Carbon::parse($request->end_time)->format('H:i:s');
 
-            $classes = AcademicClass::where('id', '!=', $academic_id)->where('start_date', $request->start_date)->where('teacher_id', $token_user->id)->get();
+            $classes = AcademicClass::where('id', '!=', $academic_id)
+                ->whereDate('start_date', $start_date)
+                ->where('teacher_id', $token_user->id)
+                ->whereTime('start_time', '>=', $start_time)
+                ->whereTime('start_time', '<=', $end_time)
+                ->whereTime('end_time', '>=', $start_time)
+                ->whereTime('end_time', '<=', $end_time)
+                ->get();
 
-            foreach ($classes as $class) {
-                $db_startTime = date("G:i", strtotime($class->start_time));
-                $db_endTime = date("G:i", strtotime($class->end_time));
-                if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
-                    return response()->json([
-                        'status' => false,
-                        'errors' => "Already have Scheduled Class at this time!",
-                    ], 400);
-                }
+
+            if (count($classes) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => trans('api_messages.SCHEDULED_CLASS_TIME_CHECK_AVAILABILITY'),
+                ], 400);
             }
+
+            // foreach ($classes as $class) {
+            //     $db_startTime = date("G:i", strtotime($class->start_time));
+            //     $db_endTime = date("G:i", strtotime($class->end_time));
+            //     if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
+            //         return response()->json([
+            //             'status' => false,
+            //             'errors' => "Already have scheduled class at this time! please check teacher availability first",
+            //         ], 400);
+            //     }
+            // }
             // return $totalDuration;
             if ($totalDuration > 48) {
                 $class->start_time = $request->start_time;
@@ -1048,7 +1067,9 @@ class ClassController extends Controller
                 } else {
                     $class->class_id = $responseBody['class_id'];
                 }
-                $academic_class = AcademicClass::find($request->academic_class_id);
+
+                $academic_class = AcademicClass::with('student', 'teacher')->find($request->academic_class_id);
+
                 $reschedule_class = new RescheduleClass();
                 $reschedule_class->rescheduled_by = $token_user->id;
                 $reschedule_class->academic_class_id =  $academic_class->id;
@@ -1061,32 +1082,32 @@ class ClassController extends Controller
                 $reschedule_class->save();
                 $class->update();
 
-                $student = User::findOrFail($token_user->id);
-                $teacher = User::findOrFail($academic_class->teacher_id);
-                $teacher_message = "Class Rescheduled Successfully!";
-                $student_message = "Teacher Rescheduled a class!";
+                $teacher = User::findOrFail($token_user->id);
+                $student = User::findOrFail($academic_class->student_id);
+                $teacher_message = "Class rescheduled successfully!";
+                $student_message = "Teacher rescheduled a class!";
 
-                // event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
-                // event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
-                // dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message));
-                // dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message));
+                event(new ClassRescheduleEvent($student->id, $student, $academic_class, $student_message));
+                event(new ClassRescheduleEvent($teacher->id, $teacher, $academic_class, $teacher_message));
+                dispatch(new ClassRescheduleJob($student->id, $student, $academic_class, $student_message,'teacher'));
+                dispatch(new ClassRescheduleJob($teacher->id, $teacher, $academic_class, $teacher_message,'teacher'));
 
 
                 return response()->json([
                     'status' => true,
-                    'message' => "Class Rescheduled Successfully!",
+                    'message' => trans('api_messages.CLASS_RESCHEDULED_SUCCESSFULLY'),
                     'class' => $class,
                 ]);
             } else {
                 return response()->json([
                     'status' => false,
-                    'errors' => "You dont have time to reschdule the class",
+                    'errors' => trans('api_messages.DONT_HAVE_TIME_RESCHEDULE_CLASS'),
                 ], 400);
             }
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class Date has been Passed",
+                'errors' => trans('api_messages.CLASS_DATE_PASSED'),
             ], 400);
         }
     }
@@ -1119,7 +1140,7 @@ class ClassController extends Controller
         $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Kudos points',
+            'message' => 'Teacher kudos points',
             'kudos_points' => $teacher->kudos_points,
             'feedbacks' => $feedbacks,
         ]);

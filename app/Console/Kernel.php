@@ -21,7 +21,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('assignment:completed')->dailyAt("00:01");
         $schedule->command('course:completed')->everyMinute();
         $schedule->command('course:reminder')->hourly();
-        $schedule->command('assignment:deadline')->dailyAt("00:01");
+        $schedule->command('assignment:deadline_alert')->dailyAt("00:01");
+        $schedule->command('pre_class_hour:cron')->everyMinute();
+        $schedule->command('pre_class_day:cron')->dailyAt("00:01");
+        $schedule->command('payment:records')->everyWeek();
     }
 
     /**

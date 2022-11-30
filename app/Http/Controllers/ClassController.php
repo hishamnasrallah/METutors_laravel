@@ -28,7 +28,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use JWTAuth;
 use Stevebauman\Location\Facades\Location;
 use Devinweb\LaravelHyperpay\Events\SuccessTransaction;
@@ -41,8 +40,11 @@ use App\Jobs\ClassStartedJob;
 use App\Jobs\CourseBookingJob;
 use App\Jobs\NoTeacherJob;
 use App\Jobs\RequestCourseJob;
+use App\Models\Assignment;
+use App\Models\BillingDetail;
 use App\Models\HighlightedTopic;
 use App\Models\LastActivity;
+use App\Models\Order;
 use App\Models\RejectedCourse;
 use App\TeacherAvailability;
 use App\TeacherProgram;
@@ -54,6 +56,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
 use PragmaRX\Countries\Package\Countries;
 use stdClass;
+use Illuminate\Support\Str;
 
 class ClassController extends Controller
 {
@@ -111,21 +114,9 @@ class ClassController extends Controller
         }
         if ($request->book_info == 2) {
             $request->validate([
-                'files' =>  'required',
+                'file' =>  'required',
             ]);
-            $course->book_info = $request->book_info;
-            if ($request->hasFile('files')) {
-                //************* book files **********\\
-                $images = array();
-                $files = $request->file('files');
-                foreach ($files as $file) {
-                    $imageName = date('YmdHis') . random_int(10, 100) . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('assets/images/class_files'), $imageName);
-                    $images[] = $imageName;
-                }
-                $course->files = implode("|", $images);
-                //************* book files ends **********\\
-            }
+            $course->files = $request->file;
         }
         if ($request->book_info == 3) {
             $request->validate([
@@ -147,9 +138,12 @@ class ClassController extends Controller
         if ($request->total_hours < 0.5) {
             return response()->json([
                 'status' => false,
-                'message' => "Course should have atleast 30 minutes duration!",
+                'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
             ], 400);
         }
+
+
+
 
         //**************** Availabilities and checkues for course booking ****************
         $start_date = Carbon::parse($request->start_date);
@@ -170,7 +164,14 @@ class ClassController extends Controller
         //     }
         // }
 
-        $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+        if ($request->has('teacher_id')) {
+            $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+            if ($teacher_specification) {
+                $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+                $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+            }
+        }
+
 
         // if ($end_date > $teacher_specification->availability_end_date) {
         //     return response()->json([
@@ -180,8 +181,7 @@ class ClassController extends Controller
         // }
 
 
-        $availability_start = Carbon::parse($teacher_specification->availability_start_date);
-        $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+
 
 
         //If Request has teacher id
@@ -293,21 +293,22 @@ class ClassController extends Controller
 
         //Adding Academic Classes data
         $classes = $request->classes;
-        $classes = json_decode($classes);
+        // $classes = json_decode($classes); 
         foreach ($classes as $session) {
+
             $class = new AcademicClass();
             $class->course_id = $course->id;
             if ($request->has('teacher_id')) {
                 $class->teacher_id = $request->teacher_id;
             }
             $class->student_id = $token_user->id;
-            $class->start_date = $session->date;
+            $class->start_date = $session['date'];
             $class->end_date = $request->end_date;
-            $class->start_time = $session->start_time;
-            $class->end_time = $session->end_time;
+            $class->start_time = $session['start_time'];
+            $class->end_time = $session['end_time'];
             $class->class_type = $request->class_type;
-            $class->duration = $session->duration;
-            $class->day = $session->day;
+            $class->duration = $session['duration'];
+            $class->day = $session['day'];
             $class->status = 'pending';
             $class->save();
         }
@@ -315,6 +316,364 @@ class ClassController extends Controller
         $program = Program::find($request->program_id);
         $subject = Subject::find($request->subject_id);
         $course_count = Course::where('subject_id', $subject->id)->where('program_id', $request->program_id)->where('course_code', '!=', null)->count();
+        if ($course_count != null) {
+            $course_count =  $course_count + 1;
+        } else {
+            $course_count = 1;
+        }
+
+
+        $course = Course::with('subject.country', 'language', 'field', 'teacher', 'program', 'order')->find($course->id);
+
+        // Adding Course Code
+        $course->course_code = $program->code . '-' . Str::limit($subject->name, 3, '') . '-' . ($course_count);
+
+        // Adding Course name
+        if ($course_count == 0) {
+            $course->course_name = $subject->name . "0001";
+        } else {
+            //Course name conditions
+            $number = strlen($course_count);
+            if ($number == 1) {
+                $course->course_name = $subject->name . "-" . "000" . $course_count;
+            } elseif ($number == 2) {
+                $course->course_name = $subject->name . "-" . "00" . $course_count;
+            } elseif ($number == 3) {
+                $course->course_name = $subject->name . "-" . "0" . $course_count;
+            } else {
+                $course->course_name = $subject->name . "-" . $course_count;
+            }
+        }
+        $course->update();
+
+        //Adding Classroom Data
+        $classRoom = new ClassRoom();
+        $classRoom->course_id = $course->id;
+        if ($request->has('teacher_id')) {
+            $classRoom->teacher_id = $request->teacher_id;
+        }
+
+        $classRoom->student_id = $token_user->id;
+        $classRoom->status = 'payment_pending';
+        $classRoom->save();
+
+        //Adding Highlighted topic data
+        if ($request->has('highlighted_topics')) {
+            foreach ($request->highlighted_topics as $topic) {
+
+                $topicc = new HighlightedTopic();
+                $topicc->name = $topic['name'];
+                $topicc->confidence_scale = $topic['knowledge_scale'];
+                $topicc->course_id = $course->id;
+                $topicc->save();
+            }
+        }
+
+        $user = User::find($token_user->id);
+        $admin = User::where('role_name', 'admin')->first();
+
+        if ($request->has('teacher_id')) {
+            $teacher = User::find($request->teacher_id);
+            // Event notification
+            $teacher_message = 'New Course Created!';
+            $student_message = 'Course Created Successfully!';
+
+            event(new CourseBookingEvent($course->teacher_id, $teacher, $teacher_message,  $course));
+            event(new CourseBookingEvent($course->student_id, $user, $student_message,  $course));
+            dispatch(new CourseBookingJob($course->teacher_id, $teacher, $teacher_message, $course));
+            dispatch(new CourseBookingJob($course->student_id, $user, $student_message, $course));
+        } else {
+            $noTeacher = new NoTeacherCourse();
+            $noTeacher->course_id = $course->id;
+            $noTeacher->save();
+
+
+            // Event notification
+            $admin_message = 'New Course Created! Kindly assign teacher!';
+            $student_message = 'Course Created Successfully!';
+            event(new NoTeacherEvent($admin->id, $admin, $admin_message,  $course));
+            event(new NoTeacherEvent($course->student_id, $user, $student_message, $course));
+            dispatch(new NoTeacherJob($admin->id, $admin, $admin_message, $course));
+            dispatch(new NoTeacherJob($course->student_id, $user, $student_message,  $course));
+        }
+
+        $trackable_data = [
+            'course_id' => $course->id,
+            'course_code' => $course->course_code
+        ];
+
+        // Adding Billing details
+        if ($request->has('billing_info') && $request->billing_info != '') {
+            $billing_info = json_decode(json_encode($request->billing_info));
+            //Add or update billing details
+            $billing_detail = BillingDetail::updateOrCreate([
+                'user_id'   => $token_user->id,
+            ], [
+                'user_id' => $token_user->id,
+                'country' => $billing_info->country,
+                'state' => $billing_info->state,
+                'city' => $billing_info->city,
+                'street' => $billing_info->street,
+                'postcode' => $billing_info->postcode,
+            ]);
+        }
+
+        $user = User::with('billing_info')
+            ->select('id', 'id_number', 'first_name', 'last_name', 'role_name', 'email', 'mobile', 'avatar')
+            ->findOrFail($token_user->id);
+
+        $amount = $request->total_price;
+        $brand = 'VISA'; // MASTER OR MADA
+
+        $id = Str::random('64');
+        $user_country = Country::find($user['billing_info']->country);
+        $user_country = $user_country->iso2;
+
+
+        $myRequest = new Request();
+        $myRequest->setMethod('get'); //default METHOD
+
+        $myRequest['testMode'] = 'EXTERNAL';
+        $myRequest['merchantTransactionId'] = $id;
+        $myRequest['customer.email'] = $user->email;
+        $myRequest['billing.street1'] = $user['billing_info']->street;
+        $myRequest['billing.city'] = $user['billing_info']->city;
+        $myRequest['billing.state'] = $user['billing_info']->state;
+        $myRequest['billing.country'] = $user_country;
+        $myRequest['billing.postcode'] = $user['billing_info']->postcode;
+        $myRequest['customer.givenName'] = $user->first_name;
+        $myRequest['customer.surname'] = $user->last_name;
+        // return $myRequest;
+        // $payment = LaravelHyperpay::addMerchantTransactionId($id)
+        //     ->addBilling(new HyperPayBilling())
+        //     ->checkout($trackable_data, $user, $amount, $brand, $myRequest);
+
+
+
+        //**************** HYPERPAY CURL implementation starts ***************** 
+
+        $url = "https://eu-test.oppwa.com/v1/checkouts";
+        $data = "entityId=8ac7a4ca80b2d4470180b3d5cdf604c6" .
+            "&amount=".$amount .
+            "&currency=USD" .
+            "&paymentType=DB" .
+            // "&registrations[0].id=8ac7a4a2848b0cf20184991ba9d359c6" .
+            // "&registrations[1].id=8ac7a4a1848b40370184991baa9520e4" .
+            // "&standingInstruction.source=CIT" .
+            // "&standingInstruction.mode=REPEATED" .
+            "&merchantTransactionId=" . $id .
+            "&customer.email=" . $user->email .
+            "&billing.street1=" . $user['billing_info']->street .
+            "&billing.city=" . $user['billing_info']->city .
+            "&billing.state=" . $user['billing_info']->state .
+            "&billing.country=" . $user_country .
+            "&billing.postcode=" . $user['billing_info']->postcode .
+            "&customer.givenName=" . $user->first_name .
+            "&customer.surname=" . $user->last_name ;
+            // "&standingInstruction.type=UNSCHEDULED";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $payment = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return response()->json([
+                'status' => false,
+                'message' => curl_error($ch),
+            ], 400);
+        }
+        curl_close($ch);
+
+        //**************** HYPERPAY CURL implementation ends ***************** 
+
+        $payment = json_decode(json_encode($payment));
+        $payment =  json_decode($payment);
+        $script_url = 'https://test.oppwa.com/v1/paymentWidgets.js?checkoutId=' . $payment->id;
+        // $shopperResultUrl = $payment->original->shopperResultUrl;
+        $redirect_url = $request->redirect_url;
+        // return view('payment_form', compact('script_url', 'shopperResultUrl'));
+        return response()->json([
+            'status' => true,
+            'message' => trans('api_messages.CHECKOUT_PREPARED_SUCCESSFULLY'),
+            'script_url' => $script_url,
+            'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
+            'course' => $course
+        ]);
+    }
+
+    //********* Create Course *********
+    public function demo_course(Request $request)
+    {
+        $token_1 = JWTAuth::getToken();
+        $token_user = JWTAuth::toUser($token_1);
+
+        $rules = [
+            'field_of_study' =>  'required',
+
+            'language_id' =>  'required',
+            // 'book_type' =>  'required',
+            'book_info' =>  'required',
+            'total_classes' =>  'required',
+            'total_hours' =>  'required',
+            'total_price' =>  'required',
+            'subject_id' =>  'required',
+            'weekdays' =>  'required',
+
+            // 'teacher_id' =>  'required',
+            'start_date' =>  'required',
+            'end_date' =>  'required',
+            'start_time' =>  'required',
+            'end_time' =>  'required',
+            'class_type' =>  'required',
+            'classes' =>  'required',
+            // 'highlighted_topics' =>  'required',
+
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            $messages = $validator->messages();
+            $errors = $messages->all();
+
+            return response()->json([
+                'status' => 'false',
+                'errors' => $errors,
+            ], 400);
+        }
+
+        if ($request->program_id == 3) {
+            $request->validate([
+                'country_id' =>  'required',
+            ]);
+        }
+
+        // Adding Course Data
+        $course = new Course();
+        if ($request->program_id == 3) {
+            $course->program_id = $request->program_id;
+            $course->country_id = $request->country_id;
+        } else {
+            $course->program_id = $request->program_id;
+        }
+        if ($request->book_info == 2) {
+            $request->validate([
+                'file' =>  'required',
+            ]);
+            $course->files = $request->file;
+        }
+        if ($request->book_info == 3) {
+            $request->validate([
+                'book_name' =>  'required',
+                'book_edition' =>  'required',
+                'book_author' =>  'required',
+            ]);
+            $course->book_info = $request->book_info;
+            $course->book_name = $request->book_name;
+            $course->book_edition = $request->book_edition;
+            $course->book_author = $request->book_author;
+        } else {
+            $course->book_info = $request->book_info;
+        }
+
+
+
+        if ($request->total_hours < 0.5) {
+            return response()->json([
+                'status' => false,
+                'message' => trans('api_messages.COURSE_LEAST_30_MINUTES_DURATION'),
+            ], 400);
+        }
+
+        if ($token_user->is_demo == 1) {
+            return response()->json([
+                'status' => false,
+                'message' => trans('Your demo class has been ended'),
+            ], 400);
+        }
+
+        if ($request->total_hours > 0.5) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You can not book a demo more than 30 minutes',
+            ], 400);
+        }
+
+        if ($request->total_classes > 1) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You can not add more than one class in demo.',
+            ], 400);
+        }
+
+        //**************** Availabilities and checkues for course booking ****************
+        $start_date = Carbon::parse($request->start_date);
+        $end_date = Carbon::parse($request->end_date);
+
+        if ($request->has('teacher_id')) {
+            $teacher_specification = TeachingSpecification::where('user_id', $request->teacher_id)->first();
+            $availability_start = Carbon::parse($teacher_specification->availability_start_date);
+            $availability_end = Carbon::parse($teacher_specification->availability_start_date);
+        }
+
+
+        $course->field_of_study = $request->field_of_study;
+
+        $course->language_id = $request->language_id;
+        // $course->book_type = $request->book_type;
+        $course->total_price = $request->total_price;
+        $course->total_hours = $request->total_hours;
+        $course->total_classes = $request->total_classes;
+        $course->subject_id = $request->subject_id;
+        //if request has teacher id
+        if ($request->has('teacher_id')) {
+            $course->teacher_id = $request->teacher_id;
+        }
+        $course->student_id = $token_user->id;
+        $course->weekdays = $request->weekdays;
+        $course->start_date = $request->start_date;
+        $course->end_date = $request->end_date;
+        $course->start_time = $request->start_time;
+        $course->end_time = $request->end_time;
+        $course->status = 'pending';
+        $course->save();
+
+        //Adding Academic Classes data
+        $classes = $request->classes;
+        //  $classes = json_decode($classes); 
+        foreach ($classes as $session) {
+            // return $session->date;
+            $class = new AcademicClass();
+            $class->course_id = $course->id;
+            if ($request->has('teacher_id')) {
+                $class->teacher_id = $request->teacher_id;
+            }
+            $class->student_id = $token_user->id;
+            $class->start_date = $session['date'];
+            $class->end_date = $request->end_date;
+            $class->start_time = $session['start_time'];
+            $class->end_time = $session['end_time'];
+            $class->class_type = $request->class_type;
+            $class->duration = $session['duration'];
+            $class->day = $session['day'];
+            $class->status = 'pending';
+            $class->save();
+        }
+
+        $program = Program::find($request->program_id);
+        $subject = Subject::find($request->subject_id);
+
+        $course_count = Course::where('subject_id', $subject->id)
+            ->where('program_id', $request->program_id)
+            ->where('course_code', '!=', null)
+            ->count();
+
         if ($course_count != null) {
             $course_count =  $course_count + 1;
         } else {
@@ -353,72 +712,39 @@ class ClassController extends Controller
         }
 
         $classRoom->student_id = $token_user->id;
-        $classRoom->status = 'payment_pending';
+        $classRoom->status = 'pending';
         $classRoom->save();
 
         //Adding Highlighted topic data
         if ($request->has('highlighted_topics')) {
-            foreach (json_decode($request->highlighted_topics) as $topic) {
+            foreach ($request->highlighted_topics as $topic) {
+
                 $topicc = new HighlightedTopic();
-                $topicc->name = $topic->name;
-                $topicc->confidence_scale = $topic->knowledge_scale;
+                $topicc->name = $topic['name'];
+                $topicc->confidence_scale = $topic['knowledge_scale'];
                 $topicc->course_id = $course->id;
                 $topicc->save();
             }
         }
 
         $user = User::find($token_user->id);
-        if ($request->has('teacher_id')) {
-            $teacher = User::find($request->teacher_id);
-            // Event notification
-            $teacher_message = 'New Course Created!';
-            $student_message = 'Course Created Successfully!';
+        $user->is_demo = 1;
+        $user->update();
 
-            event(new CourseBookingEvent($course->teacher_id, $teacher, $teacher_message,  $course));
-            event(new CourseBookingEvent($course->student_id, $user, $student_message,  $course));
-            dispatch(new CourseBookingJob($course->teacher_id, $teacher, $teacher_message, $course));
-            dispatch(new CourseBookingJob($course->student_id, $user, $student_message, $course));
-        } else {
-            $noTeacher = new NoTeacherCourse();
-            $noTeacher->course_id = $course->id;
-            $noTeacher->save();
-            $admin = User::where('role_name', 'admin')->first();
 
-            // Event notification
-            $admin_message = 'New Course Created! Kindly assign teacher!';
-            $student_message = 'Course Created Successfully!';
-            event(new NoTeacherEvent($admin->id, $admin, $admin_message,  $course));
-            event(new NoTeacherEvent($course->student_id, $user, $student_message, $course));
-            dispatch(new NoTeacherJob($admin->id, $admin, $admin_message, $course));
-            dispatch(new NoTeacherJob($course->student_id, $user, $student_message,  $course));
-        }
+        $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('id', $token_user->id)->first();
 
-        $trackable_data = [
-            'course_id' => $course->id,
-            'course_code' => $course->course_code
-        ];
-        $user = User::findOrFail($token_user->id);
-        $amount = $request->total_price;
-        $brand = 'VISA'; // MASTER OR MADA
+        $token = $token = JWTAuth::customClaims(['user' => $user])->fromUser($user);
 
-        $id = Str::random('64');
-        $payment = LaravelHyperpay::addMerchantTransactionId($id)
-            ->addBilling(new HyperPayBilling())
-            ->checkout($trackable_data, $user, $amount, $brand, $request);
 
-        $payment = json_decode(json_encode($payment));
-        $script_url = $payment->original->script_url;
-        $shopperResultUrl = $payment->original->shopperResultUrl;
-        $redirect_url = $request->redirect_url;
-        // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
-            'script_url' => $script_url,
-            'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
-            'course' => $course
+            'message' => 'Demo course created successfully',
+            'course' => $course,
+            'token' => $token
         ]);
     }
+
 
 
     public function add_classes(Request $request)
@@ -495,10 +821,11 @@ class ClassController extends Controller
         ];
 
         $course = Course::with('classes')->find($request->course_id);
+
         if ($course->status == 'completed') {
             return response()->json([
                 'status' => false,
-                'message' => 'Course has been completed!',
+                'message' => trans('api_messages.COURSE_COMPLETED'),
             ], 400);
         }
 
@@ -506,51 +833,82 @@ class ClassController extends Controller
         $availability = TeacherAvailability::where('user_id', $course->teacher_id)->get();
         $requestedClasses = json_decode(json_encode($request->classes));
         foreach ($requestedClasses as $class) {
-            $weekAvailabilities = $availability->where('day', $class->day);
+
+            $start_time = Carbon::parse($class->start_time)->format('H:i:s');
+            $end_time = Carbon::parse($class->end_time)->format('H:i:s');
+
+            $weekAvailabilities = TeacherAvailability::where('user_id', $course->teacher_id)
+                ->where('day', $class->day)
+                ->whereTime('time_from', '>=', $start_time)
+                ->whereTime('time_from', '<=', $end_time)
+                ->whereTime('time_to', '>=', $start_time)
+                ->whereTime('time_to', '<=', $end_time)
+                ->get();
+
+
+
             if (count($weekAvailabilities) == 0) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Teacher not available at this day!',
+                    'message' => trans('api_messages.TEACHER_NOT_AVAILABLE_DAY_CHECK_AVAILABILITY'),
                 ], 400);
             }
-            $flag = 0;
-            foreach ($weekAvailabilities as $weekAvailability) {
-                $start_time = Carbon::parse($weekAvailability->time_from)->format('G:i');
-                $end_time = Carbon::parse($weekAvailability->time_to)->format('G:i');
-                $request_startTime = Carbon::parse($class->start_time)->format('G:i');
-                $request_endTime = Carbon::parse($class->end_time)->format('G:i');
+            // $flag = 0;
+            // foreach ($weekAvailabilities as $weekAvailability) {
+            //     $start_time = Carbon::parse($weekAvailability->time_from)->format('G:i');
+            //     $end_time = Carbon::parse($weekAvailability->time_to)->format('G:i');
+            //     $request_startTime = Carbon::parse($class->start_time)->format('G:i');
+            //     $request_endTime = Carbon::parse($class->end_time)->format('G:i');
 
-                if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) && ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
-                    break;
-                } else {
-                    $flag++;
-                    if ($flag == count($weekAvailabilities))
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'Teacher not available at this time slot!',
-                        ], 400);
-                }
-            }
+            //     if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) && ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
+            //         break;
+            //     } else {
+            //         $flag++;
+            //         if ($flag == count($weekAvailabilities))
+            //             return response()->json([
+            //                 'status' => false,
+            //                 'message' => 'Teacher not available at this time slot!! please check teacher availability first',
+            //             ], 400);
+            //     }
+            // }
+
+            $classDate = Carbon::parse($class->date)->format('Y-m-d');
             // Checking if teacher is booked
-            $classes = AcademicClass::where('day', $class->day)->where('teacher_id', $course->teacher_id)
-                ->where('start_date', $class->date)
+            $classes = AcademicClass::where('day', $class->day)
+                ->where('teacher_id', $course->teacher_id)
+                ->where('student_id', $token_user->id)
+                ->whereDate('start_date', $classDate)
+                ->whereTime('start_time', '>=', $start_time)
+                ->whereTime('start_time', '<=', $end_time)
+                ->whereTime('end_time', '>=', $start_time)
+                ->whereTime('end_time', '<=', $end_time)
+                ->where('status', '!=', 'completed')
                 ->get();
-            if (count($classes) > 0) {
-                $flag = 0;
-                foreach ($classes as $academicClass) {
-                    $start_time = Carbon::parse($academicClass->start_time)->format('G:i');
-                    $end_time = Carbon::parse($academicClass->end_time)->format('G:i');
-                    $request_startTime = Carbon::parse($class->start_time)->format('G:i');
-                    $request_endTime = Carbon::parse($class->end_time)->format('G:i');
 
-                    if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'Teacher is not available on this slot please check teacher availability first',
-                        ], 400);
-                    }
-                }
+            if (count($classes) > 0) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Teacher already booked please check teacher availability first',
+                ], 400);
             }
+
+
+            // if (count($classes) > 0) {
+            //     $flag = 0;
+            //     foreach ($classes as $academicClass) {
+            //         $start_time = Carbon::parse($academicClass->start_time)->format('G:i');
+            //         $end_time = Carbon::parse($academicClass->end_time)->format('G:i');
+            //         $request_startTime = Carbon::parse($class->start_time)->format('G:i');
+            //         $request_endTime = Carbon::parse($class->end_time)->format('G:i');
+
+            //         if (($request_startTime >= $start_time) && ($request_startTime <= $end_time) || ($request_endTime >= $start_time) && ($request_endTime <= $end_time)) {
+            //             return response()->json([
+            //                 'status' => false,
+            //                 'message' => 'Teacher is not available on this slot! please check teacher availability first',
+            //             ], 400);
+            //         }
+            //     }
+            // }
         }
 
         $course->total_classes = $course->total_classes + $request->total_classes;
@@ -581,8 +939,8 @@ class ClassController extends Controller
                 'apikey' =>  "xKUyaLJHtbvBUtl3otJc",
                 'title' =>  'class' . $counter,
                 'timezone' => 90,
-                'start_time' => Carbon::parse($academicClass->start_time)->format('G:i a'),
-                'end_time' => Carbon::parse($academicClass->end_time)->format('G:i a'),
+                'start_time' => Carbon::parse($academicClass->start_time)->format('g:i a'),
+                'end_time' => Carbon::parse($academicClass->end_time)->format('g:i a'),
                 'date' => Carbon::parse($academicClass->start_date)->format('Y-m-d'),
                 'currency' => "USD",
                 'ispaid' => null,
@@ -650,7 +1008,7 @@ class ClassController extends Controller
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
+            'message' => trans('api_messages.CHECKOUT_PREPARED_SUCCESSFULLY'),
             'script_url' => $script_url,
             'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id . "&classes=" . json_encode($classes_array),
             'course' => $course,
@@ -695,15 +1053,71 @@ class ClassController extends Controller
         $brand = 'VISA'; // MASTER OR MADA
 
         $id = Str::random('64');
-        $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        // $payment = LaravelHyperpay::addMerchantTransactionId($id)->addBilling(new HyperPayBilling())->checkout($trackable_data, $user, $amount, $brand, $request);
+        // $payment = json_decode(json_encode($payment));
+        // $script_url = $payment->original->script_url;
+        // $shopperResultUrl = $payment->original->shopperResultUrl;
+        // $redirect_url = $request->redirect_url;
+        // // return view('payment_form', compact('script_url', 'shopperResultUrl'));
+        // return response()->json([
+        //     'status' => true,
+        //     'message' => trans('api_messages.CHECKOUT_PREPARED_SUCCESSFULLY'),
+        //     'script_url' => $script_url,
+        //     'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
+        //     'course' => $course
+        // ]);
+
+        $user_country = Country::find($user['billing_info']->country);
+        $user_country = $user_country->iso2;
+        $url = "https://eu-test.oppwa.com/v1/checkouts";
+        $data = "entityId=8ac7a4ca80b2d4470180b3d5cdf604c6" .
+            "&amount=".$amount .
+            "&currency=USD" .
+            "&paymentType=DB" .
+            // "&registrations[0].id=8ac7a4a2848b0cf20184991ba9d359c6" .
+            // "&registrations[1].id=8ac7a4a1848b40370184991baa9520e4" .
+            // "&standingInstruction.source=CIT" .
+            // "&standingInstruction.mode=REPEATED" .
+            "&merchantTransactionId=" . $id .
+            "&customer.email=" . $user->email .
+            "&billing.street1=" . $user['billing_info']->street .
+            "&billing.city=" . $user['billing_info']->city .
+            "&billing.state=" . $user['billing_info']->state .
+            "&billing.country=" . $user_country .
+            "&billing.postcode=" . $user['billing_info']->postcode .
+            "&customer.givenName=" . $user->first_name .
+            "&customer.surname=" . $user->last_name ;
+            // "&standingInstruction.type=UNSCHEDULED";
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization:Bearer OGFjN2E0Y2E4MGIyZDQ0NzAxODBiM2Q1MzM5ODA0YzJ8UWhTUDhQZDZtNA=='
+        ));
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // this should be set to true in production
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $payment = curl_exec($ch);
+        if (curl_errno($ch)) {
+            return response()->json([
+                'status' => false,
+                'message' => curl_error($ch),
+            ], 400);
+        }
+        curl_close($ch);
+
+        //**************** HYPERPAY CURL implementation ends ***************** 
+
         $payment = json_decode(json_encode($payment));
-        $script_url = $payment->original->script_url;
-        $shopperResultUrl = $payment->original->shopperResultUrl;
+        $payment =  json_decode($payment);
+        $script_url = 'https://test.oppwa.com/v1/paymentWidgets.js?checkoutId=' . $payment->id;
+        // $shopperResultUrl = $payment->original->shopperResultUrl;
         $redirect_url = $request->redirect_url;
         // return view('payment_form', compact('script_url', 'shopperResultUrl'));
         return response()->json([
             'status' => true,
-            'message' => "Checkout Prepared Successfully!",
+            'message' => trans('api_messages.CHECKOUT_PREPARED_SUCCESSFULLY'),
             'script_url' => $script_url,
             'shopperResultUrl' => $redirect_url . "?course_id=" . $course->id,
             'course' => $course
@@ -871,7 +1285,7 @@ class ClassController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Session Updated Succesfully!",
+            'message' => "Session updated succesfully!",
             'session' => $session,
         ]);
     }
@@ -1042,7 +1456,7 @@ class ClassController extends Controller
             $class->save();
             return response()->json([
                 'success' => true,
-                'message' => "Class Scheduled SuccessFully",
+                'message' => trans('api_messages.CLASS_SCHEDULED_SUCCESSFULLY'),
                 'class' => $class,
             ]);
         } else {
@@ -1061,7 +1475,7 @@ class ClassController extends Controller
         if ($class == null) {
             return response()->json([
                 'status' => false,
-                'message' => 'class not found'
+                'message' => 'Class not found'
             ], 400);
         }
         if ($class->status == 'canceled') {
@@ -1078,17 +1492,25 @@ class ClassController extends Controller
             ], 400);
         }
         // return Carbon::parse($class->start_date);
-        if (Carbon::today() < Carbon::parse($class->start_date)) {
+
+        $today = Carbon::now()->toISOString();
+        $today = Date($today);
+        $today_time = Carbon::now()->toISOString();
+        $today_time = Date($today_time);
+        $classDate = Date($class->start_date);
+        $classTime = Date($class->start_time);
+
+        if ($today < $classDate) {
             return response()->json([
                 'status' => false,
-                'message' => 'Your class is not scheduled today!'
+                'message' => trans('api_messages.CLASS_NOT_SCHEDULED_TODAY')
             ], 400);
         }
-        // If class tije is not met shows error
-        if (Carbon::now() < Carbon::parse($class->start_time)) {
+        // If class time is not met shows error
+        if ($today_time  < $classTime) {
             return response()->json([
                 'status' => false,
-                'message' => 'Please Wait! Class has not started yet.'
+                'message' => trans('api_messages.WAIT_CLASS_NOT_STARTED')
             ], 400);
         }
 
@@ -1271,20 +1693,25 @@ class ClassController extends Controller
         $classroom = ClassRoom::where($userrole, $token_user->id)->where('status', '!=', 'payment_pending')->pluck('course_id');
 
         //finding the course countries
-        $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+        // $course_countries = course::whereIn('id', $classroom)->get('country_id')->unique();
+        $course_countries = TeacherSubject::where('user_id', $token_user->id)->where('country_id','!=','')->pluck('country_id')->unique();
         $countries = Country::select('id', 'name')->whereIn('id', $course_countries)->get();
-        $course_countries=$countries;
+        $course_countries = $countries;
 
-        // $Countries = Countries::all();
-        // $course_countries = [];
-        // foreach ($countries as $country) {
-        //     $Country = $Countries->where('name.common', $country->name)->first();
-        //     $course_country = new stdClass();
-        //     $course_country->name = $Country->name->common;
-        //     $course_country->flag =  $Country->flag['flag-icon'];
-        //     array_push($course_countries, $course_country);
-        // }
-        // course countries ended
+        $Countries = Countries::all();
+        $course_countries = [];
+        if(count($countries) > 0){
+            foreach ($countries as $country) {
+                
+                $Country = $Countries->where('name.common', $country->name)->first();
+                $course_country = new stdClass();
+                $course_country->id = $country->id;
+                $course_country->name = $Country->name->common;
+                $course_country->flag =  $Country->flag['flag-icon'];
+                array_push($course_countries, $course_country);
+            }
+        }
+       // course countries ended
 
         if (count($request->all()) >= 1) {
 
@@ -1700,6 +2127,11 @@ class ClassController extends Controller
             $userrole = 'student_id';
         }
 
+
+
+
+        $current_date = Carbon::today()->format('Y-m-d');
+
         $todays_date = Carbon::now()->format('d-M-Y [l]');
 
         $user_id = $token_user->id;
@@ -1756,7 +2188,21 @@ class ClassController extends Controller
 
         $todays_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
             ->with('course', 'course.subject.country', 'course.student', 'attendence', 'attendees.user')
-            ->where('start_date', $current_date)
+            ->whereDate('start_date', $current_date)
+            ->with('course')
+            ->with(['student_attendence' => function ($q) {
+                $q->where('role_name', 'student');
+            }])
+            ->with(['teacher_attendence' => function ($q) {
+                $q->where('role_name', 'teacher');
+            }])
+            // ->where($userrole, $user_id)
+            ->where('course_id', $course->id)
+            ->get();
+
+        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
+            ->with('course', 'course.subject.country', 'course.student', 'attendence', 'attendees.user')
+            ->whereDate('start_date', '>', $current_date)
             ->with('course')
             ->with(['student_attendence' => function ($q) {
                 $q->where('role_name', 'student');
@@ -1768,21 +2214,7 @@ class ClassController extends Controller
             ->where('course_id', $course->id)
             ->get();
 
-        $upcoming_classes = AcademicClass::select('id', 'class_id', 'title', "start_date", "end_date", "start_time", "end_time", "course_id", 'duration', 'day', 'status')
-            ->with('course', 'course.subject.country', 'course.student', 'attendence', 'attendees.user')
-            ->where('start_date', '>', $current_date)
-            ->with('course')
-            ->with(['student_attendence' => function ($q) {
-                $q->where('role_name', 'student');
-            }])
-            ->with(['teacher_attendence' => function ($q) {
-                $q->where('role_name', 'teacher');
-            }])
-            ->where($userrole, $user_id)
-            ->where('course_id', $course->id)
-            ->paginate($request->per_page ?? 3);
-
-        $total_upcomingClasses = AcademicClass::where('start_date', '>', $current_date)
+        $total_upcomingClasses = AcademicClass::whereDate('start_date', '>', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
@@ -1798,18 +2230,18 @@ class ClassController extends Controller
             ->with(['teacher_attendence' => function ($q) {
                 $q->where('role_name', 'teacher');
             }])
-            ->where('start_date', '<', $current_date)
+            ->whereDate('start_date', '<', $current_date)
             ->with('course')
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
-            ->paginate($request->per_page ?? 3);
+            ->get();
 
-        $total_pastClasses = AcademicClass::where('start_date', '<', $current_date)
+        $total_pastClasses = AcademicClass::whereDate('start_date', '<', $current_date)
             ->where($userrole, $user_id)
             ->where('course_id', $course->id)
             ->count();
 
-        $remaining_classes = AcademicClass::where('course_id', $course_id)->where('start_date', '>', $current_date)->where('status', '!=', 'completed')->count();
+        $remaining_classes = AcademicClass::where('course_id', $course_id)->whereDate('start_date', '>', $current_date)->where('status', '!=', 'completed')->count();
         $completed_classes = AcademicClass::where('course_id', $course_id)->where('status', 'completed')->count();
 
         $totalClases = AcademicClass::where('course_id', $course_id)->where($userrole, $user_id)->count();
@@ -1984,7 +2416,7 @@ class ClassController extends Controller
                 if (($start_time >= $db_startTime) && ($start_time <= $db_endTime) || ($end_time >= $db_startTime) && ($end_time <= $db_endTime)) {
                     return response()->json([
                         'status' => false,
-                        'errors' => "Already have Scheduled Class at this time!",
+                        'errors' => "Already have scheduled class at this time! please check teacher availability first",
                     ], 400);
                 }
             }
@@ -2011,7 +2443,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => "Class Rescheduled Successfully!",
+                        'message' => "Class rescheduled successfully!",
                     ]);
                 } else {
                     // if class is not scheduled by braincert
@@ -2048,7 +2480,7 @@ class ClassController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'errors' => "Class Rescheduled Successfully!",
+                        'errors' => "Class rescheduled successfully!",
                     ]);
                 }
             } else {
@@ -2060,7 +2492,7 @@ class ClassController extends Controller
         } else {
             return response()->json([
                 'status' => false,
-                'errors' => "Class Date has been Passed",
+                'errors' => "Class date has been passed",
             ], 400);
         }
     }
@@ -2093,7 +2525,7 @@ class ClassController extends Controller
         $feedbacks = UserFeedback::with('sender', 'feedback')->where('receiver_id', $token_user->id)->get();
         return response()->json([
             'status' => true,
-            'message' => 'Teacher Kudos points',
+            'message' => 'Teacher kudos points',
             'kudos_points' => $teacher->kudos_points,
             'feedbacks' => $feedbacks,
         ]);
@@ -2184,5 +2616,18 @@ class ClassController extends Controller
         $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
         $items = $items instanceof Collection ? $items : Collection::make($items);
         return new LengthAwarePaginator($items->forPage($page, $perPage)->values(), $items->count(), $perPage, $page, $options);
+    }
+
+    public function test_hyperpay(Request $request)
+    {
+        $today =  Carbon::now()->toISOString();
+        $today_date =  Carbon::parse($today)->format('Y-m-d');
+        $today_time =  Carbon::parse($today)->format('H:i:s');
+
+        return $classes = AcademicClass::with('student', 'teacher', 'course.order')
+            ->whereDate('start_date', "<=", $today_date)
+            ->whereNotIn('status', ['completed', 'teacher_absent', 'student_absent'])
+            ->where('teacher_id', "!=", null)
+            ->get();
     }
 }

@@ -31,6 +31,11 @@ class TeacherSubject extends Model
         return $this->belongsTo(Program::class, 'program_id', 'id');
     }
 
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id', 'id');
+    }
+
     public function teaching_specification()
     {
         return $this->belongsTo(TeachingSpecification::class, 'user_id', 'user_id');

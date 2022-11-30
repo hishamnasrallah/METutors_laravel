@@ -88,4 +88,5 @@ class Category extends Model
 
         return $ids;
     }
+
 }

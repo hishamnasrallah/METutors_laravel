@@ -120,7 +120,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User Logged in Successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
@@ -128,16 +128,16 @@ class SocialiteController extends Controller
 
                     $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar')->where('email', $request->email)->first();
 
+                    if($user->role_id != $request->role){
+                        return response()->json([
+                            'status' => false,
+                            'message' => trans('api_messages.EMAIL_ALREADY_REGISTERED_ROLE'),
+                        ],400);
+                    }
+
                     if ($user->role_name == 'teacher') {
 
                         $user = User::select('id', 'first_name', 'last_name', 'role_name', 'role_id', 'mobile', 'email',  'verified', 'avatar', 'profile_completed_step')->where('email', $request->email)->first();
-                    }
-
-                    if($user->role_name != $request->role){
-                        return response()->json([
-                            'status' => false,
-                            'message' => 'This email is already registered with us for another role',
-                        ],400);
                     }
 
 
@@ -145,7 +145,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User Logged in Successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
@@ -162,7 +162,7 @@ class SocialiteController extends Controller
                 return response()->json([
 
                     'status' => 'false',
-                    'message' => 'auth token required',
+                    'message' => 'Auth token required',
                 ], 400);
             }
         } catch (Exception $e) {
@@ -171,7 +171,7 @@ class SocialiteController extends Controller
             return response()->json([
 
                 'status' => 'false',
-                'message' => 'auth token invalid',
+                'message' => 'Auth token invalid',
             ], 401);
         }
     }
@@ -268,7 +268,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User Logged in Successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
@@ -280,7 +280,7 @@ class SocialiteController extends Controller
 
                         return response()->json([
                             'status' => false,
-                            'message' => 'This email is already registered with us for another role.',
+                            'message' => trans('api_messages.EMAIL_ALREADY_REGISTERED_ROLE'),
                         ], 400);
                     }
 
@@ -298,7 +298,7 @@ class SocialiteController extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'User Logged in Successfully!!',
+                        'message' => trans('api_messages.USER_LOGIN_SUCCESSFULLY'),
                         'user' => $user,
                         'token' => $token
                     ]);
