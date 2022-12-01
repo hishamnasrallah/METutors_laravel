@@ -41,12 +41,21 @@ class RejectAssignmentJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'assignment' => $this->assignment);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'assignment' => $this->assignment);
 
-        Mail::send('email.add_assignment', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Assignment Accepted');
-           $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.reject_assignment', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('An assignment on your course has been rejected');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'teacher') {
+            Mail::send('email.reject_assignment', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('An assignment has been rejected');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
         //********* Sending Email ends **********
 
         //********* Realtime Notification **********

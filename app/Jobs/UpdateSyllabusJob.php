@@ -43,12 +43,22 @@ class UpdateSyllabusJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'topic' => $this->topic);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'topic' => $this->topic);
 
-        Mail::send('email.syllabus', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Syllabus Added');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if ($this->user->role_name == 'teacher') {
+            Mail::send('email.update_syllabus', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Course syllabus updated successfully');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
+        if ($this->user->role_name == 'student') {
+            Mail::send('email.update_syllabus', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('Course syllabus updated');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+
         //********* Sending Email ends **********
 
         //********* Realtime Notification **********

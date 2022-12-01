@@ -7,10 +7,12 @@ use App\Events\AcceptAssignmentEvent;
 use App\Events\AddAssignmentEvent;
 use App\Events\RejectAssignment;
 use App\Events\RejectAssignmentEvent;
+use App\Events\UpdateAssignmentEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\AcceptAssignmentJob;
 use App\Jobs\AddAssignmentJob;
 use App\Jobs\RejectAssignmentJob;
+use App\Jobs\UpdateAssignmentJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
 use App\Models\AssignmentFeedback;
@@ -295,6 +297,19 @@ class AssignmentController extends Controller
         //******** returning response ********
         $assignment = Assignment::with('assignees')->find($assignment_id);
 
+        $course = Course::findOrFail($assignment->course_id);
+        $student = User::findOrFail($course->student_id);
+        $teacher_message = "Successfully Added Assignment!";
+        $student_message = "You have a new Assignment!";
+
+
+        //Sending Emails and notifications to Student and teacher
+        event(new UpdateAssignmentEvent($assignment, $course->teacher_id, $teacher_message, $teacher));
+        event(new UpdateAssignmentEvent($assignment, $course->student_id, $student_message, $student));
+        dispatch(new UpdateAssignmentJob($assignment, $course->teacher_id, $teacher_message, $teacher));
+        dispatch(new UpdateAssignmentJob($assignment, $course->student_id, $student_message, $student));
+
+
         return response()->json([
             'status' => true,
             'message' => trans('api_messages.COURSE_ASSIGNMENT_UPDATED_SUCCESSFULLY'),
@@ -363,8 +378,14 @@ class AssignmentController extends Controller
         } else {
             $feedback = AssignmentFeedback::where('user_assignment_id', $request->user_assignment_id)->where('student_id', $request->student_id)->where('assignment_id', $assignment_id)->orderBy('id', 'desc')->first();
         }
-        $user_assignment = UserAssignment::where('id', $request->user_assignment_id)->where('user_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
+
+        $user_assignment = UserAssignment::where('id', $request->user_assignment_id)
+        ->where('user_id', $request->student_id)
+        ->where('assignment_id', $assignment_id)
+        ->first();
+
         $user_assignment->status = 'completed';
+        $user_assignment->accepted_at = Carbon::now()->toISOString();
 
 
         $feedback->review = $request->review;
@@ -394,10 +415,10 @@ class AssignmentController extends Controller
         $assignment = Assignment::findOrFail($assignment_id);
 
         //Sending emails and notifications
-        // event(new AcceptAssignmentEvent($teacher, $teacher_message, $assignment));
-        // event(new AcceptAssignmentEvent($student, $student_message, $assignment));
-        // dispatch(new AcceptAssignmentJob($teacher, $teacher_message, $assignment));
-        // dispatch(new AcceptAssignmentJob($student, $student_message, $assignment));
+        event(new AcceptAssignmentEvent($teacher, $teacher_message, $assignment));
+        event(new AcceptAssignmentEvent($student, $student_message, $assignment));
+        dispatch(new AcceptAssignmentJob($teacher, $teacher_message, $assignment));
+        dispatch(new AcceptAssignmentJob($student, $student_message, $assignment));
 
         return response()->json([
             'status' => true,
@@ -440,6 +461,7 @@ class AssignmentController extends Controller
         }
         $user_assignment = UserAssignment::where('id', $request->user_assignment_id)->where('user_id', $request->student_id)->where('assignment_id', $assignment_id)->first();
         $user_assignment->status = 'rejected';
+        $user_assignment->rejected_at = Carbon::now()->toISOString();
 
 
         $feedback->review = $request->review;
@@ -466,13 +488,13 @@ class AssignmentController extends Controller
         $student_message = 'Your Assignment has been Rejected!';
         $teacher = User::find($token_user->id);
         $student = User::find($request->student_id);
-        $assignment = User::find($assignment_id);
+        $assignment = Assignment::find($assignment_id);
 
         //sending emails and notifications
-        // event(new RejectAssignmentEvent($teacher, $teacher_message, $feedback));
-        // event(new RejectAssignmentEvent($student, $student_message, $feedback));
-        // dispatch(new RejectAssignmentJob($teacher, $teacher_message, $feedback));
-        // dispatch(new RejectAssignmentJob($student, $student_message, $feedback));
+        event(new RejectAssignmentEvent($teacher, $teacher_message, $assignment));
+        event(new RejectAssignmentEvent($student, $student_message, $assignment));
+        dispatch(new RejectAssignmentJob($teacher, $teacher_message, $assignment));
+        dispatch(new RejectAssignmentJob($student, $student_message, $assignment));
 
         return response()->json([
             'status' => true,

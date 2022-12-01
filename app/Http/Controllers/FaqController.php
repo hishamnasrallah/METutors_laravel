@@ -125,7 +125,9 @@ class FaqController extends Controller
         ]);
 
         $query = $request->search_query;
-        $result = Faq::where('title', 'LIKE', "%$query%")->orWhere('description', 'LIKE', "%$query%")->get();
+        $result = Faq::where('title', 'LIKE', "%$query%")
+        ->orWhere('description', 'LIKE', "%$query%")
+        ->get();
 
         return response()->json([
             'success' => true,

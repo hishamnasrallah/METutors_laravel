@@ -14,7 +14,7 @@ class TicketResponseEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $userid, $user, $custom_message, $comment;
+    public $userid, $user, $custom_message, $ticket;
 
 
     /**
@@ -22,12 +22,12 @@ class TicketResponseEvent implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct($userid, $user, $custom_message, $comment)
+    public function __construct($userid, $user, $custom_message, $ticket)
     {
         $this->userid = $userid;
         $this->user = $user;
         $this->custom_message =  $custom_message;
-        $this->comment = $comment;
+        $this->ticket = $ticket;
     }
 
     /**

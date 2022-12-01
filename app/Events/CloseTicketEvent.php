@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 class CloseTicketEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    public $userid, $user, $custom_message, $ticket;
+    public $comment, $user, $custom_message, $ticket,$ticket_status;
 
 
     /**
@@ -21,12 +21,13 @@ class CloseTicketEvent implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct($userid, $user, $custom_message, $ticket)
+    public function __construct($comment, $user, $custom_message, $ticket,$ticket_status)
     {
-        $this->userid = $userid;
+        $this->comment = $comment;
         $this->user = $user;
         $this->custom_message =  $custom_message;
         $this->ticket = $ticket;
+        $this->ticket_status = $ticket_status;
     }
 
     /**

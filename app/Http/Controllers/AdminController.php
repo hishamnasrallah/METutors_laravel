@@ -2116,11 +2116,20 @@ class AdminController extends Controller
                             ->where('name', 'LIKE', "%$request->search%")
                             ->whereIn('field_id', $field_ids)
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
                     } else {
                         $subjects = Subject::with('program', 'country', 'field')
                             ->where('program_id', $program_id)
                             ->whereIn('field_id', $field_ids)
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->whereIn('field_id', $field_ids)
+                            ->get();
                     }
                 } else {
                     if ($request->has('search')) {
@@ -2128,17 +2137,21 @@ class AdminController extends Controller
                             ->where('program_id', $program_id)
                             ->where('name', 'LIKE', "%$request->search%")
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->where('name', 'LIKE', "%$request->search%")
+                            ->get();
                     } else {
                         $subjects = Subject::with('program', 'country', 'field')
                             ->where('program_id', $program_id)
                             ->paginate($request->per_page ?? 10);
+
+                        $Subjects = Subject::where('program_id', $program_id)
+                            ->get();
                     }
                 }
             }
         }
-
-
-
 
         /// IF program is national
 

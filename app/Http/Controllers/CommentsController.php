@@ -62,9 +62,16 @@ class CommentsController extends Controller
         $tick->updated_at = Carbon::now();
         $tick->update();
 
+        $tick = Ticket::with('latest_comment')->findOrFail($request->ticket_id);
         $teacher_message = "Ticket Comment added";
         $admin_message = "Ticket Comment added";
-        $admin = User::where('role_name', 'admin')->first();
+
+        if ($user->role_name == 'teacher' || $user->role_name == 'sttudent') {
+            $admin = User::where('role_name', 'admin')->first();
+        } else {
+            $admin = $user;
+            $user = $tick->user;
+        }
 
         event(new TicketResponseEvent($user->id, $user, $teacher_message, $tick));
         event(new TicketResponseEvent($admin->id, $admin, $teacher_message, $tick));
@@ -74,6 +81,7 @@ class CommentsController extends Controller
         return response()->json([
             'message' => 'success',
             'status' => "Reply has been submitted",
+            'ticket' => $tick,
         ]);
         return redirect()->back()->with("status", "Your comment has been submitted.");
     }

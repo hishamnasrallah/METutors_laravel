@@ -20,6 +20,12 @@ class Assignment extends Model
         // return $this->hasMany(UserAssignment::class)->latest('updated_at')->groupBy('user_id');
     }
 
+    public function assignee()
+    {
+        return $this->hasOne(UserAssignment::class)->latest();
+        // return $this->hasMany(UserAssignment::class)->latest('updated_at')->groupBy('user_id');
+    }
+
     public function course()
     {
         return $this->belongsTo(Course::class);

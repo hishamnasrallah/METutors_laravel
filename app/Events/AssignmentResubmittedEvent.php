@@ -10,24 +10,20 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class UpdateSyllabusEvent implements ShouldBroadcast
+class AssignmentResubmittedEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $userid, $user, $topic, $custom_message;
-
-
+    public $user, $custom_message, $assignment;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($userid, $user, $topic, $custom_message)
+    public function __construct($user, $custom_message, $assignment)
     {
-        $this->userid = $userid;
-        $this->user = $user;
+        $this->assignment = $assignment;
         $this->custom_message = $custom_message;
-        $this->topic = $topic;
+        $this->user = $user;
     }
 
     /**
@@ -35,6 +31,8 @@ class UpdateSyllabusEvent implements ShouldBroadcast
      *
      * @return \Illuminate\Broadcasting\Channel|array
      */
+    
+
     public function broadcastOn()
     {
         return ['MeTutors'];
@@ -42,6 +40,6 @@ class UpdateSyllabusEvent implements ShouldBroadcast
 
     public function broadcastAs()
     {
-        return 'syllabus-updated';
+        return 'resubmit-assignment';
     }
 }

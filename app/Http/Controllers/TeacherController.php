@@ -877,6 +877,8 @@ class TeacherController extends Controller
         $assignment->created_by = $teacher->id;
         $assignment->save();
 
+
+
         $assignees = json_decode($request->assignee);
         foreach ($assignees as $assignee) {
             $user_assignment = new UserAssignment();
@@ -894,10 +896,10 @@ class TeacherController extends Controller
 
 
         //Sending Emails and notifications to Student and teacher
-        // event(new AddAssignmentEvent($assignment, $course->teacher_id, $teacher_message, $teacher));
-        // event(new AddAssignmentEvent($assignment, $course->student_id, $student_message, $student));
-        // dispatch(new AddAssignmentJob($assignment, $course->teacher_id, $teacher_message, $teacher));
-        // dispatch(new AddAssignmentJob($assignment, $course->student_id, $student_message, $student));
+        event(new AddAssignmentEvent($assignment, $course->teacher_id, $teacher_message, $teacher));
+        event(new AddAssignmentEvent($assignment, $course->student_id, $student_message, $student));
+        dispatch(new AddAssignmentJob($assignment, $course->teacher_id, $teacher_message, $teacher));
+        dispatch(new AddAssignmentJob($assignment, $course->student_id, $student_message, $student));
 
         return response()->json([
             'status' => true,
@@ -1157,10 +1159,10 @@ class TeacherController extends Controller
                             $student_message = "Syllabus has been updated";
                             $teacher_message = "Syllabus updated Successfully!";
 
-                            // event(new UpdateSyllabusEvent($student->id, $student, $topic, $student_message));
-                            // event(new UpdateSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
-                            // dispatch(new UpdateSyllabusJob($student->id, $student, $topic, $student_message));
-                            // dispatch(new UpdateSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
+                            event(new UpdateSyllabusEvent($student->id, $student, $topic, $student_message));
+                            event(new UpdateSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
+                            dispatch(new UpdateSyllabusJob($student->id, $student, $topic, $student_message));
+                            dispatch(new UpdateSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
 
 
 
@@ -1236,10 +1238,10 @@ class TeacherController extends Controller
                             $student_message = "Syllabus has been updated";
                             $teacher_message = "Syllabus updated Successfully!";
 
-                            // event(new UpdateSyllabusEvent($student->id, $student, $topic, $student_message));
-                            // event(new UpdateSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
-                            // dispatch(new UpdateSyllabusJob($student->id, $student, $topic, $student_message));
-                            // dispatch(new UpdateSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
+                            event(new UpdateSyllabusEvent($student->id, $student, $topic, $student_message));
+                            event(new UpdateSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
+                            dispatch(new UpdateSyllabusJob($student->id, $student, $topic, $student_message));
+                            dispatch(new UpdateSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
 
                             return response()->json([
                                 'success' => true,
@@ -1287,6 +1289,17 @@ class TeacherController extends Controller
                     $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
                 }
 
+                //Emails and notifications
+                $teacher = User::find($token_user->id);
+                $student = User::find($course->student_id);
+                $student_message = "Syllabus has been updated";
+                $teacher_message = "Syllabus updated Successfully!";
+
+                event(new UpdateSyllabusEvent($student->id, $student, $topic, $student_message));
+                event(new UpdateSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
+                dispatch(new UpdateSyllabusJob($student->id, $student, $topic, $student_message));
+                dispatch(new UpdateSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
+
                 return response()->json([
                     'status' => true,
                     'message' => 'Topic updated successfully',
@@ -1331,7 +1344,16 @@ class TeacherController extends Controller
         if ($totalTopicClases > 0) {
             $topicProgress = ($completedTopicClases / $totalTopicClases) * 100;
         }
+        //Emails and notifications
+        $teacher = User::find($token_user->id);
+        $student = User::find($course->student_id);
+        $student_message = "Syllabus has been updated";
+        $teacher_message = "Syllabus updated Successfully!";
 
+        event(new UpdateSyllabusEvent($student->id, $student, $topic, $student_message));
+        event(new UpdateSyllabusEvent($teacher->id, $teacher, $topic, $teacher_message));
+        dispatch(new UpdateSyllabusJob($student->id, $student, $topic, $student_message));
+        dispatch(new UpdateSyllabusJob($teacher->id, $teacher, $topic, $teacher_message));
 
         return response()->json([
             'status' => true,

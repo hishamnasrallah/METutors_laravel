@@ -247,7 +247,7 @@ class TicketsController extends Controller
             dispatch(new CreateSupportTicketJob($user, $ticket, $student_message, 'student'));
             dispatch(new CreateSupportTicketJob($admin, $ticket, $admin_message, 'student'));
         }
-        
+
         if ($user->role_name == 'teacher') {
             $teacher_message = "Ticket opened Successfully!";
             $admin_message = "New Ticket has been opened!";
@@ -436,23 +436,40 @@ class TicketsController extends Controller
                 'message' => trans('api_messages.STATUS_CHANGED_CLOSED_INPROGRESS'),
             ], 401);
         }
-        $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();
+        $ticket = Ticket::with('comment')->where('ticket_id', $request->ticket_id)->firstOrFail();
+        $ticket_status = $ticket->status;
         $ticket->status = $request->status;
         $ticket->save();
+
+        $ticket = Ticket::where('ticket_id', $request->ticket_id)->firstOrFail();
         $ticketOwner = $ticket->user;
 
-        $teacher_message = "Ticket has marked as $request->status!";
-        $admin_message = "Ticket has marked as $request->status!";
-        $admin = User::where('role_name', 'admin')->first();
+        
+        //Latest reply time
+        $latest_comment = $ticket->ticket_comments->first();
+        if ($latest_comment) {
+            $last_reply = $latest_comment->created_at;
+        } else {
+            $last_reply = null;
+        }
 
-        event(new CloseTicketEvent($user->id, $user, $teacher_message, $ticket));
-        event(new CloseTicketEvent($admin->id, $admin, $admin_message, $ticket));
-        dispatch(new CloseTicketJob($user->id, $user, $teacher_message, $ticket));
-        dispatch(new CloseTicketJob($admin->id, $admin, $admin_message, $ticket));
+
+        if ($ticket->status == 'closed') {
+            $teacher_message = "Ticket has marked as $request->status!";
+            $admin_message = "Ticket has marked as $request->status!";
+            $admin = $user;
+            $end_user = $ticket->user;
+
+            event(new CloseTicketEvent($last_reply, $end_user, $teacher_message, $ticket, $ticket_status));
+            event(new CloseTicketEvent($last_reply, $admin, $admin_message, $ticket, $ticket_status));
+            dispatch(new CloseTicketJob($last_reply, $end_user, $teacher_message, $ticket, $ticket_status));
+            dispatch(new CloseTicketJob($last_reply, $admin, $admin_message, $ticket, $ticket_status));
+        }
+
 
         return response()->json([
-            'message' => 'success',
-            'status' => trans('api_messages.STATUS_CHANGED_SUCCESSFULLY'),
+            'status' => true,
+            'message' => trans('api_messages.STATUS_CHANGED_SUCCESSFULLY'),
         ]);
         return redirect()->back()->with("status", "The ticket has been closed.");
     }

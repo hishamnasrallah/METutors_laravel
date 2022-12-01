@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Events\AssignmentResubmittedEvent;
 use App\Events\SubmitAssignmentEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\AssignmentResubmittedJob;
 use App\Jobs\SubmittAssignmentJob;
 use App\Models\AcademicClass;
 use App\Models\Assignment;
@@ -39,7 +41,7 @@ class AssignmentController extends Controller
 
         // $corse = Course::find($course_id);
 
-        $course = Course::with('participants', 'participants.user','assignments')
+        $course = Course::with('participants', 'participants.user', 'assignments')
             ->with(['assignments.assignees.user' => function ($q) {
                 $q->latest();
             }])
@@ -61,7 +63,7 @@ class AssignmentController extends Controller
             $users = [];
             $assignees = $assignment->assignees;
             foreach ($assignees as $assignee) {
-                // $assignment->status =  $assignee->status;
+                $assignment->assignee_status =  $assignee->status;
                 $user = $assignees->whereIn('user_id', $users)->first();
                 if ($user == null) {
                     $assignment->assignees = $user;
@@ -85,7 +87,7 @@ class AssignmentController extends Controller
                 foreach ($course->assignments as $assignment) {
                     $users = [];
                     $assignees = $assignment->assignees;
-                    // $assignment->status =  $assignees[0]->status;
+                    $assignment->assignee_status =  $assignees[0]->status;
                 }
             }
             if ($request->status == 'completed') {
@@ -102,7 +104,7 @@ class AssignmentController extends Controller
                 foreach ($course->assignments as $assignment) {
                     $users = [];
                     $assignees = $assignment->assignees;
-                    // $assignment->status =  $assignees[0]->status;
+                    $assignment->assignee_status =  $assignees[0]->status;
                 }
             }
 
@@ -146,7 +148,7 @@ class AssignmentController extends Controller
             'status' => true,
             'message' => 'Assignment details',
             'assignment' => $assignment,
-            // 'isSubmitted' => $user_assignment->status,
+            'assignee_status' => $user_assignment->status,
         ]);
     }
 
@@ -168,8 +170,10 @@ class AssignmentController extends Controller
                 'errors' => $errors,
             ], 400);
         }
+
         $token_1 = JWTAuth::getToken();
         $token_user = JWTAuth::toUser($token_1);
+
         $assignment = Assignment::findOrFail($assignment_id);
         $course = Course::findOrFail($assignment->course_id);
 
@@ -192,11 +196,12 @@ class AssignmentController extends Controller
             $student_message = 'Assignment ReSubmitted Successfully!';
             $student = User::find($token_user->id);
             $teacher = User::find($course->teacher_id);
+
             //Sending emails and notifications
-            event(new SubmitAssignmentEvent($teacher->id, $teacher, $teacher_message, $assignment));
-            event(new SubmitAssignmentEvent($student->id, $student, $student_message, $assignment));
-            dispatch(new SubmittAssignmentJob($teacher->id, $teacher, $teacher_message, $assignment));
-            dispatch(new SubmittAssignmentJob($student->id, $student, $student_message, $assignment));
+            event(new AssignmentResubmittedEvent($teacher, $teacher_message, $assignment));
+            event(new AssignmentResubmittedEvent($student, $student_message, $assignment));
+            dispatch(new AssignmentResubmittedJob($teacher, $teacher_message, $assignment));
+            dispatch(new AssignmentResubmittedJob($student, $student_message, $assignment));
 
 
             return response()->json([
@@ -213,6 +218,7 @@ class AssignmentController extends Controller
             $userAssignment->file = $request->file;
         }
         $userAssignment->status = 'submitted';
+        $userAssignment->submitted_at = Carbon::now()->toISOString();
         $userAssignment->updated_at = Carbon::now();
         $userAssignment->update();
 
@@ -224,6 +230,7 @@ class AssignmentController extends Controller
         $student = User::find($token_user->id);
         $teacher = User::find($course->teacher_id);
         $assignment = Assignment::findOrFail($assignment_id);
+        // return $assignment->assignee;
 
         // Sending emails and notifications
         event(new SubmitAssignmentEvent($teacher->id, $teacher, $teacher_message, $assignment));

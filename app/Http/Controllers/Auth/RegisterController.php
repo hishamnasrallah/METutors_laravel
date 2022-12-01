@@ -224,7 +224,7 @@ class RegisterController extends Controller
             }
             if ($user->role_name == 'student') {
                 $user_count = User::where('role_name', 'student')->count();
-                
+
                 $user_count = 100000 + $user_count;
                 $id_number = 'S' . $user_count;
             }
@@ -236,13 +236,15 @@ class RegisterController extends Controller
             }
             $update_user->update();
 
-            $admin = User::where('role_name', 'admin')->first();
 
-            // Emails and notifications for registeration
-            // event(new UserRegisterEvent($user->id, $user, "Registerd Successfully"));
-            // event(new UserRegisterEvent($admin->id, $admin, "A New User Registerd Successfully"));
-            // dispatch(new UserRegisterJob($user->id, $user, "Registerd Successfully"));
-            // dispatch(new UserRegisterJob($admin->id, $admin, "A New User Registerd Successfully"));
+            if ($user->role_name == 'student') {
+                $admin = User::where('role_name', 'admin')->first();
+                //Emails and notifications for registeration
+                event(new UserRegisterEvent($user->id, $user, "Registerd Successfully"));
+                event(new UserRegisterEvent($admin->id, $admin, "A New User Registerd Successfully"));
+                dispatch(new UserRegisterJob($user->id, $user, "Registerd Successfully"));
+                dispatch(new UserRegisterJob($admin->id, $admin, "A New User Registerd Successfully"));
+            }
 
             return response()->json([
                 'status' => true,

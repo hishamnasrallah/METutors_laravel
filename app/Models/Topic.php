@@ -12,4 +12,10 @@ class Topic extends Model
     public function classes(){
         return $this->hasMany(AcademicClass::class,'topic_id','id');
     }
+
+    public function class_topic(){
+        return $this->belongsTo(AcademicClass::class,'id','topic_id');
+    }
+
+
 }

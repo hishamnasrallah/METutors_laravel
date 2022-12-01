@@ -15,19 +15,19 @@ class TicketResponseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $userid, $user, $custom_message, $comment;
+    public $userid, $user, $custom_message, $ticket;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($userid, $user, $custom_message, $comment)
+    public function __construct($userid, $user, $custom_message, $ticket)
     {
         $this->userid = $userid;
         $this->user = $user;
         $this->custom_message =  $custom_message;
-        $this->comment = $comment;
+        $this->ticket = $ticket;
     }
 
     /**
@@ -42,19 +42,20 @@ class TicketResponseJob implements ShouldQueue
         $user_email = $this->user->email;
         $custom_message = $this->custom_message;
         $to_email = $user_email;
-        $email_subject = 'Update on support ticket no.' . $this->comment->ticket->ticket_id ;
+        $ticket = $this->ticket;
+        $email_subject = 'Update on support ticket no.' . $ticket->ticket_id;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'comment' => $this->comment);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'ticket' => $this->ticket);
 
         if ($this->user->role_name == 'admin') {
-            Mail::send('email.ticket_reply', $data, function ($message) use ($to_email,$email_subject) {
+            Mail::send('email.ticket_reply', $data, function ($message) use ($to_email, $email_subject) {
                 $message->to($to_email)->subject($email_subject);
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
         }
 
         if ($this->user->role_name == 'teacher' || $this->user->role_name == 'student') {
-            Mail::send('email.ticket_reply', $data, function ($message) use ($to_email,$email_subject) {
+            Mail::send('email.ticket_reply', $data, function ($message) use ($to_email, $email_subject) {
                 $message->to($to_email)->subject($email_subject);
                 $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
             });
@@ -68,7 +69,7 @@ class TicketResponseJob implements ShouldQueue
         $notification->notifiable_type = "App\Models\Ticket";
         $notification->notifiable_id = $this->userid;
         $notification->message =  $this->custom_message;
-        $notification->data =  $this->comment;
+        $notification->data =  $this->ticket;
         $notification->save();
     }
 }

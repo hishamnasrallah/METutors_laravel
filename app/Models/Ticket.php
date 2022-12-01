@@ -26,6 +26,11 @@ class Ticket extends Model
         return $this->belongsTo(Comment::class)->latest();
     }
 
+    public function latest_comment()
+    {
+        return $this->hasOne(Comment::class)->latest();
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);

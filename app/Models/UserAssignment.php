@@ -49,4 +49,9 @@ class UserAssignment extends Model
     {
         return $this->hasMany(AssignmentFeedback::class, 'assignment_id', 'assignment_id')->select('id', 'assignment_id', 'student_id', 'review', 'rating', 'file', 'feedback_by');
     }
+
+    public function teacher_feedback()
+    {
+        return $this->hasOne(AssignmentFeedback::class, 'user_assignment_id', 'id')->select('id', 'assignment_id', 'student_id', 'review', 'rating', 'file', 'feedback_by');
+    }
 }

@@ -30,10 +30,12 @@ use Illuminate\Support\Facades\Storage;
 use Validator;
 use \App\Mail\SendMailInvite;
 use App\Models\AcademicClass;
+use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\TeacherPayment;
 use App\Models\UserFeedback;
 use App\TeacherSubject;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -50,16 +52,15 @@ class GeneralController extends Controller
     {
 
 
-        $courses = Course::with('classes')
-        ->whereHas('classes', function ($q) {
-            $q->where('status', 'completed');
-        })
-            ->where('status', '!=', "completed")->get();
+        $today = Carbon::now()->subDay(1);
+         $today_date = Carbon::parse($today)->format('Y-m-d');
 
-        return response()->json([
-            'status' => true,
-            'payment_details' =>  $courses,
-        ]);
+        return $assignments = Assignment::with('course','assignee')
+        ->whereDate('deadline',$today_date)
+        ->whereHas('assignee',function($q){
+            $q->where('status','pending');
+        })
+        ->get();
     }
 
     public function field_of_studies()

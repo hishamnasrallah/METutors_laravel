@@ -12,9 +12,9 @@
                                 <p>A new update has been received on support ticket no. <b>{{ $ticket->ticket_id }}</b>.</p>
 
                                 <p>Ticket issuer: <b>{{ $ticket->user->first_name }}</b></p>
-                                <p>Reply by: <b>{{ $ticket->comment->user->first_name }}</b></p>
+                                <p>Reply by: <b>{{ $ticket->latest_comment->user->first_name }}</b></p>
                                 <p>Ticket status: <b>{{ $ticket->status }}</b></p>
-                                <p>Message update: <b>{{ $ticket->comment->created_at }}</b></p>
+                                <p>Message update: <b>{{ $ticket->latest_comment->created_at }}</b></p>
 
                                 <p>Regards,</p>
                                 <p>Technical Support Team</p>
@@ -26,9 +26,9 @@
                                 <p>A new update has been received on support ticket no. <b>{{ $ticket->ticket_id }}</b>.</p>
 
                                 <p>Ticket issuer: <b>{{ $ticket->user->first_name }}</b></p>
-                                <p>Reply by: <b>{{ $ticket->comment->user->first_name }}</b></p>
+                                <p>Reply by: <b>{{ $ticket->latest_comment->user->first_name }}</b></p>
                                 <p>Ticket status: <b>{{ $ticket->status }}</b></p>
-                                <p>Message update: <b>{{ $ticket->comment->created_at }}</b></p>
+                                <p>Message update: <b>{{ $ticket->latest_comment->created_at }}</b></p>
 
                                 <p>Regards,</p>
                                 <p>Student Success Team</p>

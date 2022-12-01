@@ -9,13 +9,13 @@
                         @if ($user->role_name == 'teacher')
                             <div class="card-body">
                                 <p>Hi <b>{{ $user->first_name }},</b> </p>
-                                <p>You have added an assignment for your student
-                                    <b>{{ $assignment->course->student->first_name }}</b> for the course
+                                <p>You have successfully updated the assignment for student
+                                    <b>{{ $assignment->course->student->first_name }}</b> SIN
+                                    <b>{{ $assignment->course->student->id_number }}</b> for the course
                                     <b>{{ $assignment->course->course_name }}</b>
                                     ID <b>{{ $assignment->course->course_code }}</b>, booking number
-                                    <b>{{ $assignment->course->course_order->booking_id ?? null }}</b>. You can view all of
-                                    the assignments you have set on your
-                                    dashboard.
+                                    <b>{{ $assignment->course->course_order->booking_id ?? null }}</b>.Your student has been
+                                    notified.
                                 </p>
                                 <p>Regards,</p>
                                 <p>Teacher Success Team</p>
@@ -25,8 +25,8 @@
                         @if ($user->role_name == 'student')
                             <div class="card-body">
                                 <p>Hi <b>HR,</b> </p>
-                                <p>Your teacher <b>{{ $assignment->course->teacher->first_name }}</b> TIN
-                                    <b>{{ $assignment->course->teacher->id_number }}</b> has added a new assignment for the
+                                <p>Your teacher <b>{{ $assignment->course->teacher->first_name }}</b> has updated your
+                                    assignment for the
                                     course <b>{{ $assignment->course->course_name }}</b> ID
                                     <b>{{ $assignment->course->course_code }}</b>, booking number
                                     <b>{{ $assignment->course->course_order->booking_id ?? null }}</b>. You can view your

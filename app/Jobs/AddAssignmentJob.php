@@ -41,19 +41,28 @@ class AddAssignmentJob implements ShouldQueue
         $custom_message = $this->custom_message;
         $to_email = $user_email;
 
-        $data = array('email' =>  $user_email, 'custom_message' =>  $custom_message, 'assignment' => $this->assignment);
+        $data = array('user' =>  $this->user, 'custom_message' =>  $custom_message, 'assignment' => $this->assignment);
 
-        Mail::send('email.add_assignment', $data, function ($message) use ($to_email) {
-            $message->to($to_email)->subject('Assignment Added');
-            $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
-        });
+        if($this->user->role_name == 'teacher'){
+            Mail::send('email.add_assignment', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New assignment has been sent to your student successfully');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+        if($this->user->role_name == 'student'){
+            Mail::send('email.add_assignment', $data, function ($message) use ($to_email) {
+                $message->to($to_email)->subject('New assignment added to your course');
+                $message->from(env('MAIL_FROM_ADDRESS', 'info@metutors.com'), 'MEtutors');
+            });
+        }
+        
         //********* Sending  Email ends **********//
 
         //********* Sending  Notifications **********//
         $notification = new Notification();
         $notification->type = "App\Events\AddAssignmentEvent";
         $notification->notifiable_type = "App\Models\Assignment";
-        $notification->notifiable_id = $this->userid;
+        $notification->notifiable_id = $this->user->id;
         $notification->message =  $this->custom_message;
         $notification->data =  $this->assignment;
         $notification->save();
